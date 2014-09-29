@@ -23,9 +23,10 @@ print(d)
 ```
 
 ```r
-# for our null-hypothesis assume the two rates are identical.
+# For our null-hypothesis assume the two rates are identical.
 # under this hypothesis we can pool the data to get an estimate of what
-# common rate we are looking at.
+# common rate we are looking at.  Not we don't actually know the common
+# rate, so using a single number from the data is a bit of a short-cut.
 baseRate <- sum(d$conversions)/sum(d$visitors)
 print(baseRate)
 ```
@@ -35,11 +36,11 @@ print(baseRate)
 ```
 
 ```r
-# write down how far the observed counts are from the expected values
+# Write down how far the observed counts are from the expected values.
 d$expectation <- d$visitors*baseRate
 d$difference <- d$conversions-d$expectation
 
-# compute the one and two-sided significances of this from a Binomial model
+# Compute the one and two-sided significances of this from a Binomial model.
 # return p( lowConversions <= conversions <= highConversions | visitors,rate)
 pInterval <- function(visitors,rate,lowConversions,highConversions) {
   # pbinom(obs,total,rate) = P[obs <= total | rate]
@@ -50,7 +51,7 @@ d$pAtLeastAbsDiff <- 1 - pInterval(d$visitors,baseRate,
    d$expectation-(abs(d$difference)-1),
    d$expectation+(abs(d$difference)-1))
 
-# also show estimate of typical deviation and z-like score
+# Also show estimate of typical deviation and z-like score.
 d$expectedDeviation <- sqrt(baseRate*(1-baseRate)*d$visitors)
 d$Z <- abs(d$difference)/d$expectedDeviation
 
@@ -67,7 +68,7 @@ print(d)
 ```
 
 ```r
-# plot pooled rate null-hypothesis
+# Plot pooled rate null-hypothesis
 library(ggplot2)
 library(reshape2)
 plotD <- data.frame(conversions=
@@ -88,3 +89,19 @@ ggplot(data=thinD,aes(x=conversions,y=probability,color=assumedNullDistribution)
 ```
 
 ![plot of chunk rateExample](figure/rateExample.png) 
+
+```r
+# The important thing to remember is your exact
+# significances/probabilities are a function of the unknown true rates,
+# your data, and your modeling assumptions. The usual advice is to
+# control the undesirable dependence on modeling assumptions by using only "brand
+# name tests." I actually prefer using ad-hoc tests, but discussion what
+# is assumed in them (one-sided/two-sided, pooled data for null, and so
+# on). You definitely can't assume away a thumb on the scale.
+#
+# Also this calculation is not compensating for any multiple trial or
+# early stopping effect.  It (rightly or wrongly) assumes this is the only
+# experiment run and it was stopped without looking at the rates.
+#
+# This may look like a lot of code, but the code doesn't change over different data.
+```

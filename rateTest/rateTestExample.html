@@ -14,17 +14,18 @@ d$rates &lt;-<span class="st"> </span>d$conversions/d$visitors
 <pre><code>##          name visitors conversions  rates
 ## 1 variation#1     3920         721 0.1839
 ## 2 variation#2     3999         623 0.1558</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># for our null-hypothesis assume the two rates are identical.</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># For our null-hypothesis assume the two rates are identical.</span>
 <span class="co"># under this hypothesis we can pool the data to get an estimate of what</span>
-<span class="co"># common rate we are looking at.</span>
+<span class="co"># common rate we are looking at.  Not we don&#39;t actually know the common</span>
+<span class="co"># rate, so using a single number from the data is a bit of a short-cut.</span>
 baseRate &lt;-<span class="st"> </span><span class="kw">sum</span>(d$conversions)/<span class="kw">sum</span>(d$visitors)
 <span class="kw">print</span>(baseRate)</code></pre>
 <pre><code>## [1] 0.1697</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># write down how far the observed counts are from the expected values</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Write down how far the observed counts are from the expected values.</span>
 d$expectation &lt;-<span class="st"> </span>d$visitors*baseRate
 d$difference &lt;-<span class="st"> </span>d$conversions-d$expectation
 
-<span class="co"># compute the one and two-sided significances of this from a Binomial model</span>
+<span class="co"># Compute the one and two-sided significances of this from a Binomial model.</span>
 <span class="co"># return p( lowConversions &lt;= conversions &lt;= highConversions | visitors,rate)</span>
 pInterval &lt;-<span class="st"> </span>function(visitors,rate,lowConversions,highConversions) {
   <span class="co"># pbinom(obs,total,rate) = P[obs &lt;= total | rate]</span>
@@ -35,7 +36,7 @@ d$pAtLeastAbsDiff &lt;-<span class="st"> </span><span class="dv">1</span> -<span
    d$expectation-(<span class="kw">abs</span>(d$difference)-<span class="dv">1</span>),
    d$expectation+(<span class="kw">abs</span>(d$difference)-<span class="dv">1</span>))
 
-<span class="co"># also show estimate of typical deviation and z-like score</span>
+<span class="co"># Also show estimate of typical deviation and z-like score.</span>
 d$expectedDeviation &lt;-<span class="st"> </span><span class="kw">sqrt</span>(baseRate*(<span class="dv">1</span>-baseRate)*d$visitors)
 d$Z &lt;-<span class="st"> </span><span class="kw">abs</span>(d$difference)/d$expectedDeviation
 
@@ -46,7 +47,7 @@ d$Z &lt;-<span class="st"> </span><span class="kw">abs</span>(d$difference)/d$ex
 ##   pAtLeastAbsDiff expectedDeviation     Z
 ## 1         0.01821             23.50 2.370
 ## 2         0.02051             23.74 2.347</code></pre>
-<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># plot pooled rate null-hypothesis</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Plot pooled rate null-hypothesis</span>
 <span class="kw">library</span>(ggplot2)
 <span class="kw">library</span>(reshape2)
 plotD &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">conversions=</span>
@@ -67,3 +68,16 @@ thinD &lt;-<span class="st"> </span><span class="kw">melt</span>(plotD,<span cla
 <div class="figure">
 <img src="figure/rateExample.png" alt="plot of chunk rateExample" /><p class="caption">plot of chunk rateExample</p>
 </div>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># The important thing to remember is your exact</span>
+<span class="co"># significances/probabilities are a function of the unknown true rates,</span>
+<span class="co"># your data, and your modeling assumptions. The usual advice is to</span>
+<span class="co"># control the undesirable dependence on modeling assumptions by using only &quot;brand</span>
+<span class="co"># name tests.&quot; I actually prefer using ad-hoc tests, but discussion what</span>
+<span class="co"># is assumed in them (one-sided/two-sided, pooled data for null, and so</span>
+<span class="co"># on). You definitely can&#39;t assume away a thumb on the scale.</span>
+<span class="co">#</span>
+<span class="co"># Also this calculation is not compensating for any multiple trial or</span>
+<span class="co"># early stopping effect.  It (rightly or wrongly) assumes this is the only</span>
+<span class="co"># experiment run and it was stopped without looking at the rates.</span>
+<span class="co">#</span>
+<span class="co"># This may look like a lot of code, but the code doesn&#39;t change over different data.</span></code></pre>
