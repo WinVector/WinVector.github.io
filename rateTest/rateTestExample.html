@@ -1,4 +1,10 @@
-<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Working a rate significance test related to the problem stated in http://blog.sumall.com/journal/optimizely-got-me-fired.html</span>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># R example working a rate significance test related to the problem stated in http://blog.sumall.com/journal/optimizely-got-me-fired.html</span>
+<span class="co"># See: http://www.win-vector.com/blog/2014/05/a-clear-picture-of-power-and-significance-in-ab-tests/ for more writing on this</span>
+<span class="co"># Note: we are using exact tail-probability from the binomial distribution exactly.   This is easy</span>
+<span class="co"># to do (as it is a built in function in many languages) and more faithful to the underlying</span>
+<span class="co"># assumed model than using a normal approximation (though a normal approximation is certainly good enough).</span>
+
+<span class="co"># to rebuild</span>
 <span class="co"># echo &quot;library(knitr); knit(&#39;rateTestExample.Rmd&#39;)&quot; | R --vanilla ; pandoc rateTestExample.md -o rateTestExample.html</span>
 
 <span class="co"># type in data</span>

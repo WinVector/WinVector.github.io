@@ -1,7 +1,13 @@
 
 
 ```r
-# Working a rate significance test related to the problem stated in http://blog.sumall.com/journal/optimizely-got-me-fired.html
+# R example working a rate significance test related to the problem stated in http://blog.sumall.com/journal/optimizely-got-me-fired.html
+# See: http://www.win-vector.com/blog/2014/05/a-clear-picture-of-power-and-significance-in-ab-tests/ for more writing on this
+# Note: we are using exact tail-probability from the binomial distribution exactly.   This is easy
+# to do (as it is a built in function in many languages) and more faithful to the underlying
+# assumed model than using a normal approximation (though a normal approximation is certainly good enough).
+
+# to rebuild
 # echo "library(knitr); knit('rateTestExample.Rmd')" | R --vanilla ; pandoc rateTestExample.md -o rateTestExample.html
 
 # type in data
