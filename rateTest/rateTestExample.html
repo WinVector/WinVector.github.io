@@ -1,0 +1,63 @@
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Working a rate significance test related to the problem stated in http://blog.sumall.com/journal/optimizely-got-me-fired.html</span>
+<span class="co"># echo &quot;library(knitr); knit(&#39;rateTestExample.Rmd&#39;)&quot; | R --vanilla ; pandoc rateTestExample.md -o rateTestExample.html</span>
+
+<span class="co"># type in data</span>
+d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">name=</span><span class="kw">c</span>(<span class="st">&#39;variation#1&#39;</span>,<span class="st">&#39;variation#2&#39;</span>),<span class="dt">visitors=</span><span class="kw">c</span>(<span class="dv">3920</span>,<span class="dv">3999</span>),<span class="dt">conversions=</span><span class="kw">c</span>(<span class="dv">721</span>,<span class="dv">623</span>))
+d$rates &lt;-<span class="st"> </span>d$conversions/d$visitors
+<span class="kw">print</span>(d)</code></pre>
+<pre><code>##          name visitors conversions  rates
+## 1 variation#1     3920         721 0.1839
+## 2 variation#2     3999         623 0.1558</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># for our null-hypothesis assume the two rates are identical.</span>
+<span class="co"># under this hypothesis we can pool the data to get an estimate of what</span>
+<span class="co"># common rate we are looking at.</span>
+baseRate &lt;-<span class="st"> </span><span class="kw">sum</span>(d$conversions)/<span class="kw">sum</span>(d$visitors)
+<span class="kw">print</span>(baseRate)</code></pre>
+<pre><code>## [1] 0.1697</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># write down how far the observed counts are from the expected values</span>
+d$expectation &lt;-<span class="st"> </span>d$visitors*baseRate
+d$difference &lt;-<span class="st"> </span>d$conversions-d$expectation
+
+<span class="co"># compute the one and two-sided significances of this from a Binomial model</span>
+<span class="co"># return p( lowConversions &lt;= conversions &lt;= highConversions | visitors,rate)</span>
+pInterval &lt;-<span class="st"> </span>function(visitors,rate,lowConversions,highConversions) {
+  <span class="co"># pbinom(obs,total,rate) = P[obs &lt;= total | rate]</span>
+  <span class="kw">pbinom</span>(highConversions,visitors,rate) -<span class="st"> </span>
+<span class="st">     </span><span class="kw">pbinom</span>(lowConversions<span class="dv">-1</span>,visitors,rate)
+}
+d$pAtLeastAbsDiff &lt;-<span class="st"> </span><span class="dv">1</span> -<span class="st"> </span><span class="kw">pInterval</span>(d$visitors,baseRate,
+   d$expectation-(<span class="kw">abs</span>(d$difference)-<span class="dv">1</span>),
+   d$expectation+(<span class="kw">abs</span>(d$difference)-<span class="dv">1</span>))
+
+<span class="co"># also show estimate of typical deviation and z-like score</span>
+d$expectedDeviation &lt;-<span class="st"> </span><span class="kw">sqrt</span>(baseRate*(<span class="dv">1</span>-baseRate)*d$visitors)
+d$Z &lt;-<span class="st"> </span><span class="kw">abs</span>(d$difference)/d$expectedDeviation
+
+<span class="kw">print</span>(d)</code></pre>
+<pre><code>##          name visitors conversions  rates expectation difference
+## 1 variation#1     3920         721 0.1839       665.3       55.7
+## 2 variation#2     3999         623 0.1558       678.7      -55.7
+##   pAtLeastAbsDiff expectedDeviation     Z
+## 1         0.01821             23.50 2.370
+## 2         0.02051             23.74 2.347</code></pre>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="co"># plot pooled rate null-hypothesis</span>
+<span class="kw">library</span>(ggplot2)
+<span class="kw">library</span>(reshape2)
+plotD &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">conversions=</span>
+   (<span class="kw">floor</span>(<span class="kw">min</span>(d$expectation) -<span class="st"> </span><span class="dv">3</span>*<span class="kw">max</span>(d$expectedDeviation))):
+<span class="st">   </span>(<span class="kw">ceiling</span>(<span class="kw">max</span>(d$expectation) +<span class="st"> </span><span class="dv">3</span>*<span class="kw">max</span>(d$expectedDeviation))))
+plotD[,<span class="kw">as.character</span>(d$name[<span class="dv">1</span>])] &lt;-<span class="st"> </span><span class="kw">dbinom</span>(plotD$conversions,d$visitors[<span class="dv">1</span>],baseRate)
+plotD[,<span class="kw">as.character</span>(d$name[<span class="dv">2</span>])] &lt;-<span class="st"> </span><span class="kw">dbinom</span>(plotD$conversions,d$visitors[<span class="dv">2</span>],baseRate)
+
+
+thinD &lt;-<span class="st"> </span><span class="kw">melt</span>(plotD,<span class="dt">id.vars=</span><span class="kw">c</span>(<span class="st">&#39;conversions&#39;</span>),
+   <span class="dt">variable.name=</span><span class="st">&#39;assumedNullDistribution&#39;</span>,<span class="dt">value.name=</span><span class="st">&#39;probability&#39;</span>)
+<span class="co"># In this plot the two distributions are assumed to have the same</span>
+<span class="co"># conversion rate, so the only distributional difference is from the</span>
+<span class="co"># different total number of visitors.  The vertical lines are the</span>
+<span class="co"># observed conversion counts for each group.</span>
+<span class="kw">ggplot</span>(<span class="dt">data=</span>thinD,<span class="kw">aes</span>(<span class="dt">x=</span>conversions,<span class="dt">y=</span>probability,<span class="dt">color=</span>assumedNullDistribution)) +<span class="st"> </span>
+<span class="st">   </span><span class="kw">geom_line</span>() +<span class="st"> </span><span class="kw">geom_vline</span>(<span class="dt">data=</span>d,<span class="kw">aes</span>(<span class="dt">xintercept=</span>conversions,<span class="dt">color=</span>name))</code></pre>
+<div class="figure">
+<img src="figure/rateExample.png" alt="plot of chunk rateExample" /><p class="caption">plot of chunk rateExample</p>
+</div>
