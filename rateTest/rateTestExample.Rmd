@@ -69,9 +69,10 @@ ggplot(data=thinD,aes(x=conversions,y=probability,color=assumedNullDistribution)
 # name tests." I actually prefer using ad-hoc tests, but discussion what
 # is assumed in them (one-sided/two-sided, pooled data for null, and so
 # on). You definitely can't assume away a thumb on the scale.
-
+#
 # Also this calculation is not compensating for any multiple trial or
 # early stopping effect.  It (rightly or wrongly) assumes this is the only
 # experiment run and it was stopped without looking at the rates.
-
+#
+# This may look like a lot of code, but the code doesn't change over different data.
 ```
