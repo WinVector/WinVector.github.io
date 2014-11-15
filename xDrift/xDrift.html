@@ -1681,6 +1681,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>iPython notebook source <a href="xDift.ipynb">here</a></p>
 <p>Example of using methods from the orthogonal Procrustes problem ( Schonemann, P.H. (1966), A generalized solution of the orthogonal Procrustes problem, Psychometrika 31: 1–10 ) to try and solve for simple x concept drift. For notes on deriving the Procrustes solution see <a href="http://www.win-vector.com/blog/2014/11/can-we-try-to-make-an-adjustment/">the application</a> and <a href="http://winvector.github.io/xDrift/orthApprox.pdf">the derivation</a>.</p>
 <p>The ideas is we have a random process generating y_i ~ b . z_i + e_i where y_i is the scalar outcome, z_i is a vector, b is a vector and e_i is the scalar error term. We further assume that z_i is in fact unobserved and we actually observe pairs (y_i, x_i) where x_i ~ L_1 z_i where L_1 is an unobserved linear operator. The drift idea is after observing n1 observation pairs we switch to observing only q_i where q_i ~ L_2 z_i (L_2 a new unobserved linear operator) and would like to estimate the now unobserved y_i.</p>
 <p>We know y_i ~ b L_1^{-1} x_i and can build an estimate g ~ b L_1^{-1} from the initial data. After the switch over we know the unobserved y_i are ~ b L_2^{-1} x_i so we want an h ~ L_2^{-1}. h ~ g L_1 L_2^{-1} would work. So we need an estimate of L_1 L_2^{-1} from our observations of only the x_i and the q_i.</p>
@@ -1957,24 +1958,15 @@ In&nbsp;[7]:
 
 
 <span class="c">#hHidden = numpy.matrix(numpy.linalg.lstsq(appFrame[varNames].values,appFrame[&#39;y&#39;])[0])</span>
-<span class="n">hHidden</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">appFrame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">coef_</span><span class="p">)</span>
+<span class="n">clfH</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">linear_model</span><span class="o">.</span><span class="n">Ridge</span><span class="p">(</span><span class="n">copy_X</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fit_intercept</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">hHidden</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">clfH</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">appFrame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">coef_</span><span class="p">)</span>
 
+<span class="c"># adjust coefficients</span>
 <span class="k">print</span> <span class="s">&#39;hHidden&#39;</span><span class="p">,</span><span class="n">hHidden</span>
 <span class="k">print</span> <span class="s">&#39;unobserved train b estimate&#39;</span><span class="p">,</span><span class="n">hHidden</span><span class="o">*</span><span class="n">L2</span>  <span class="c"># L2,hHidden would not be known to an experimentor</span>
 
-
 <span class="n">hEst</span> <span class="o">=</span> <span class="n">g</span><span class="o">*</span><span class="n">r</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
 <span class="k">print</span> <span class="s">&#39;hEst&#39;</span><span class="p">,</span><span class="nb">type</span><span class="p">(</span><span class="n">hEst</span><span class="p">),</span><span class="n">hEst</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span><span class="n">hEst</span>
-
-<span class="c"># go through all of the trouble of getting in and out of matrix notation</span>
-<span class="k">def</span> <span class="nf">applyEst</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span><span class="n">coefs</span><span class="p">):</span>
-    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">coefs</span><span class="o">.</span><span class="n">transpose</span><span class="p">())))</span>
-
-<span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yGest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">applyEst</span><span class="p">(</span><span class="n">appFrame</span><span class="p">,</span><span class="n">g</span><span class="p">),</span><span class="n">index</span><span class="o">=</span><span class="n">appFrame</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-<span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yHest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">applyEst</span><span class="p">(</span><span class="n">appFrame</span><span class="p">,</span><span class="n">hEst</span><span class="p">),</span><span class="n">index</span><span class="o">=</span><span class="n">appFrame</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-
-<span class="k">print</span> <span class="s">&#39;g estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yGest&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
-<span class="k">print</span> <span class="s">&#39;h estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yHest&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
 </pre></div>
 
 </div>
@@ -2015,6 +2007,45 @@ unobserved transformed estimate [[-0.32404219  0.06859821 -0.44835955]]
 hHidden [[-0.33033421  0.06523913 -0.44242063]]
 unobserved train b estimate [[-0.24899127  0.11051771 -0.4532814 ]]
 hEst &lt;class &apos;numpy.matrixlib.defmatrix.matrix&apos;&gt; (1, 3) [[-0.30635833  0.15160543 -0.43238963]]
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[8]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight"><pre><span class="c"># make predictions using adjusted coefficients</span>
+<span class="c"># go through all of the trouble of getting in and out of matrix notation</span>
+<span class="k">def</span> <span class="nf">applyEst</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span><span class="n">coefs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">frame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">coefs</span><span class="o">.</span><span class="n">transpose</span><span class="p">())))</span>
+
+<span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yGest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">applyEst</span><span class="p">(</span><span class="n">appFrame</span><span class="p">,</span><span class="n">g</span><span class="p">),</span><span class="n">index</span><span class="o">=</span><span class="n">appFrame</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yHest&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">applyEst</span><span class="p">(</span><span class="n">appFrame</span><span class="p">,</span><span class="n">hEst</span><span class="p">),</span><span class="n">index</span><span class="o">=</span><span class="n">appFrame</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="s">&#39;g estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yGest&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
+<span class="k">print</span> <span class="s">&#39;h estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;yHest&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
 g estimate square error 2.67619425173
 h estimate square error 1.07708434887
 
@@ -2029,7 +2060,45 @@ h estimate square error 1.07708434887
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[8]:
+In&nbsp;[9]:
+</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class="highlight"><pre><span class="c"># make same predictions using adjusted coordinates</span>
+
+<span class="n">yGest</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">appFrame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">yHest</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">appFrame</span><span class="p">[</span><span class="n">varNames</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">*</span><span class="n">r</span><span class="p">)</span>
+
+<span class="k">print</span> <span class="s">&#39;g estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">yGest</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
+<span class="k">print</span> <span class="s">&#39;h estimate square error&#39;</span><span class="p">,</span><span class="nb">sum</span><span class="p">([(</span><span class="n">yHest</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">appFrame</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">])</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">)])</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>
+g estimate square error 2.67619425173
+h estimate square error 1.07708434887
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[10]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
@@ -2849,7 +2918,7 @@ hjUIIIAAAggkTIAAnDBaDowAAggggEB4AQJweBvWIIAAAgggkDABAnDCaDkwAggggAAC4QX+P9hJ
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[8]:
+In&nbsp;[10]:
 </div>
 <div class="inner_cell">
     <div class="input_area">
