@@ -1681,7 +1681,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>iPython notebook source <a href="xDift.ipynb">here</a></p>
+<p>iPython notebook source <a href="xDrift.ipynb">here</a></p>
 <p>Example of using methods from the orthogonal Procrustes problem ( Schonemann, P.H. (1966), A generalized solution of the orthogonal Procrustes problem, Psychometrika 31: 1–10 ) to try and solve for simple x concept drift. For notes on deriving the Procrustes solution see <a href="http://www.win-vector.com/blog/2014/11/can-we-try-to-make-an-adjustment/">the application</a> and <a href="http://winvector.github.io/xDrift/orthApprox.pdf">the derivation</a>.</p>
 <p>The ideas is we have a random process generating y_i ~ b . z_i + e_i where y_i is the scalar outcome, z_i is a vector, b is a vector and e_i is the scalar error term. We further assume that z_i is in fact unobserved and we actually observe pairs (y_i, x_i) where x_i ~ L_1 z_i where L_1 is an unobserved linear operator. The drift idea is after observing n1 observation pairs we switch to observing only q_i where q_i ~ L_2 z_i (L_2 a new unobserved linear operator) and would like to estimate the now unobserved y_i.</p>
 <p>We know y_i ~ b L_1^{-1} x_i and can build an estimate g ~ b L_1^{-1} from the initial data. After the switch over we know the unobserved y_i are ~ b L_2^{-1} x_i so we want an h ~ L_2^{-1}. h ~ g L_1 L_2^{-1} would work. So we need an estimate of L_1 L_2^{-1} from our observations of only the x_i and the q_i.</p>
