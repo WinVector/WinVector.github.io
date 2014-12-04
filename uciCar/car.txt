@@ -1,0 +1,8 @@
+n_entradas= 6
+n_clases= 4
+n_arquivos= 1
+fich1= car_R.dat
+n_patrons1= 1728
+n_patrons_entrena= 864
+n_patrons_valida= 864
+n_conxuntos= 1
