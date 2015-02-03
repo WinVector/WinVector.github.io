@@ -1,0 +1,85 @@
+---
+title: "Lesson1 Project Walkthrough"
+---
+
+Load and examine data
+
+```{r}
+hdata = readRDS("homedata_lesson1_dirty.rds")
+summary(hdata)
+```
+
+Examine the data
+
+```{r}
+library(ggplot2)
+ggplot(hdata, aes(x=Price)) + geom_density()
+```
+
+
+```{r}
+summary(hdata[, c("Lot", "Year")])
+sort(unique(hdata$Lot))
+sort(unique(hdata$Year))
+```
+
+Example of missing data
+
+```{r}
+hdata$Year = ifelse(hdata$Year <= 0, NA, hdata$Year)
+summary(hdata$Year)
+```
+
+The cleaned (and slightly transformed) data
+
+```{r}
+hdata = readRDS("homedata_lesson1_clean.rds")
+hdata$Lot = as.factor(hdata$Lot)
+thisyear = 2015
+hdata$Age = thisyear- hdata$Year
+summary(hdata)
+```
+
+Visualize the data
+
+```{r}
+ggplot(hdata, aes(x=Age, y=Price)) + geom_point() + geom_smooth(se=FALSE)
+```
+
+Fit a model (GAM)
+
+```{r}
+library(mgcv)
+output = "Price"
+inputs = c("Lot", "Elem", "Bath", "Bed", "Garage") # the inputs we will put in directly
+sinputs = c("Size", "Age") # the inputs to spline (learn more in the GAM lesson)
+
+fmla = paste(output, "~", paste(inputs, collapse="+"), "+", paste("s(", sinputs, ")", sep="", collapse="+"))
+print(fmla)
+
+model = gam(as.formula(fmla), data=hdata)
+summary(model)
+```
+
+
+Evaluate the model 
+
+```{r}
+# run the model on the "hold-out set"
+ytrue = hdata[[output]]
+ypred = predict(model, data=hdata)
+
+# average home price and standard deviation
+mean(ytrue);
+sd(ytrue);
+
+pricediff = ytrue-ypred
+# root mean squared error - 
+# "average gap" between predicted and actual sale price
+sqrt(mean(pricediff^2));
+
+# plot price vs. prediction
+df = data.frame(price=ytrue, predPrice = ypred)
+ggplot(df, aes(x=predPrice, y=price)) + geom_point() + geom_abline(slope=1, color="blue")
+```
+
