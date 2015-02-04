@@ -1,0 +1,50 @@
+---
+title: "StartingWithR"
+output: html_document
+---
+
+
+```{r}
+c(1,2) + c(3,5)
+
+c(1,c(2,3))
+
+sqrt(10)
+```
+
+```{r}
+d <- read.table('http://www.amstat.org/publications/jse/datasets/homes76.dat.txt',
+                header=TRUE,sep='\t',stringsAsFactor=TRUE)
+
+summary(d)
+
+colnames(d)
+
+colnames(d) <- c('id', 'Price', 'Size', 'Lot', 'Bath', 'Bed', 'BathBed', 'Year', 'Age',
+   'Agesq', 'Garage', 'Status', 'Active', 'Elem', 'Edison Elementary',
+   'Harris Elementary', 'Adams Elementary', 'Crest Elementary', 'Parker Elementary')
+
+summary(d)
+
+str(d)
+
+class(d)
+
+typeof(d)
+
+# help(saveRDS)
+saveRDS(d,file='tmp.rds')
+
+rm(list=ls())
+ls()
+
+d = readRDS(file='tmp.rds')
+head(d)
+
+# help(loadRDS)
+
+library(ggplot2)
+
+ggplot(data=d,aes(x=Price,y=Size)) + geom_point() + geom_smooth()
+```
+
