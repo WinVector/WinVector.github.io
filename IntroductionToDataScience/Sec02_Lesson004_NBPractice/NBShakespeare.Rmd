@@ -1,0 +1,166 @@
+---
+title: "NBShakespeare"
+output: html_document
+---
+
+
+```{r}
+library('stringr')
+library('ggplot2')
+```
+
+```{r}
+# read text as a sequence of token blocks
+readText <- function(fName,firstLine=1000,lastLine=3000,chunkSize=200) {
+  f <- file(fName)
+  lines <- readLines(f)[firstLine:lastLine]
+  close(f)
+  text <- paste(str_trim(lines),collapse=' ')
+  toks <- str_split(text,'[ \t\n]+')[[1]]
+  groups <- split(toks, ceiling(seq_along(toks)/chunkSize))
+  vapply(groups,function(s) paste(s,collapse=' '),c(''))
+}
+
+# return list of two-grams (without counts) from a single string
+twoGramStr <- function(s) {
+  s <- tolower(s)
+  s <- str_replace_all(s,'[^a-z]+',' ')
+  s <- str_trim(s)
+  toks <- str_split(s,'[^a-z]+')[[1]]
+  ntok <- length(toks)
+  unique(paste(toks[seq_len(ntok-1)],toks[1+seq_len(ntok-1)]))
+}
+
+# from a list of documents get 2-gram counts
+getCounts <- function(docList) {
+  table(unlist(lapply(docList,twoGramStr)))
+}
+
+# vectorized lookup mapping novel values to zero
+lookupVals <- function(stats,key) {
+  v <- as.numeric(stats[key])
+  v[is.na(v)] <- 0
+  v
+}
+```
+
+```{r}
+# load text data
+ShakespeareMacbeth <- readText('pg2264.txt.gz')
+ShakespeareHamlet <- readText('pg1524.txt.gz')
+MarloweEdwardII <- readText('pg20288.txt.gz')
+MarloweFaustus <- readText('pg811.txt.gz')
+
+head(MarloweEdwardII,n=1)
+tail(MarloweEdwardII,n=1)
+```
+
+```{r}
+# For demonstration purposes use count each block as a separate document
+trainData <- rbind(
+    data.frame(docs=ShakespeareMacbeth,title='Shakespeare Macbeth',
+               isShakespeare=1,stringsAsFactors=FALSE),
+    data.frame(docs=MarloweEdwardII,title='Marlowe EdwardII',
+               isShakespeare=0,stringsAsFactors=FALSE)
+)
+
+# View(head(trainData))
+
+# form all the estimates as in the last lecture
+n <- nrow(trainData)
+nY <- sum(trainData$isShakespeare)
+nN <- n-nY
+toks <- names(getCounts(trainData[,'docs']))
+
+print(length(toks))
+
+# This block is essentially the slide
+# "The Bernoulli model implementation"
+# of the presentation
+# compute isShakespeare==1 or y/yes statistics
+yeStats <- double(length=length(toks))
+names(yeStats) <- toks
+yTab <- getCounts(trainData[trainData$isShakespeare==1,'docs'])
+# copy non-zero counts into oveall vector, there may be 2-grams that
+# only occur in isShakespeare==1 or isShakespeare==0
+yeStats[names(yTab)] <- yTab
+#
+# compute isShakespeare==1 or n/no statistics
+# yStats and nStats have the exact same lenght and indices
+neStats <- double(length=length(toks))
+names(neStats) <- toks
+nTab <- getCounts(trainData[trainData$isShakespeare==0,'docs'])
+# copy non-zero counts into oveall vector, there may be 2-grams that
+# only occur in isShakespeare==1 or isShakespeare==0
+neStats[names(nTab)] <- nTab
+
+# This block is essentailly the slide
+# "Define smoothed estimates"
+# compute the log-probability terms
+# prior log-probabilites of class
+lPriorY <- log((nY+1)/(n+2))
+lPriorN <- log((nN+1)/(n+2))
+# conditional log-probabilties of evidence given class
+lpeY <- log((yeStats+1)/(nY+2))
+lpeN <- log((neStats+1)/(nN+2))
+
+# notice I didn't have to cast numbers to double to get
+# double arithmetic 
+# so I didn't have to write log((nY+1.0)/(n+2.0))
+as.integer(1)/as.integer(2)
+
+# This function is essentially the slide
+# "To estimate a probability"
+# return an estimate of p(isShakespeare|evidence)
+# notice this funciton is stealing its data from
+# the surrounding environment (don't have to pass
+# them in as parameters).
+scoreTextDoc <- function(text) {
+  twoGrams <- twoGramStr(text)
+  logPY <- lPriorY + sum(lookupVals(lpeY,twoGrams))
+  logPN <- lPriorN + sum(lookupVals(lpeN,twoGrams))
+  shift <- max(logPY,logPN)
+  PY <- exp(logPY-shift)
+  PN <- exp(logPN-shift)
+  Z <- PY + PN
+  PY/Z
+}
+
+# work some examples
+scoreTextDoc(ShakespeareMacbeth[[1]])
+scoreTextDoc(MarloweEdwardII[[1]])
+scoreTextDoc(ShakespeareHamlet[[1]])
+scoreTextDoc(MarloweFaustus[[1]])
+
+scoreTextDoc(MarloweFaustus[[2]])
+
+# Neil Armstrong
+scoreTextDoc("One small step for a man, one large step for mankind.")
+# Alfred Tennyson
+scoreTextDoc("Tis better to have loved and lost than never to have loved at all.")
+# Francis Bacon
+scoreTextDoc("Hope is a good breakfast, but it is a bad supper.")
+
+# score and plot data we trained on
+trainData$pred <- vapply(trainData$docs,scoreTextDoc,c(0.0))
+ggplot(data=trainData,aes(x=pred,color=as.factor(isShakespeare),fill=as.factor(isShakespeare))) + 
+  geom_histogram() + facet_wrap(~title,ncol=1) + ggtitle("train scores")
+aggregate(pred~isShakespeare,data=trainData,FUN=mean)
+aggregate(pred~isShakespeare,data=trainData,FUN=median)
+
+
+# bring in two new plays
+testData <- rbind(
+    data.frame(docs=ShakespeareHamlet,title='Shakespeare Hamlet',
+               isShakespeare=1,stringsAsFactors=FALSE),
+    data.frame(docs=MarloweFaustus,title='Marlowe Faustus',
+               isShakespeare=0,stringsAsFactors=FALSE)
+)
+
+# score and plot new data
+testData$pred <- vapply(testData$docs,scoreTextDoc,c(0.0))
+ggplot(data=testData,aes(x=pred,color=as.factor(isShakespeare),fill=as.factor(isShakespeare))) + 
+  geom_histogram() + facet_wrap(~title,ncol=1) + ggtitle("test scores")
+aggregate(pred~isShakespeare,data=testData,FUN=mean)
+aggregate(pred~isShakespeare,data=testData,FUN=median)
+```
