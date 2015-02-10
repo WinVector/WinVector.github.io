@@ -1,0 +1,200 @@
+---
+title: "Linear Regression"
+output: html_document
+---
+
+```{r}
+# libraries
+library('ggplot2')
+```
+
+```{r}
+# load the data
+# as with the starting with R lesson
+d <- read.table('http://www.amstat.org/publications/jse/datasets/homes76.dat.txt',
+                header=TRUE,sep='\t',stringsAsFactor=FALSE)
+colnames(d) <- c('id', 'Price', 'Size', 'Lot', 'Bath', 'Bed', 'BathBed', 'Year', 'Age',
+   'Agesq', 'Garage', 'Status', 'Active', 'Elem', 'Edison Elementary',
+   'Harris Elementary', 'Adams Elementary', 'Crest Elementary', 'Parker Elementary')
+
+# perform some elemenatry data treatment
+d$Lot <- as.factor(d$Lot)
+# define columns we will be working with
+yColumn <- 'Price'
+vars <- c("Size", "Lot", "Bath", "Bed", "Year", "Age", 
+     "Garage", "Status", "Active", "Elem")
+
+# look at the data
+print(dim(d))
+print(head(d))
+print(head(d[,c(vars,yColumn)]))
+print(summary(d[,c(vars,yColumn)]))
+```
+
+
+
+```{r}
+# guess at reproducting original analysis
+fOrig <- "Price ~ Size + Lot + I(Bath*Bed) + Age + I(Age*Age) + Garage + Status + Elem"
+modelOrig <- lm(as.formula(fOrig),data=d)
+d$modelOrig <- predict(modelOrig,newdata=d)
+sqrt(mean((d$Price-d$modelOrig)^2)) # comes out to 35.0
+# data scientists always want to see the fit.  Statisticians are a little more patient
+# and look at diagnostics first.
+ggplot(data=d,aes_string(x='modelOrig',y=yColumn)) + 
+  geom_point() + geom_abline(slope=1)
+```
+
+```{r}
+# Look at some of the classic diagnostic
+print(summary(modelOrig))
+plot(modelOrig)
+```
+
+```{r}
+# We are going to be comparing different models with different 
+# model complexity (in this case numbers of variables and levels).
+# So try to add a test/train split for scoring.
+set.seed(123)
+d$isTest <- runif(nrow(d))<=0.25
+modelSplit <- lm(as.formula(fOrig),data=d[!d$isTest,,drop=FALSE])
+tryCatch(
+   d$modelSplit <- predict(modelSplit,newdata=d),
+     warning = function(w) {print(paste('warn:',w))},
+     error = function(e) {print(paste('error:',e))}
+  )
+```
+
+```{r}
+# Find out what failed in the test/train split
+# look at the variable types a bit
+print(str(d))
+
+# both Elem and Lot are categorical variables
+print(summary(as.factor(d$Elem)))
+print(summary(d$Lot))
+
+# Lot has unique levels : 6, 8, and 11
+# This means (since we are not using test/train split)
+# the model can use these levels to simulate perfectly predicting the prices
+# of these three houses.
+
+# The unique level effect also makes straightforward holdout testing
+# harder.
+# Build a function to crudely perform 1-way hold-out testing (even in the presence of unique levels)
+oneHoldPreds <- function(d,fitFn,varsToCheck) {
+  preds <- double(nrow(d))
+  for(i in seq_len(nrow(d))) {
+    di <- d
+    for(v in varsToCheck) {
+      if(!(di[i,v] %in% d[-i,v])) {
+         # if there is a new level in test knock the variable out 
+         # of the scratch frame to prevent it from being in the model
+         # this is a hack to avoid having to manipulate the 
+         # formula string.
+         di[,v] <- 0
+      }
+    }
+    mi <- fitFn(di[-i,,drop=FALSE])
+    preds[[i]] <- predict(mi,newdata=di[i,,drop=FALSE])
+  }
+  preds
+}
+
+riskyVars <- c('Lot')
+
+# run the original model in a 1-way hold out fasion.
+d$modelOrig <- oneHoldPreds(d,function(df) { lm(fOrig,data=df) },riskyVars)
+sqrt(mean((d$Price-d$modelOrig)^2))
+# RMS error increases from original 35.0 to 55.8!
+ggplot(data=d,aes_string(x='modelOrig',y=yColumn)) + 
+  geom_point() + geom_abline(slope=1)
+```
+
+```{r}
+# start our own modeling effort modeling
+f1 <- paste(yColumn,paste(vars,collapse=' + '),sep=' ~ ')
+print(f1)
+model1 <- lm(f1,data=d[!d$isTest,,drop=FALSE])
+# lm() has a lot of useful summaries, might as well use them!
+# look at model summary
+print(summary(model1))
+
+# First problem: 
+
+table(d$Status,d$Active)
+# Active is redundant, implied by Status
+
+checkM <- lm(Age ~ Year,data=d)
+print(checkM)
+print(summary(d$Age - predict(checkM,newdata=d)))
+# Age = 0.1*(Year - 1970)
+
+# remove these variables
+vars <- setdiff(vars,c('Active','Age'))
+```
+
+```{r}
+# re-fit
+f2 <- paste(yColumn,paste(vars,collapse=' + '),sep=' ~ ')
+d$model2 <- oneHoldPreds(d,function(df) { lm(f2,data=df) },riskyVars)
+sqrt(mean((d$Price-d$model2)^2))
+# RMS held-out error 54.6 (instead of 55.8), something is supplying
+# a small amount of over-fit.
+ggplot(data=d,aes_string(x='model2',y=yColumn)) + 
+  geom_point() + geom_abline(slope=1)
+```
+
+```{r}
+# try picking variables from original model
+modelOrig <- lm(as.formula(fOrig),data=d[!d$isTest,,drop=FALSE])
+steppedModel <- step(modelOrig)
+print(steppedModel)
+```
+
+```{r}
+# try to impose a model structure appropriate for the problem
+d$PriceSqFoot <- d$Price/d$Size
+d$BathsPerBed <- d$Bath/d$Bed
+f4  <- 'log(PriceSqFoot) ~ BathsPerBed + Lot + Age + Garage + Elem + Status'
+model4 <- lm(as.formula(f4),data=d[!d$isTest,,drop=FALSE])
+d$model4 <- exp(oneHoldPreds(d,function(df) { lm(f4,data=df) },riskyVars))*d$Size
+sqrt(mean((d$Price-d$model4)^2))
+# RMS error larger 59.2
+ggplot(data=d,aes_string(x='model4',y=yColumn)) + 
+  geom_point() + geom_abline(slope=1)
+```
+
+```{r}
+# look for why our "good idea" did not work
+ggplot(data=d,aes(x=Size,y=Price)) + 
+  geom_point() + geom_smooth() + 
+  scale_x_continuous(breaks=seq(1.5,3.0,0.1))
+
+# At best relation only holds for Size range 1.8 through 2.2
+# Notice we looked at all the data to make this observation, so 
+# the analyst them selves adds an (undesirable) bias as they
+# pick things that look good.  If we had more data we would 
+# build a proper test/train split and make modeling decision based
+# only on looking at the training portion of the data.
+# Also note the analyst introduces a "multiple comparison" problem
+# on the training data: they try many variations of method and
+# keep a best one, which means they may be scoring their own
+# performance higher than is going to be seen on test data or
+# later in production.
+# The more data and more careful procedures you have, the less
+# you see of such problems.
+```
+
+```{r}
+# Try again, combining our ideas with sources ideas
+d$collaredSize <- pmax(1.8,pmin(2.2,d$Size))
+d$PriceSqFoot <- d$Price/d$collaredSize
+f5 <- 'log(PriceSqFoot) ~ Bed*Bath + Lot + Age + Garage + Elem + Status'
+d$model5 <- exp(oneHoldPreds(d,function(df) { lm(f5,data=df) },riskyVars))*d$collaredSize
+sqrt(mean((d$Price-d$model5)^2))
+# RMS error 52.8
+ggplot(data=d,aes_string(x='model5',y=yColumn)) + 
+  geom_point() + geom_abline(slope=1)
+```
+

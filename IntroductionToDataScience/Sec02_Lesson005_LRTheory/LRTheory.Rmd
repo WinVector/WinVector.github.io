@@ -1,0 +1,45 @@
+---
+title: "LRTheory"
+output: html_document
+---
+
+
+
+```{r}
+library('ggplot2')
+```
+
+
+```{r}
+# Galton's data 
+dAll <- read.table('Galton.csv',header=TRUE,sep=',',stringsAsFactors=FALSE) 
+print(summary(dAll))
+print(var(dAll$Child))
+print(var(dAll$Midparent))
+print(summary(lm(Child~Midparent,data=dAll)))
+mH <- mean(c(dAll$Child,dAll$Midparent))
+dAll$ChildExcess <- dAll$Child - mH
+dAll$MidparentExcess <- dAll$Midparent - mH
+print(summary(lm(dAll$ChildExcess~dAll$MidparentExcess,data=dAll)))
+set.seed(15961)
+d <- dAll[sample.int(nrow(dAll),20),,drop=FALSE]
+# complicated code to number repeated points
+dSort <- data.frame(idx=seq_len(nrow(d)),key=paste(d$Midparent,d$Child),one=1,total=0,id=0,offset=0)
+for(ki in unique(dSort$key)) {
+  posns <- dSort$key==ki
+  n <- sum(posns)
+  dSort[posns,'total'] <- n
+  dSort[posns,'id'] <- seq_len(n)
+}
+hasRep <- dSort$total>1
+dSort[hasRep,'offset'] <- 2*(dSort[hasRep,'id']-1)/(dSort[hasRep,'total']-1) -1
+d$offset <- dSort$offset
+model <- lm(Child~Midparent,data=d)
+print(summary(model))
+d$yEst <- predict(model,newdata=d)
+ggplot(data=d,aes(x=Midparent)) +
+  geom_line(aes(y=yEst),size=2,color='blue') +
+  scale_size() + geom_point(aes(x=(Midparent+0.1*offset),y=Child),size=3) +
+  geom_segment(aes(xend=Midparent,y=Child,yend=yEst),color='red') +
+  scale_y_continuous('Child Height')
+```
