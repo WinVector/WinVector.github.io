@@ -1,0 +1,110 @@
+---
+title: "GAM"
+output: html_document
+---
+
+
+```{r}
+# load libraries, in particular mgcv which supplies the gam model
+library('ggplot2')
+library('reshape2')
+library('mgcv')
+library('ROCR')
+```
+
+```{r}
+# work an artificial example
+d <- data.frame(x=1:40)
+d$y <- sin(0.3*d$x)
+m1 <- lm(y~x,data=d)
+d$pred1 <- predict(m1,newdata=d)
+ggplot(data=d,aes(x=pred1,y=y)) + 
+  geom_point() + geom_abline(slope=1,color='blue')
+mGAM <- gam(y~s(x),data=d)
+d$predGAM <- predict(mGAM,newdata=d)
+ggplot(data=d,aes(x=predGAM,y=y)) +
+  geom_point() + geom_abline(slope=1,color='blue')
+plot(mGAM)
+```
+
+```{r}
+# load the UCI Abalone data
+d <- read.table('abalone.data.txt.gz',header=FALSE,sep=',',
+                stringsAsFactors=TRUE)
+colnames(d) <- c('Sex', 'Length', 'Diameter', 'Height', 'WholeWeight',
+   'ShuckedWeight', 'VisceraWeight', 'ShellWeight', 'Rings')
+yColumn <- 'old'
+d[,yColumn] <- d$Rings>=10
+d$LongDim <- pmax(d$Length,d$Diameter)
+set.seed(2352)
+d$isTest <- runif(nrow(d))<0.25
+d$dataLabel <- ifelse(d$isTest,"test data","train data")
+
+nonInvasiveVars <- c('Sex', 'Length', 'Diameter', 'LongDim', 'Height', 'WholeWeight')
+invasiveVars <- c('ShuckedWeight', 'VisceraWeight', 'ShellWeight')
+
+# actual number of rings model
+#vars <- c(nonInvasiveVars,invasiveVars)
+vars <- nonInvasiveVars
+
+rmseErrors <- function(modelName) {
+  print(paste('train RMSE',
+              format(sqrt(mean((d[!d$isTest,modelName]-d[!d$isTest,'Rings'])^2)),digits=4)))
+  print(paste('test RMSE',
+              format(sqrt(mean((d[d$isTest,modelName]-d[d$isTest,'Rings'])^2)),digits=4)))
+}
+```
+
+```{r}
+# build a model of ring count (proxy for age) just on longest dimension.
+# this is what regulations are written using.
+modelR0 <- lm(Rings~0+LongDim,data=d[!d$isTest,])
+print(modelR0)
+modelR0 <- lm(Rings~LongDim,data=d[!d$isTest,])
+print(modelR0)
+d$modelR0 <- predict(modelR0,newdata=d)
+rmseErrors('modelR0')
+ggplot(data=d[d$isTest,],aes(x=modelR0,y=Rings)) + 
+  geom_point(alpha=0.5) + geom_abline(slope=1,linetype=2)
+```
+
+```{r}
+# build a better linear model using the non-invasive vars
+fAllVarsR <- paste('Rings',paste(vars,collapse=' + '),sep=' ~ ')
+modelR1 <- lm(fAllVarsR,data=d[!d$isTest,])
+d$modelR1 <- predict(modelR1,newdata=d)
+rmseErrors('modelR1')
+ggplot(data=d[d$isTest,],aes(x=modelR1,y=Rings)) +
+  geom_point(alpha=0.5) + geom_abline(slope=1,color='blue')
+```
+
+```{r}
+# build a better linear model using the non-invasive vars and GAM splines
+splineVars <- function(vlist) {
+  ifelse(vapply(vlist,function (v) is.numeric(d[,v]),c(FALSE)),
+                      paste('s(',vlist,')',sep=''),vlist)
+  }
+splinedVars <- splineVars(vars)
+fAllVarsRS <- paste('Rings',paste(splinedVars,collapse=' + '),sep=' ~ ')
+print(fAllVarsRS)
+modelR2 <- gam(as.formula(fAllVarsRS),data=d[!d$isTest,])
+d$modelR2 <- predict(modelR2,newdata=d,type='response')
+rmseErrors('modelR2')
+ggplot(data=d[d$isTest,],aes(x=modelR2,y=Rings)) +
+  geom_point(alpha=0.5) + geom_abline(slope=1,color='blue')
+#plot(modelR2)
+```
+
+```{r}
+# build a better linear model using the non-invasive vars and GAM splines plus the invasive vars
+splinedVarsA <- splineVars(c(nonInvasiveVars,invasiveVars))
+fAllVarsRSA <- paste('Rings',paste(splinedVarsA,collapse=' + '),sep=' ~ ')
+print(fAllVarsRSA)
+modelR3 <- gam(as.formula(fAllVarsRSA),data=d[!d$isTest,])
+d$modelR3 <- predict(modelR3,newdata=d,type='response')
+rmseErrors('modelR3')
+ggplot(data=d[d$isTest,],aes(x=modelR3,y=Rings)) +
+  geom_point(alpha=0.5) + geom_abline(slope=1,color='blue')
+plot(modelR3)
+```
+
