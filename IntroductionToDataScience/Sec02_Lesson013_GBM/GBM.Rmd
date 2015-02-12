@@ -1,0 +1,205 @@
+---
+title: "GBM"
+output: html_document
+---
+
+
+
+
+```{r}
+# Actual example
+# isolet data from https://archive.ics.uci.edu/ml/datasets/ISOLET
+library('ggplot2')
+library('reshape2')
+library('gbm')
+library('ROCR')
+
+dTrain = read.table("isolet1+2+3+4.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTrain$isTest <- FALSE
+dTest = read.table("isolet5.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTest$isTest <- TRUE
+d <- rbind(dTrain,dTest)
+rm(list=c('dTest','dTrain'))
+d$V618 <- letters[d$V618]
+vars <- colnames(d)[1:617]
+yColumn <- 'isLetter'
+d <- d[d$V618 %in% c('m','n'),,drop=FALSE]
+d[,yColumn] <- d[,'V618']=='n'
+
+formula <- paste(yColumn,paste(vars,collapse=' + '),sep=' ~ ')
+```
+
+```{r}
+# define some helper and reporting functions
+# calulcate area under the curve of numeric vectors x,y
+# length(x)==length(y)
+# y>=0, 0<=x<=1 and x increasing
+areaCalc <- function(x,y) {
+   # append extra points to get rid of degenerate cases
+   x <- c(0,x,1)
+   y <- c(0,y,1)
+   n <- length(x)
+   sum(0.5*(y[-1]+y[-n])*(x[-1]-x[-n]))
+}
+
+
+# needs ggplot2 and reshape2
+# plot the gain-curve which is what proportion of the target (make target numric)
+# is sorted into position by the prediction
+# example:
+#  d <- data.frame(pred=runif(100))
+#  d$y <- runif(100)<d$pred
+#  gainCurve('test',d$pred,d$y)
+gainCurve <- function(title,ycol,predcol) {
+  ycol <- as.numeric(ycol)
+  spearStat <- cor(predcol,ycol,method="spearman")
+  d <- data.frame(predcol=predcol,ycol=ycol)
+  predord <- order(d[['predcol']], decreasing=TRUE) # reorder, with highest first
+  wizard <- order(d[['ycol']], decreasing=TRUE)
+  npop <- dim(d)[1]
+  
+  results <- data.frame(pctpop= (1:npop)/npop,
+                       model = cumsum(d[predord,'ycol'])/sum(d[['ycol']]),
+                       wizard = cumsum(d[wizard, 'ycol'])/sum(d[['ycol']]))
+  wideIDX <- which.max(results$model-results$pctpop)
+  wFrame <- data.frame(wideX=results[wideIDX,'pctpop',drop=TRUE],
+     wideY=results[wideIDX,'model',drop=TRUE])
+  maxvgap <- wFrame$wideY-wFrame$wideX
+  idealArea <- areaCalc(results$pctpop,results$wizard)
+  modelArea <- areaCalc(results$pctpop,results$model)
+  giniScore <- modelArea/idealArea
+  
+  results <- melt(results, id.vars="pctpop", measure.vars=c("model", "wizard"),
+                 variable.name="sort_criterion", value.name="pct_outcome")
+  
+  gplot <- ggplot(data=results, aes(x=pctpop, y=pct_outcome, color=sort_criterion)) + 
+    geom_point() + geom_line() + 
+    geom_abline(color="gray") +
+    ggtitle(paste("Gain curve,", title, '\n', 
+       'relative Gini score', format(giniScore,digits=2), '\n',
+       'Spearman rank correlation', format(spearStat,digits=2) , '\n',
+       'maxVGap',format(maxvgap,digits=2))) +
+       xlab("% items in score order") + ylab("% total category") +
+       geom_segment(data=wFrame,
+          aes(x=wideX,y=wideX,xend=wideX,yend=wideY),color="gray") +
+       scale_x_continuous(breaks=seq(0,1,0.1)) +
+       scale_y_continuous(breaks=seq(0,1,0.1))
+  gplot
+}
+
+plotROC <- function(title,outcol,predcol) {
+  pred <- prediction(predcol,outcol)
+  perf <- performance(pred,'tpr','fpr')
+  auc <- as.numeric(performance(pred,'auc')@y.values)
+  pf <- data.frame(
+    FalsePositiveRate=perf@x.values[[1]],
+    TruePositiveRate=perf@y.values[[1]])
+  plot=ggplot() +
+    geom_ribbon(data=pf,aes(x=FalsePositiveRate,ymax=TruePositiveRate,ymin=0),
+      fill='blue',alpha=0.3) +
+      geom_point(data=pf,aes(x=FalsePositiveRate,y=TruePositiveRate)) +
+      geom_line(aes(x=c(0,1),y=c(0,1))) + coord_fixed() +
+      ggtitle(paste(title,'\nAUC:',format(auc,digits=2)))
+  list(pf=pf,plot=plot)
+}
+
+
+deviance <- function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+
+reportStats <- function(d,test,modelName,title,epsilon) {
+  dSub <- d[d$isTest==test,,drop=FALSE]
+  tab <- table(truth=dSub[,yColumn],pred=dSub[,modelName]>0.5)
+  accuracy <- (tab[1,1] + tab[2,2])/sum(tab)
+  note = ifelse(test,'test','train')
+  print(paste('\t',note,'accuracy',modelName,format(accuracy,digits=2)))
+  residual.deviance <- deviance(dSub[,yColumn],dSub[,modelName],epsilon)
+  #print(paste('\tresidual.deviance',residual.deviance))
+  null.deviance <- deviance(dSub[,yColumn],mean(dSub[,yColumn]),epsilon)
+  #print(paste('\tnull.deviance',null.deviance))
+  print(paste("\tmodel explained a",
+              format((1-residual.deviance/null.deviance),digits=2),
+            "fraction of the variation on",note))  
+}
+
+report <- function(d,modelName,title,epsilon=1.0e-2) {
+  print("***********")
+  print(paste("model",modelName,title))
+  reportStats(d,FALSE,modelName,title,epsilon)
+  reportStats(d,TRUE,modelName,title,epsilon)
+  print(ggplot(data=d[d$isTest==TRUE,,drop=FALSE],
+               aes_string(x=modelName,color=yColumn)) + 
+    geom_density() + 
+    ggtitle(paste(title,'test')))
+  print(plotROC(paste(title,'train'),
+                d[d$isTest==FALSE,yColumn],
+                d[d$isTest==FALSE,modelName])$plot)
+  print(plotROC(paste(title,'test'),
+                d[d$isTest==TRUE,yColumn],
+                d[d$isTest==TRUE,modelName])$plot)
+  print(gainCurve(paste(title,'train'),
+                d[d$isTest==FALSE,yColumn],
+                d[d$isTest==FALSE,modelName]))
+  print(gainCurve(paste(title,'test'),
+                d[d$isTest==TRUE,yColumn],
+                d[d$isTest==TRUE,modelName]))
+  print("***********")
+}
+```
+
+```{r}
+# do the GBM modeling
+help(gbm)
+modelGBM <- gbm(as.formula(formula),data=d[!d$isTest,],
+         distribution='bernoulli',
+         n.trees=1000,
+         interaction.depth=3,
+         shrinkage=0.05,
+         bag.fraction=0.5,
+         train.fraction=0.5,
+         keep.data=FALSE)
+d$modelGBM <- predict(modelGBM,newdata=d,type='response')
+report(d,'modelGBM',"GBM")
+```
+
+```{r}
+# residuals diagram
+library(gbm)
+library(ggplot2)
+
+d <- data.frame(x=1:50)
+d$y <- sin(0.2*d$x)
+ggplot(data=d,aes(x=x,y=y)) + geom_point()
+modelGBM1 <- gbm(y~x,data=d,n.trees=100,distribution="gaussian",shrinkage=0.8)
+d$pred1 <- predict(modelGBM1,newdata=d,type='response',n.trees=1)
+ggplot(data=d) + 
+  geom_line(aes(x=x,y=y)) +  geom_point(aes(x=x,y=y)) +
+  geom_point(aes(x=x,y=pred1),color='blue',size=3) + 
+  geom_segment(aes(x=x,xend=x,y=y,yend=pred1),color='red')
+d$pred2 <- predict(modelGBM1,newdata=d,type='response',n.trees=2)
+ggplot(data=d) + 
+  geom_line(aes(x=x,y=y)) +  geom_point(aes(x=x,y=y)) +
+  geom_point(aes(x=x,y=pred1),color='green',size=2) + 
+  geom_point(aes(x=x,y=pred2),color='blue',size=3) + 
+  geom_segment(aes(x=x,xend=x,y=y,yend=pred2),color='red')
+d$pred3 <- predict(modelGBM1,newdata=d,type='response',n.trees=3)
+ggplot(data=d) + 
+  geom_line(aes(x=x,y=y)) +  geom_point(aes(x=x,y=y)) +
+  geom_point(aes(x=x,y=pred2),color='green',size=2) + 
+  geom_point(aes(x=x,y=pred3),color='blue',size=3) + 
+  geom_segment(aes(x=x,xend=x,y=y,yend=pred3),color='red')
+d$pred <- predict(modelGBM1,newdata=d,type='response',n.trees=100)
+ggplot(data=d) + 
+  geom_line(aes(x=x,y=y)) +  geom_point(aes(x=x,y=y)) +
+  geom_point(aes(x=x,y=pred),color='blue',size=3) + 
+  geom_segment(aes(x=x,xend=x,y=y,yend=pred),color='red')
+``` 
