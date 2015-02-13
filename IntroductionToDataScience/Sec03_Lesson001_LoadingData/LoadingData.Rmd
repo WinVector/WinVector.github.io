@@ -49,6 +49,7 @@ rm(list=ls())
 
 ```{r}
 # save in a few forms for later use
+# to clear: rm -rf Boscovich.Rds Boscovich.SQLite Boscovich.h2db*
 d <- read.table('Boscovich.tsv',header=TRUE,sep='\t',stringsAsFactors=FALSE)
 saveRDS(d,'Boscovich.Rds')
 library('RSQLite')
