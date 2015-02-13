@@ -1,0 +1,138 @@
+---
+title: "LoadingData"
+output: html_document
+---
+
+
+```{r}
+# one possibility: type the data in
+d <- data.frame(
+  location= c("Quito", "Capehope", "Rome",  "Paris", "Lapland"),
+  x=        c(0.0000,   0.2987,    0.4648,  0.5762,   0.8386),
+  y=        c(51,       337,       279,     374,      722)
+  )
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# some data comes with R, you don't want to think too much about this
+summary(cars)
+ls()
+# data()
+# help(data)
+cars <- cars
+ls()
+rm(list=ls())
+```
+
+```{r}
+# data in a package, a more orderly built-in
+# Data Boscovich used to estimate the ellipticity of the earth.
+# 1755
+library('quantreg')
+search()
+# data(package='quantreg')
+# help(Bosco)
+data(Bosco)
+ls()
+print(Bosco)
+rm(list=ls())
+```
+
+```{r}
+# Reading from a TSV file
+d <- read.table('Boscovich.tsv',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# save in a few forms for later use
+d <- read.table('Boscovich.tsv',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+saveRDS(d,'Boscovich.Rds')
+library('RSQLite')
+con <- dbConnect(SQLite(),'Boscovich.SQLite')
+rs <- dbSendQuery(con,'CREATE TABLE Boscovich (location TEXT, x REAL, y REAL)')
+dbClearResult(rs)
+rs <- dbSendPreparedQuery(con,'INSERT INTO Boscovich VALUES (?,?,?)',d)
+dbClearResult(rs)
+dbDisconnect(con)
+options( java.parameters = "-Xmx2g" )
+library('RJDBC')
+drv <- JDBC('org.h2.Driver','h2-1.3.176.jar',identifier.quote='"')
+con <- dbConnect(drv,'jdbc:h2:Boscovich.h2db')
+dbWriteTable(con,'Boscovich',d)
+dbDisconnect(con)
+rm(list=ls())
+```
+
+
+```{r}
+# Reading a native R save
+d <- readRDS('Boscovich.Rds')
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# read directly from Microsoft Excel
+library('gdata')
+dA <- read.xls('Boscovich.xlsx',sheet=1,header=FALSE,stringsAsFactors=FALSE)
+print(dA)
+d <- dA[c(-1,-2),-1]
+colnames(d) <- dA[2,-1]
+for(cn in colnames(d)) {
+  d[[cn]] <- type.convert(d[[cn]],as.is=TRUE)
+}
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# read from SQLite
+library('RSQLite')
+con <- dbConnect(SQLite(),'Boscovich.SQLite')
+rs <- dbSendQuery(con,'SELECT * FROM Boscovich')
+d <- fetch(rs,-1)
+dbClearResult(rs)
+dbDisconnect(con)
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# read from a JDBC connection to an arbitrary database
+options( java.parameters = "-Xmx2g" )
+library('RJDBC')
+drv <- JDBC('org.h2.Driver','h2-1.3.176.jar',identifier.quote='"')
+con <- dbConnect(drv,'jdbc:h2:Boscovich.h2db')
+d <- dbGetQuery(con,'SELECT * FROM Boscovich')
+dbDisconnect(con)
+print(d)
+rm(list=ls())
+```
+
+```{r}
+# treat a data frame as a SQL database table
+options(gsubfn.engine = "R") # prevent a crashing attempt to start X11 on OSX
+library('sqldf')
+d <- read.table('Boscovich.tsv',header=TRUE,sep='\t',stringsAsFactors=FALSE)
+dj <- sqldf('
+   SELECT
+      d1.location location1,
+      d2.location location2,
+      d2.x-d1.x deltax,
+      d2.y-d1.y deltay
+   FROM
+      d d1
+   JOIN
+      d d2
+')
+class(dj)
+print(dj)
+rm(list=ls())
+```
+
+
+
