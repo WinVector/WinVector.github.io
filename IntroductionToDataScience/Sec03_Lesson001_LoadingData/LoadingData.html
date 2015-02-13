@@ -174,7 +174,9 @@ library('gdata')</code></pre>
 ## The following object is masked from 'package:utils':
 ## 
 ##     object.size</code></pre>
-<pre class="r"><code>dA &lt;- read.xls('Boscovich.xlsx',sheet=1,header=FALSE,stringsAsFactors=FALSE)
+<pre class="r"><code>dA &lt;- read.xls('Boscovich.xlsx',sheet=1,
+               header=FALSE,stringsAsFactors=FALSE,
+               as.is=TRUE,colClasses='character')
 print(dA)</code></pre>
 <pre><code>##                     V1       V2                V3
 ## 1       Boscovich data            sin^2(latitude)

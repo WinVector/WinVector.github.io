@@ -78,7 +78,9 @@ rm(list=ls())
 ```{r}
 # read directly from Microsoft Excel
 library('gdata')
-dA <- read.xls('Boscovich.xlsx',sheet=1,header=FALSE,stringsAsFactors=FALSE)
+dA <- read.xls('Boscovich.xlsx',sheet=1,
+               header=FALSE,stringsAsFactors=FALSE,
+               as.is=TRUE,colClasses='character')
 print(dA)
 d <- dA[c(-1,-2),-1]
 colnames(d) <- dA[2,-1]
