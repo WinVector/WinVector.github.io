@@ -1,0 +1,261 @@
+---
+title: "MissingValues"
+output: html_document
+---
+
+
+```{r}
+# load libraries
+library('ggplot2')
+library('reshape2')
+library('rpart')
+library('ROCR')
+library('glmnet')
+library('gdata')
+```
+
+```{r}
+# load problem
+d = read.xls("CTG.xls",
+             sheet=2,header=TRUE,skip=1,
+             stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+vars <- colnames(d)[11:31]
+d <- d[,c(vars,'NSP'),drop=FALSE]
+d <- d[complete.cases(d),,drop=FALSE]
+d[,'NSP'] <- c('Normal','Suspect','Pathological')[d[,'NSP']]
+yColumn <- 'NSPbad'
+d[,yColumn] <- d[,'NSP']!='Normal'
+
+set.seed(2352)
+d$isTest <- runif(nrow(d))<0.25
+d$dataLabel <- ifelse(d$isTest,"test data","train data")
+formula <- paste(yColumn,paste(vars,collapse=' + '),sep=' ~ ')
+
+print(dim(d))
+print(str(d))
+print(head(d))
+print(summary(d))
+print(summary(as.factor(d$NSP)))
+```
+
+```{r}
+# load some conveince functions
+
+# calulcate area under the curve of numeric vectors x,y
+# length(x)==length(y)
+# y>=0, 0<=x<=1 and x increasing
+areaCalc <- function(x,y) {
+   # append extra points to get rid of degenerate cases
+   x <- c(0,x,1)
+   y <- c(0,y,1)
+   n <- length(x)
+   sum(0.5*(y[-1]+y[-n])*(x[-1]-x[-n]))
+}
+
+
+# needs ggplot2 and reshape2
+# plot the gain-curve which is what proportion of the target (make target numric)
+# is sorted into position by the prediction
+# example:
+#  d <- data.frame(pred=runif(100))
+#  d$y <- runif(100)<d$pred
+#  gainCurve('test',d$pred,d$y)
+gainCurve <- function(title,ycol,predcol) {
+  ycol <- as.numeric(ycol)
+  spearStat <- cor(predcol,ycol,method="spearman")
+  d <- data.frame(predcol=predcol,ycol=ycol)
+  predord <- order(d[['predcol']], decreasing=TRUE) # reorder, with highest first
+  wizard <- order(d[['ycol']], decreasing=TRUE)
+  npop <- dim(d)[1]
+  
+  results <- data.frame(pctpop= (1:npop)/npop,
+                       model = cumsum(d[predord,'ycol'])/sum(d[['ycol']]),
+                       wizard = cumsum(d[wizard, 'ycol'])/sum(d[['ycol']]))
+  wideIDX <- which.max(results$model-results$pctpop)
+  wFrame <- data.frame(wideX=results[wideIDX,'pctpop',drop=TRUE],
+     wideY=results[wideIDX,'model',drop=TRUE])
+  maxvgap <- wFrame$wideY-wFrame$wideX
+  idealArea <- areaCalc(results$pctpop,results$wizard)
+  modelArea <- areaCalc(results$pctpop,results$model)
+  giniScore <- modelArea/idealArea
+  
+  results <- melt(results, id.vars="pctpop", measure.vars=c("model", "wizard"),
+                 variable.name="sort_criterion", value.name="pct_outcome")
+  
+  gplot <- ggplot(data=results, aes(x=pctpop, y=pct_outcome, color=sort_criterion)) + 
+    geom_point() + geom_line() + 
+    geom_abline(color="gray") +
+    ggtitle(paste("Gain curve,", title, '\n', 
+       'relative Gini score', format(giniScore,digits=2), '\n',
+       'Spearman rank correlation', format(spearStat,digits=2) , '\n',
+       'maxVGap',format(maxvgap,digits=2))) +
+       xlab("% items in score order") + ylab("% total category") +
+       geom_segment(data=wFrame,
+          aes(x=wideX,y=wideX,xend=wideX,yend=wideY),color="gray") +
+       scale_x_continuous(breaks=seq(0,1,0.1)) +
+       scale_y_continuous(breaks=seq(0,1,0.1))
+  gplot
+}
+
+plotROC <- function(title,outcol,predcol) {
+  pred <- prediction(predcol,outcol)
+  perf <- performance(pred,'tpr','fpr')
+  auc <- as.numeric(performance(pred,'auc')@y.values)
+  pf <- data.frame(
+    FalsePositiveRate=perf@x.values[[1]],
+    TruePositiveRate=perf@y.values[[1]])
+  plot=ggplot() +
+    geom_ribbon(data=pf,aes(x=FalsePositiveRate,ymax=TruePositiveRate,ymin=0),
+      fill='blue',alpha=0.3) +
+      geom_point(data=pf,aes(x=FalsePositiveRate,y=TruePositiveRate)) +
+      geom_line(aes(x=c(0,1),y=c(0,1))) + coord_fixed() +
+      ggtitle(paste(title,'\nAUC:',format(auc,digits=2)))
+  list(pf=pf,plot=plot)
+}
+
+
+deviance <- function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+
+reportStats <- function(d,test,modelName,title,epsilon) {
+  dSub <- d[d$isTest==test,,drop=FALSE]
+  tab <- table(truth=dSub[,yColumn],pred=dSub[,modelName]>0.5)
+  accuracy <- (tab[1,1] + tab[2,2])/sum(tab)
+  note = ifelse(test,'test','train')
+  print(paste('\t',note,'accuracy',modelName,format(accuracy,digits=2)))
+  residual.deviance <- deviance(dSub[,yColumn],dSub[,modelName],epsilon)
+  #print(paste('\tresidual.deviance',residual.deviance))
+  null.deviance <- deviance(dSub[,yColumn],mean(dSub[,yColumn]),epsilon)
+  #print(paste('\tnull.deviance',null.deviance))
+  print(paste("\tmodel explained a",
+              format((1-residual.deviance/null.deviance),digits=2),
+            "fraction of the variation on",note))  
+}
+
+report <- function(d,modelName,title,epsilon=1.0e-2) {
+  print("***********")
+  print(paste("model",modelName,title))
+  reportStats(d,FALSE,modelName,title,epsilon)
+  reportStats(d,TRUE,modelName,title,epsilon)
+  print(ggplot(data=d,aes_string(x=modelName,color=yColumn)) + 
+    geom_density() + facet_wrap(~dataLabel,ncol=1,scales='free_y') +
+    ggtitle(title))
+  print(plotROC(paste(title,'train'),
+                d[d$isTest==FALSE,yColumn],
+                d[d$isTest==FALSE,modelName])$plot)
+  print(plotROC(paste(title,'test'),
+                d[d$isTest==TRUE,yColumn],
+                d[d$isTest==TRUE,modelName])$plot)
+  print(gainCurve(paste(title,'train'),
+                d[d$isTest==FALSE,yColumn],
+                d[d$isTest==FALSE,modelName]))
+  print(gainCurve(paste(title,'test'),
+                d[d$isTest==TRUE,yColumn],
+                d[d$isTest==TRUE,modelName]))
+  print("***********")
+}
+```
+
+
+```{r}
+# build a decision tree
+treeModelPred <- function(d,vars) {
+  formula <- paste('as.factor(',yColumn,') ~ ',paste(vars,collapse=' + '),sep='')
+  modelTree <- rpart(formula,data=d)
+  predict(modelTree,newdata=d,type='prob')[,'TRUE',drop=TRUE]
+}
+
+d$modelTree <- treeModelPred(d,vars)
+report(d,'modelTree',"decision tree (with some missing values)")
+```
+
+```{r}
+# build a GLMNET model
+glmNetModelPred <- function(d,vars) {
+  cv <- cv.glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
+                family='binomial')
+  lambda <- cv$lambda.1se
+  modelEGLM <- glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
+                 family='binomial',lambda=lambda)
+  predict(modelEGLM,newx=as.matrix(d[,vars]),type='response')[,1]
+}
+
+d$modelEGLM <- glmNetModelPred(d,vars)
+report(d,'modelEGLM',"glmnet")
+```
+
+
+
+```{r}
+# force some values to missing at random (unifromative)
+d2 <- d
+nMissing <- 1000
+set.seed(235)
+for(v in sample(vars,nMissing,replace=TRUE)) {
+  i = sample.int(nrow(d2),1)
+  d2[i,v] <- NA
+}
+```
+
+```{r}
+# try to re-build a decision tree model
+d$modelTreeE <- treeModelPred(d2,vars)
+report(d,'modelTreeE',"decision tree")
+```
+
+
+```{r}
+# try to re-build a GLMNET model
+tryCatch(
+  glmNetModelPred(d2,vars),
+  warning = function(w) {print(paste('warning',w)); c()},
+  error = function(e) {print(paste('error',e)) ; c()})
+```
+
+
+```{r}
+# Install a library try to work around problem
+library('devtools')
+install_github('WinVector/vtreat')
+library('vtreat') # https://github.com/WinVector/vtreat
+```
+
+```{r}
+# try a fix for the missing values
+treatmentsC <- designTreatmentsC(d2[!d2$isTest,],vars,yColumn,TRUE,verbose=FALSE)
+dTreated <- prepare(treatmentsC,d2,pruneLevel=c())
+treatedVars <- setdiff(colnames(dTreated),c(yColumn,'isTest'))
+dTreated$isTest <- d2$isTest
+print(treatedVars)
+print(head(dTreated))
+d$modelEGLME <- glmNetModelPred(dTreated,treatedVars)
+report(d,'modelEGLME',"glmnet (with missing data)")
+```
+
+```{r}
+# show what informative data loss can look like
+d2 <- d
+nMissing <- 1000
+set.seed(235)
+for(v in sample(vars,nMissing,replace=TRUE)) {
+  i = sample.int(nrow(d2),1)
+  # suppose data is only lost on negative examples (extreme form of informative!)
+  if(!d2[i,yColumn]) {
+    d2[i,v] <- NA
+  }
+}
+treatmentsC <- designTreatmentsC(d2[!d2$isTest,],vars,yColumn,TRUE,verbose=FALSE)
+dTreated <- prepare(treatmentsC,d2,pruneLevel=c())
+treatedVars <- setdiff(colnames(dTreated),c(yColumn,'isTest'))
+dTreated$isTest <- d2$isTest
+print(treatedVars)
+print(head(dTreated))
+d$modelEGLMEI <- glmNetModelPred(dTreated,treatedVars)
+report(d,'modelEGLMEI',"glmnet (with informative missing data)")
+```
+
