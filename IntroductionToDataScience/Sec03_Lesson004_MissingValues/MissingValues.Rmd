@@ -179,10 +179,7 @@ report(d,'modelTree',"decision tree (with some missing values)")
 glmNetModelPred <- function(d,vars) {
   cv <- cv.glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
                 family='binomial')
-  lambda <- cv$lambda.1se
-  modelEGLM <- glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
-                 family='binomial',lambda=lambda)
-  predict(modelEGLM,newx=as.matrix(d[,vars]),type='response')[,1]
+  predict(cv,newx=as.matrix(d[,vars]),type='response')[,1]
 }
 
 d$modelEGLM <- glmNetModelPred(d,vars)
