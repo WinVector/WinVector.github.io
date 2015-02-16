@@ -1,0 +1,41 @@
+---
+title: "reshape2"
+output: html_document
+---
+
+```{r}
+# load some libraries
+library('ggplot2')
+library('reshape2')
+```
+
+```{r}
+d <- data.frame(x=seq(0,10,by=0.05))
+d$sinx <- sin(d$x)
+d$sin1.5x <- sin(1.5*d$x)
+d$cosx <- cos(d$x)
+```
+
+```{r}
+# plot it the hard way
+ggplot(data=d) + 
+  geom_line(aes(x=x,y=sinx)) +
+  geom_line(aes(x=x,y=sin1.5x)) +
+  geom_line(aes(x=x,y=cosx))
+
+head(d)
+```
+
+```{r}
+# move to long/thin frames to automate stuff
+dM <- melt(d,id.vars='x',variable.name='f')
+head(dM)
+head(dM[dM$x %in% c(0.0,0.05),])
+
+ggplot(data=dM,aes(x=x,y=value,color=f)) +
+  geom_point()
+
+# move data the back into wide format other way
+dL <- dcast(dM,x~f)
+print(head(dL))
+```

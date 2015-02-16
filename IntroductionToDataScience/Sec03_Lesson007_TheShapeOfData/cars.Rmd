@@ -1,0 +1,15 @@
+---
+title: "pivot"
+output: html_document
+---
+
+
+```{r}
+cars <- read.table('http://www.win-vector.com/dfiles/car.data.csv',header=TRUE,sep=',')
+print(head(cars))
+with(cars,table(safety,rating))
+
+print(summary(cars$safety))
+m <- model.matrix(~0+safety,data=cars)
+print(head(m))
+```

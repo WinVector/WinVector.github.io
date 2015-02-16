@@ -1,0 +1,358 @@
+---
+title: "NBDB"
+output: html_document
+---
+
+
+```{r}
+# load libraries
+library('stringr')
+library('ggplot2')
+# read from a JDBC connection to an arbitrary database
+options( java.parameters = "-Xmx2g" )
+library('RJDBC')
+
+# define somem functions
+
+# read text as a sequence of token blocks
+readText <- function(fName,firstLine=1000,lastLine=3000,chunkSize=200) {
+  f <- file(fName)
+  lines <- readLines(f)[firstLine:lastLine]
+  close(f)
+  text <- paste(str_trim(lines),collapse=' ')
+  toks <- str_split(text,'[ \t\n]+')[[1]]
+  groups <- split(toks, ceiling(seq_along(toks)/chunkSize))
+  vapply(groups,function(s) paste(s,collapse=' '),c(''))
+}
+
+# return list of two-grams (without counts) from a single string
+twoGramStr <- function(docID,s) {
+  s <- tolower(s)
+  s <- str_replace_all(s,'[^a-z]+',' ')
+  s <- str_trim(s)
+  toks <- str_split(s,'[^a-z]+')[[1]]
+  ntok <- length(toks)
+  data.frame(docID=docID,
+             feature=unique(paste(toks[seq_len(ntok-1)],toks[1+seq_len(ntok-1)])))
+}
+
+executeDBQuery <- function(con,query) {
+  res <- dbSendQuery(con,query)
+  d <- fetch(res,-1)
+  dbClearResult(res)
+  d
+}
+
+# executeDBQuery(con,'SELECT a FROM ( SELECT 1 a UNION SELECT NULL a) s')
+# executeDBQuery(con,'SELECT COUNT(a) FROM ( SELECT 1 a UNION SELECT NULL a) s')
+
+dropTable <- function(con,tableName) {
+   # dbExistsTable() seems to have different case sensitivity than dropping
+   tryCatch(
+      dbSendUpdate(con,paste('DROP TABLE',tableName)),
+      error = function(e) {e},
+      warn = function(w) {w})
+}
+
+mkTable <- function(con,tableName,columnString) {
+  dropTable(con,tableName)
+  msg = dbSendUpdate(con,paste('CREATE TABLE ',tableName,columnString))
+}
+
+enterDocDef <- function(con,tableName,docID,isShakespeare) {
+  # remove any previous copy
+  dbSendUpdate(con,
+      paste('DELETE FROM ',tableName,' WHERE docID=\'',docID,'\'',sep=''))
+  dbSendUpdate(con,
+         paste('INSERT INTO ',tableName,' VALUES (?,?)'),
+         docID,isShakespeare)
+}
+
+
+enterDocFeatureRelations <- function(con,tableName,docID,docText) {
+  # remove any previous copy
+  dbSendUpdate(con,
+      paste('DELETE FROM ',tableName,' WHERE docID=\'',docID,'\'',sep=''))
+  toks <- twoGramStr(docID,docText)
+  for(i in seq_len(nrow(toks))) {
+    dbSendUpdate(con,
+        paste('INSERT INTO ',tableName,' VALUES (?,?)'),
+        docID,toks[i,'feature'])
+  }
+}
+
+
+
+
+# load text data
+
+ShakespeareMacbeth <- readText('pg2264.txt.gz')
+ShakespeareHamlet <- readText('pg1524.txt.gz')
+MarloweEdwardII <- readText('pg20288.txt.gz')
+MarloweFaustus <- readText('pg811.txt.gz')
+
+head(MarloweEdwardII,n=1)
+tail(MarloweEdwardII,n=1)
+
+# For demonstration purposes use count each block as a separate document
+trainData <- rbind(
+    data.frame(docText=ShakespeareMacbeth,title='Shakespeare Macbeth',
+               isShakespeare=1,stringsAsFactors=FALSE),
+    data.frame(docText=MarloweEdwardII,title='Marlowe EdwardII',
+               isShakespeare=0,stringsAsFactors=FALSE)
+)
+trainData$docID <- paste('trainDoc',seq_len(nrow(trainData)))
+# bring in two new plays
+testData <- rbind(
+    data.frame(docText=ShakespeareHamlet,title='Shakespeare Hamlet',
+               isShakespeare=1,stringsAsFactors=FALSE),
+    data.frame(docText=MarloweFaustus,title='Marlowe Faustus',
+               isShakespeare=0,stringsAsFactors=FALSE)
+)
+testData$docID <- paste('testDoc',seq_len(nrow(testData)))
+```
+
+```{r}
+# load the data into a database
+drv <- JDBC('org.h2.Driver','h2-1.3.176.jar',identifier.quote='"')
+# remove the file NBDB.h2db.* to create new one
+con <- dbConnect(drv,'jdbc:h2:NBDB.h2db')
+
+
+
+mkTable(con,'docs','(docID VARCHAR(255), isShakespeare INTEGER)')
+mkTable(con,'relationDocsAndFeatures','(docID VARCHAR(255), feature VARCHAR(255))')
+
+enterDocDef(con,'docs',
+            trainData[1,'docID'],
+            trainData[1,'isShakespeare'])
+enterDocFeatureRelations(con,'relationDocsAndFeatures',
+                         trainData[1,'docID'],
+                         trainData[1,'docText'])
+
+head(dbReadTable(con,'docs'))
+
+head(dbReadTable(con,'relationDocsAndFeatures'))
+
+# some examples of SQL
+
+# SQL is great at aggregaton
+print(head(executeDBQuery(con,'
+   SELECT
+      docID,
+      COUNT(1)
+   FROM
+      relationDocsAndFeatures
+   GROUP BY
+      docID
+')))
+
+# bringing in data is by joins
+print(head(executeDBQuery(con,'
+   SELECT
+      relationDocsAndFeatures.docID,
+      relationDocsAndFeatures.feature,
+      docs.isShakespeare
+   FROM
+      relationDocsAndFeatures
+   JOIN
+      docs
+   ON
+      docs.docID=relationDocsAndFeatures.docID
+')))
+
+
+print(executeDBQuery(con,'
+SELECT
+  *
+FROM
+  ( SELECT
+      r1.docID,
+      r1.feature,
+      COUNT(r2.feature) ord
+   FROM
+      relationDocsAndFeatures r1
+   LEFT JOIN
+      relationDocsAndFeatures r2
+   ON
+      r1.docID=r2.docID
+      AND r2.feature<r1.feature
+   GROUP BY
+      r1.docID,
+      r1.feature
+   ORDER BY
+      r1.docID,
+      r1.feature ) sub
+WHERE
+   ord<=5
+'))
+
+```
+
+```{r}
+#entero all of the data
+for(i in seq_len(nrow(trainData))) {
+  enterDocDef(con,'docs',
+              trainData[i,'docID'],
+              trainData[i,'isShakespeare'])
+  enterDocFeatureRelations(con,'relationDocsAndFeatures',
+                           trainData[i,'docID'],
+                           trainData[i,'docText'])
+}
+dbSendUpdate(con,'CREATE INDEX DFI1 ON relationDocsAndFeatures(feature)')
+dbSendUpdate(con,'CREATE INDEX DFI2 ON relationDocsAndFeatures(docID)')
+dbSendUpdate(con,'CREATE UNIQUE INDEX DFU ON relationDocsAndFeatures(docID,feature)')
+dbSendUpdate(con,'CREATE INDEX DDI1 ON docs(isShakespeare)')
+dbSendUpdate(con,'CREATE UNIQUE INDEX DDUI ON docs(docID)')
+
+# put in the extra data we need
+# it would probably be better to do this another table, but for this demo we will just add the column
+dbSendUpdate(con,'ALTER TABLE relationDocsAndFeatures ADD COLUMN isShakespeare INTEGER')
+dbSendUpdate(con,'UPDATE relationDocsAndFeatures SET isShakespeare = (SELECT isShakespeare FROM docs WHERE docs.docID=relationDocsAndFeatures.docID)')
+dbSendUpdate(con,'CREATE INDEX DFI3 ON relationDocsAndFeatures(isShakespeare)')
+
+print(executeDBQuery(con,'SELECT * from relationDocsAndFeatures where feature=\'peer of\''))
+```
+
+```{r}
+# build the naive Bayes model
+
+# total counts
+mkTable(con,'totals','(n REAL, nC REAL, isShakespeare INTEGER, prior REAL, logPrior REAL)')
+dbSendUpdate(con,'
+   INSERT INTO totals
+   SELECT 
+      *,
+      (1.0+nC)/(2.0+n) prior,
+      log((1.0+nC)/(2.0+n)) logPrior
+   FROM (
+      SELECT 
+         (SELECT COUNT(1) FROM docs) n,
+         COUNT(1) nC,
+         docs.isShakespeare isShakespeare
+      FROM
+         docs
+      GROUP BY
+         isShakespeare
+    ) innertable
+   ')
+head(dbReadTable(con,'totals'))
+
+# counts by class and feature
+mkTable(con,'countFootprint','(feature VARCHAR(255), isShakespeare INTEGER, n REAL, nc REAL)')
+dbSendUpdate(con,'
+   INSERT INTO countFootprint
+      SELECT 
+        feature,
+        isShakespeare,
+        MAX(n) n,
+        MAX(nc) nc
+      FROM
+        ( SELECT feature FROM relationDocsAndFeatures GROUP by feature ) featlist
+      JOIN
+        totals
+      ON
+        1=1
+      GROUP BY
+        featlist.feature,
+        isShakespeare
+   ')
+head(dbReadTable(con,'countFootprint'))
+dbSendUpdate(con,'CREATE INDEX CFI1 ON countFootprint(feature)')
+dbSendUpdate(con,'CREATE INDEX CFI2 ON countFootprint(isShakespeare)')
+dbSendUpdate(con,'CREATE UNIQUE INDEX CFU ON countFootprint(feature,isShakespeare)')
+
+mkTable(con,'conditionalCounts','(feature VARCHAR(255), isShakespeare INTEGER, nc REAL, nf REAL, pCgivenY REAL, logpCgivenY REAL)')
+dbSendUpdate(con,'
+   INSERT INTO conditionalCounts
+     SELECT
+      *,
+      (1.0+nf)/(2.0+nc) pCgivenY,
+      log((1.0+nf)/(2.0+nc)) logpCgivenY
+     FROM (
+      SELECT 
+        countFootprint.feature feature,
+        countFootprint.isShakespeare isShakespeare,
+        MAX(countFootprint.nc) nc,
+        COUNT(relationDocsAndFeatures.feature) nf
+      FROM
+        countFootprint
+      LEFT JOIN
+        relationDocsAndFeatures
+      ON
+        relationDocsAndFeatures.feature=countFootprint.feature
+        AND relationDocsAndFeatures.isShakespeare=countFootprint.isShakespeare
+      GROUP BY
+        countFootprint.feature,
+        countFootprint.isShakespeare
+      ) summaries
+   ')
+head(dbReadTable(con,'conditionalCounts'))
+dbSendUpdate(con,'CREATE INDEX CDI1 ON conditionalCounts(feature)')
+dbSendUpdate(con,'CREATE INDEX CDI2 ON conditionalCounts(isShakespeare)')
+dbSendUpdate(con,'CREATE UNIQUE INDEX CFCU ON conditionalCounts(feature,isShakespeare)')
+
+print(executeDBQuery(con,'SELECT * from conditionalCounts where feature=\'i am\''))
+print(executeDBQuery(con,'SELECT * from conditionalCounts where feature=\'me la\''))
+print(executeDBQuery(con,'SELECT * from conditionalCounts where feature=\'peer of\''))
+
+mkTable(con,'scoringTable','(docID VARCHAR(255), feature VARCHAR(255))')
+
+scoreTextDoc <- function(text) {
+  enterDocFeatureRelations(con,'scoringTable','score tmp',text)
+  # dbReadTable(con,'scoringTable')
+  d <- executeDBQuery(con,'
+     SELECT
+        docID,
+        totals.isShakespeare,
+        MAX(totals.logPrior) logPrior,
+        SUM(COALESCE(logpCgivenY,0.0)) logpCgivenY
+     FROM
+        scoringTable
+     JOIN
+        totals
+     ON
+        1=1
+     LEFT JOIN
+        conditionalCounts
+     ON
+        scoringTable.feature=conditionalCounts.feature
+        AND totals.isShakespeare=conditionalCounts.isShakespeare
+     WHERE
+        scoringTable.docID=\'score tmp\'
+     GROUP BY
+        docID,
+        totals.isShakespeare
+  ')
+  logPY <- d[d$ISSHAKESPEARE==1,'LOGPRIOR'] + d[d$ISSHAKESPEARE==1,'LOGPCGIVENY']
+  logPN <- d[d$ISSHAKESPEARE==0,'LOGPRIOR'] + d[d$ISSHAKESPEARE==0,'LOGPCGIVENY']
+  shift <- max(logPY,logPN)
+  PY <- exp(logPY-shift)
+  PN <- exp(logPN-shift)
+  Z <- PY + PN
+  PY/Z
+}
+```
+
+
+```{r}
+# work some examples
+scoreTextDoc(ShakespeareMacbeth[[1]])
+scoreTextDoc(MarloweEdwardII[[1]])
+scoreTextDoc(ShakespeareHamlet[[1]])
+scoreTextDoc(MarloweFaustus[[1]])
+
+scoreTextDoc(MarloweFaustus[[2]])
+
+# Neil Armstrong
+scoreTextDoc("One small step for a man, one large step for mankind.")
+# Alfred Tennyson
+scoreTextDoc("Tis better to have loved and lost than never to have loved at all.")
+# Francis Bacon
+scoreTextDoc("Hope is a good breakfast, but it is a bad supper.")
+```
+
+```{r}
+dbDisconnect(con)
+```
+

@@ -1,0 +1,16 @@
+---
+title: "lapply"
+output: html_document
+---
+
+```{r}
+f <- function(k) { seq_len(k) }
+lapply(1:5,f)
+unlist(lapply(1:5,f))
+```
+
+```{r}
+# also look to vapply!
+lapply(1:10,sin)
+vapply(1:10,sin,numeric(1))
+```

@@ -1,0 +1,18 @@
+02-16 07:58:13 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "DOCS" not found; SQL statement:
+DROP TABLE docs [42102-176]
+02-16 07:58:13 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "RELATIONDOCSANDFEATURES" not found; SQL statement:
+DROP TABLE relationDocsAndFeatures [42102-176]
+02-16 07:58:36 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "TOTALS" not found; SQL statement:
+DROP TABLE totals [42102-176]
+02-16 07:58:36 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "COUNTFOOTPRINT" not found; SQL statement:
+DROP TABLE countFootprint [42102-176]
+02-16 07:58:37 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "CONDITIONALCOUNTS" not found; SQL statement:
+DROP TABLE conditionalCounts [42102-176]
+02-16 07:58:38 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: Table "SCORINGTABLE" not found; SQL statement:
+DROP TABLE scoringTable [42102-176]

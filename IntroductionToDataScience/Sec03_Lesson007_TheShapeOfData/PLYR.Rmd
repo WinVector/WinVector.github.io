@@ -1,0 +1,40 @@
+---
+title: "plyr"
+output: html_document
+---
+
+
+
+```{r}
+# load some libraries
+library(plyr)
+library('ggplot2')
+library('reshape2')
+```
+
+```{r}
+d <- data.frame(x=seq(0,10,by=0.05))
+d$group <- floor(d$x)
+d$sinx <- sin(d$x)
+d$sin1.1x <- sin(1.1*d$x)
+d$sin1.2x <- sin(1.1*d$x)
+
+# move to long/thin frames to automate stuff
+dM <- melt(d,id.vars=c('x','group'),variable.name='f')
+
+ggplot(data=dM,aes(x=x,y=value,color=f)) +
+  geom_point()
+
+
+dN <- ddply(dM,'group',summarize,
+            minX=min(x),maxX=max(x),
+            max=max(value),min=min(value))
+head(dN)
+
+ggplot() +
+  geom_point(data=dM,aes(x=x,y=value,color=f)) +
+  geom_rect(data=dN,aes(xmin=minX,xmax=maxX,ymin=min,ymax=max),alpha=0.3)
+
+
+
+```
