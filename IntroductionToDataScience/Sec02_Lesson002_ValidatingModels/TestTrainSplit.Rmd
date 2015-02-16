@@ -1,0 +1,108 @@
+---
+title: "Test/Train Split Lesson"
+author: "Nina Zumel"
+date: "February 3, 2015"
+output: html_document
+---
+Lesson on Test/Train Split
+
+The first thing to do is load the data. 
+```{r}
+salaryData = readRDS("salaryData.rds")
+# look at the data
+dim(salaryData)
+summary(salaryData)
+```
+
+Let's set the outcome variable, and the input variables
+```{r}
+outcome = "logSalary"
+vars = setdiff(colnames(salaryData), c("Salary", "Player", "logSalary"))
+vars
+```
+
+Now we can split the data into a training set and a test set.
+```{r}
+set.seed(45433622) # set the random number generator seed, so the random assignments are the same every time
+```
+
+```{r}
+nr = nrow(salaryData)
+# make the train/test assignments (set aside 25% of the data for test)
+is.test = runif(nr)<=0.25
+summary(is.test)
+```
+
+```{r}
+# split the data
+test = salaryData[is.test,]
+train = salaryData[!is.test, ]
+```
+
+
+```{r}
+salaryData$is.test = is.test  # put the test marker back in the data, for reproducibility
+```
+
+
+Run the model on the training set 
+```{r}
+fmla = paste(outcome, "~", paste(vars, collapse="+")) # set up the variables
+fmla
+model = lm(fmla, data=train)
+summary(model)
+```
+
+Now we'll evaluate the model. We will look at the root mean squared error of the prediction.
+
+```{r}
+# make the predictions on the salaryData frame
+salPred = predict(model, newdata=salaryData)
+
+# set up a frame with the outcomes
+perf = data.frame(logSalary = salaryData[[outcome]], 
+                  pred = salPred, is.test=salaryData$is.test)
+
+sqerr = (perf$logSalary - perf$pred)^2
+# training error
+sqrt(mean(sqerr[!is.test])) 
+# test error
+sqrt(mean(sqerr[is.test])) 
+```
+
+And we can plot, it too.
+```{r}
+library(ggplot2)
+
+ggplot(perf, aes(x=pred, y=logSalary, color=is.test)) + 
+  geom_point(aes(shape=is.test)) +  
+  geom_abline(slope=1) + 
+  scale_color_manual(values = c("FALSE" = "darkgray", "TRUE" = "darkblue")) +
+  coord_fixed()
+
+```
+
+The x axis is the predicted log salary, and the y axis is the actual log salary.
+The blue triangles are the test data, and the gray circles are the training data. 
+
+Now let's try Random Forest on the exact same training and test sets
+
+```{r}
+library(randomForest)
+mod = randomForest(train[,vars], y=train[,outcome])
+
+# set up a frame with the outcomes
+perf = data.frame(logSalary = salaryData[[outcome]], 
+                  pred = as.numeric(predict(mod, newdata=salaryData)), is.test=salaryData$is.test)
+sqerr = (perf$logSalary - perf$pred)^2
+```
+
+```{r}
+# training error
+sqrt(mean(sqerr[!is.test])) 
+# test error
+sqrt(mean(sqerr[is.test])) 
+
+```
+
+Random Forest looks better in training, but may be slightly worse in test.

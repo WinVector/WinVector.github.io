@@ -1,0 +1,167 @@
+---
+title: "isolet"
+output: html_document
+---
+
+
+```{r}
+library('ggplot2')
+library('randomForest')
+```
+
+First we load the data. The test and training sets have already been given in this
+set, but I'll put them together with a test/train marker as we usually have
+```{r}
+# test and training sets already given
+dTrain = read.table("isolet1+2+3+4.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTrain$isTest <- FALSE
+dTrain$testlabel="train"
+
+dTest = read.table("isolet5.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTest$isTest = TRUE
+dTest$testlabel="test"
+d = rbind(dTrain,dTest) 
+# make "train" the first level, so it shows up first in the plots
+rank = ifelse(d$isTest, 2, 1)
+d$testlabel = reorder(d$testlabel, rank, FUN=mean)
+rm(list=c('dTest','dTrain')) # clean up the environment a little by deleting the smaller sets
+
+dim(d)
+colnames(d)[1:5]
+```
+
+Make the frame a little more user-friendly
+```{r}
+# column 618 designates the letter as a number
+unique(d$V618)
+letters # a predefined (by R) vector
+```
+
+```{r}
+# so let's map the numbers to letters
+d$V618 = letters[d$V618]
+summary(as.factor(d$V618))
+# rename the column
+colnames(d)[618] = "letter"
+```
+
+
+Define variables and output
+```{r}
+vars = colnames(d)[1:617]
+yColumn = 'isN'
+```
+
+We are just going to work on the letters 'm' and 'n'.
+'n' is our target class
+```{r}
+# Subset to just the utterances 'n', and 'm'
+d = d[d$letter %in% c('m','n'),,drop=FALSE]
+# 'n' is our target class
+d[,yColumn] = d[,'letter']=='n'
+table(d[,yColumn])/nrow(d)
+```
+
+First, some convenience functions for performance stats
+```{r}
+deviance = function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+pseudo_Rsquared = function(truth, pred, epsilon) {
+  dev = deviance(truth, pred, epsilon)
+  null.dev = deviance(truth, mean(pred), epsilon)
+  1 - (dev/null.dev)
+}
+
+accuracy = function(truth, pred) {
+  # confusion matrix
+  cmat = table(truth, pred>0.5)
+  sum(diag(cmat))/sum(cmat)
+}
+
+reportStats = function(d,test,modelName,title,epsilon=1e-02) {
+  dSub = d[d$isTest==test,,drop=FALSE]
+  acc = accuracy(dSub[,yColumn], dSub[,modelName])
+  r2 = pseudo_Rsquared(dSub[,yColumn], dSub[,modelName], epsilon)
+  note = ifelse(test,'test','train')
+  print(paste('\t',note,'accuracy',modelName,format(acc,digits=2)))
+  print(paste("\tmodel explained a",
+              format(r2,digits=2),
+            "fraction of the variation on",note))  
+}
+
+report <- function(d,modelName,title,epsilon=1.0e-2) {
+  print("***********")
+  reportStats(d, FALSE, modelName, title, epsilon)
+  reportStats(d, TRUE, modelName, title, epsilon)
+  print("***********")
+}
+```
+
+Run the random forest model
+```{r}
+set.seed(23424) # set seed for reproducibility 
+                # RF algorithm is randomized
+# it's better not to use formulas for random forest. Use x and y
+model1 = randomForest(x=d[!d$isTest,vars],
+                      y=as.factor(d[!d$isTest,yColumn]),
+                      importance=TRUE)
+model1
+```
+
+Do the predictions 
+```{r}
+d$model1 = predict(model1,newdata=d,type='prob')[,'TRUE',drop=TRUE]
+```
+
+Report performance
+```{r}
+# double density plot
+ggplot(d, aes_string(x="model1", color=yColumn)) + geom_density() + facet_wrap(~testlabel, ncol=1)
+
+report(d,'model1',"randomForest")
+```
+
+We can examine the variable importances
+```{r}
+# first plot it (top 30 or so)
+varImpPlot(model1, type=1) # just look at mean decrease accuracy
+```
+
+Get the variable importances
+```{r}
+# get the variable importances
+vImps = importance(model1, class='TRUE')
+head(vImps)
+```
+
+Sort the variable importances
+```{r}
+ord = order(vImps[,3], decreasing=TRUE) # sort, descending order
+vord = vImps[ord, 3]
+head(vord)
+```
+
+Get the top 30
+```{r}
+# limit to the top 30
+topvars = names(vord[1:30])
+```
+
+Make a reduced model
+```{r}
+model2 = randomForest(x=d[!d$isTest,topvars],y=as.factor(d[!d$isTest,yColumn]))
+d$model2 = predict(model2,newdata=d,type='prob')[,'TRUE',drop=TRUE]                      
+report(d,'model2',"randomForest")
+```
+
+(Interestingly, did better on deviance)
+

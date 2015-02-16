@@ -1,0 +1,116 @@
+---
+title: "glmnet example"
+output: html_document
+---
+
+Load libraries and read in data
+```{r}
+library('glmnet')
+
+dTrain = read.table("isolet1+2+3+4.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTrain$isTest <- FALSE
+dTest = read.table("isolet5.data.gz",
+              header=FALSE,sep=',',
+              stringsAsFactors=FALSE,blank.lines.skip=TRUE)
+dTest$isTest <- TRUE
+d <- rbind(dTrain,dTest)
+rm(list=c('dTest','dTrain'))
+colnames(d)[618] = 'letters'
+d$letters <- letters[d$letters]
+
+# define input variables and target variable
+vars <- colnames(d)[1:617]
+yColumn <- 'isN'
+d <- d[d$letters %in% c('m','n'),,drop=FALSE]
+d[,yColumn] <- d[,"letters"]=='n'
+```
+
+Set up the variable formula
+```{r}
+formula <- paste(yColumn,paste(vars,collapse=' + '),sep=' ~ ')
+```
+
+First, some convenience functions for performance stats
+```{r}
+deviance = function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+pseudo_Rsquared = function(truth, pred, epsilon) {
+  dev = deviance(truth, pred, epsilon)
+  null.dev = deviance(truth, mean(pred), epsilon)
+  1 - (dev/null.dev)
+}
+
+accuracy = function(truth, pred) {
+  # confusion matrix
+  cmat = table(truth, pred>0.5)
+  sum(diag(cmat))/sum(cmat)
+}
+
+reportStats = function(d,test,modelName,title,epsilon=1e-02) {
+  dSub = d[d$isTest==test,,drop=FALSE]
+  acc = accuracy(dSub[,yColumn], dSub[,modelName])
+  r2 = pseudo_Rsquared(dSub[,yColumn], dSub[,modelName], epsilon)
+  note = ifelse(test,'test','train')
+  print(paste('\t',note,'accuracy',modelName,format(acc,digits=2)))
+  print(paste("\tmodel explained a",
+              format(r2,digits=2),
+            "fraction of the variation on",note))  
+}
+
+report <- function(d,modelName,title,epsilon=1.0e-2) {
+  print("***********")
+  reportStats(d, FALSE, modelName, title, epsilon)
+  reportStats(d, TRUE, modelName, title, epsilon)
+  print("***********")
+}
+```
+
+
+Try glm first
+```{r}
+model1 <- glm(formula,data=d[!d$isTest,],family=binomial(link='logit'))
+# print out a few of the coefficients
+coef = summary(model1)$coefficients
+coef[1:10,]
+
+d$model1 <- predict(model1,newdata=d,type='response')
+report(d,'model1',"logistic regression")
+dim(d)
+length(vars)
+```
+
+Then try glmnet
+```{r}
+set.seed(245623) # set seed for reproducibility
+                 # cv.glmnet is randomized
+
+# finds the best lambda parameter by cross validation
+# and returns the corresponding model
+# glmnet doesn't take formulas
+model2 <- cv.glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
+                family='binomial')
+lambda = model2$lambda.1se # the value of lambda used by default
+lambda
+```
+
+Get the non-zero variables
+```{r}
+coefs = as.matrix(coef(model2)) # convert to a matrix (618 by 1)
+ix = which(abs(coefs[,1]) > 0)
+length(ix)
+coefs[ix,1, drop=FALSE] # note V297 and V298 are on this list
+```
+
+```{r}
+d$model2 <- predict(model2,newx=as.matrix(d[,vars]),type='response')[,1]
+report(d,'model2',"glmnet") # comparable to random forest
+
+```
+

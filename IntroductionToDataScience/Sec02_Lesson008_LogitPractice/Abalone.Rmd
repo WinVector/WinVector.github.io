@@ -1,0 +1,159 @@
+---
+title: "Abalone"
+output: html_document
+---
+Example use of Logistic Regression (glm) function in R
+
+Read in the data. We have to add the column names by hand.
+
+```{r}
+library('ggplot2')
+d <- read.table('abalone.data.txt.gz',header=FALSE,sep=',',
+                stringsAsFactors=TRUE)
+# add the column names
+colnames(d) <- c('Sex', 'Length', 'Diameter', 'Height', 'WholeWeight',
+   'ShuckedWeight', 'VisceraWeight', 'ShellWeight', 'Rings')
+dim(d) 
+summary(d) 
+```
+
+Define the outcome variable to be whether or not the abalone has ten rings or more.
+```{r}
+# define 'old' as more than 10 rings (more than ~11.5 years old)
+d$old <- d$Rings>=10
+table(d$old)/nrow(d)
+```
+
+Look at the Sex variable
+```{r}
+summary(d$Sex)
+```
+
+Check whether Sex separates the data
+```{r}
+tab = table(truth=d$Rings, sex=d$Sex)
+rs = rowSums(tab)
+tab/rowSums(tab)
+```
+
+Do the test/train split
+```{r}
+set.seed(2352) # set random seed for reproducibility
+
+# do the random split (25% held out for test), put the label back into the data frame
+d$isTest <- runif(nrow(d))<0.25
+d$dataLabel <- ifelse(d$isTest,"test data","train data")
+```
+
+Try a non-invasive prediction procedure first. 
+(Only the measurements we can take without dissecting the abalone)
+```{r}
+nonInvasiveVars <- c('Sex', 'Length', 'Diameter', 'Height', 'WholeWeight')
+# the model formula
+fNonInvasive <- paste('old',paste(nonInvasiveVars,collapse=' + '),sep=' ~ ')
+fNonInvasive
+```
+
+Run the model. 
+```{r}
+model1 <- glm(fNonInvasive,data=d[!d$isTest,],family=binomial(link='logit'))
+summary(model1)  
+```
+
+Look at the model's predictions on the data.
+```{r}
+d$model1 <- predict(model1,newdata=d,type='response')
+head(d[,c("old","model1")])
+```
+
+Calculate pseudo-R-Squared on training data
+```{r}
+# training pseudo-R2
+1 - model1$deviance/model1$null.deviance
+```
+
+Plot the predictions for the training data. 
+```{r}
+dtrain = d[!d$isTest,]  # makes the following calls easier
+ggplot(dtrain, aes(x=model1, color=old)) + geom_density()
+```
+
+Create the confusion matrix
+```{r}
+# confusion matrix
+
+cmat = table(truth=dtrain$old, pred=dtrain$model1 > 0.5)
+cmat
+```
+
+Calculate the accuracy (training data)
+```{r}
+accuracy = (cmat[1,1] + cmat[2,2])/sum(cmat)
+accuracy
+```
+
+Convenience functions to report performance
+```{r}
+deviance <- function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+deviance(dtrain$old, dtrain$model1)
+model1$deviance
+```
+
+```{r}
+
+reportStats <- function(d,test,modelName,title) {
+  dSub <- d[d$isTest==test,,drop=FALSE]
+  tab <- table(truth=dSub$old,pred=dSub[,modelName]>0.5)
+  accuracy <- (tab[1,1] + tab[2,2])/sum(tab)
+  note = ifelse(test,'test','train')
+  print(paste('   ',note,'accuracy',modelName,format(accuracy,digits=2)))
+  residual.deviance <- deviance(dSub[,'old'],dSub[,modelName])
+  null.deviance <- deviance(dSub[,'old'],mean(dSub[,'old']))
+  print(paste("   model explained a",
+              format((1-residual.deviance/null.deviance),digits=2),
+            "fraction of the variation on",note))  
+}
+
+report <- function(d,modelName,title) {
+  print("***********")
+  print(paste("model",modelName,title))
+  reportStats(d,FALSE,modelName,title)
+  reportStats(d,TRUE,modelName,title)
+  print(ggplot(data=d,aes_string(x=modelName,color='old')) + 
+    geom_density() + facet_wrap(~dataLabel,ncol=1,scales='free_y') +
+    ggtitle(title))
+  print("***********")
+}
+```
+
+Performance report for both the training and test data
+```{r}
+# report the performance of the model on hold-out
+report(d, "model1", "Logistic Regression: Non-invasive Model")
+```
+
+Set up a model that includes invasive measurments
+```{r}
+invasiveVars <- c('ShuckedWeight', 'VisceraWeight', 'ShellWeight')
+fAllVars <- paste('old',paste(c(nonInvasiveVars,invasiveVars),collapse=' + '),sep=' ~ ')
+fAllVars
+```
+
+Fit the model
+```{r}
+model2 <- glm(fAllVars,data=d[!d$isTest,],family=binomial(link='logit'))
+d$model2 <- predict(model2,newdata=d,type='response')
+summary(model2)
+```
+
+Report performance statistics
+```{r}
+report(d,'model2', "invasive model logistic regression")
+```
+
