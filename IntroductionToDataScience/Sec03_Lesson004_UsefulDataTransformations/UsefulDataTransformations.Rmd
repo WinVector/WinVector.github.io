@@ -1,0 +1,74 @@
+---
+title: "UsefulDataTransformations"
+output: html_document
+---
+
+
+```{r}
+# Winsorising
+set.seed(3523)
+xTrain <- runif(1000)
+bounds <- quantile(xTrain,probs=c(0.01,0.99))
+xTest <- runif(1000)
+mean(xTest)
+xTestWins <- pmax(pmin(xTest,bounds[2]),bounds[1])
+mean(xTestWins)
+```
+
+```{r}
+# CDF xform
+library(ggplot2)
+set.seed(5292)
+xTrain <- rgamma(10000,shape=1)
+ggplot() + geom_density(aes(x=xTrain)) + 
+  ggtitle('gamma distribution')
+cdf <- ecdf(xTrain)
+xTest <- rgamma(10000,shape=1)
+ggplot() + geom_density(aes(x=cdf(xTest))) + 
+  ggtitle('gamma distribution (converted to near uniform by empirical cdf')
+ggplot() + geom_density(aes(x=qnorm(cdf(xTest)))) + 
+  ggtitle('gamma distribution (converted to near normal by empirical cdf and qnorm')
+```
+
+```{r}
+set.seed(5292)
+# build a multi-modal variable
+# x is a mixture of continuous variable and an unrelated discrete variable
+x <- rnorm(1000) + sample(c(-5,0,5),size=1000,replace=TRUE)
+ggplot() + geom_density(aes(x=x)) + 
+  ggtitle('a multi-modal variable')
+# get cut points
+library(quantmod)
+dens <- density(x)
+breaks <- dens$x[findPeaks(-dens$y)]
+print(breaks)
+# get the discrete part of the variable
+xD <- cut(x,c(-Inf,breaks,Inf))
+# get the continuous portion
+library(plyr)
+d <- data.frame(x=x,xD=xD,xM=NA,xC=NA)
+dS <- ddply(d,'xD',summarize,
+            med=median(x))
+print(dS)
+for(v in dS$xD) {
+  d[d$xD==v,'xM'] <- dS[dS$xD==v,'med']
+}
+d$xC <- d$x-d$xM
+
+print(head(d))
+ggplot() +
+   geom_histogram(aes(x=d$xM),binwidth=1) +
+   ggtitle("recovered discrete component of the variable x")
+
+ggplot() +
+   geom_density(aes(x=d$xC)) +
+   ggtitle("recovered continuous portion of the variable x")
+
+ggplot() + 
+  geom_density(data=d,aes(x=x,color=xD),trim=TRUE) +
+  geom_vline(data=dS,aes(xintercept=med,color=xD)) +
+  ggtitle("the original variable x, grouped by recovered discrete label")
+# have now "unstirred the mixture" that x was
+# now could use xD,xC as variables or even the interaction xD*xC to model
+```
+
