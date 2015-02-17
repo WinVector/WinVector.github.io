@@ -70,7 +70,6 @@ areaCalc <- function(x,y) {
    sum(0.5*(y[-1]+y[-n])*(x[-1]-x[-n]))
 }
 
-
 # needs ggplot2 and reshape2
 # plot the gain-curve which is what proportion of the target (make target numric)
 # is sorted into position by the prediction
@@ -78,42 +77,42 @@ areaCalc <- function(x,y) {
 #  d <- data.frame(pred=runif(100))
 #  d$y <- runif(100)<d$pred
 #  gainCurve('test',d$pred,d$y)
-gainCurve <- function(title,ycol,predcol) {
-  ycol <- as.numeric(ycol)
-  spearStat <- cor(predcol,ycol,method="spearman")
-  d <- data.frame(predcol=predcol,ycol=ycol)
-  predord <- order(d[['predcol']], decreasing=TRUE) # reorder, with highest first
-  wizard <- order(d[['ycol']], decreasing=TRUE)
-  npop <- dim(d)[1]
+gainCurve = function(truthcol, predcol, title) {
+  truthcol <- as.numeric(truthcol)
+  # data frame of pred and truth, sorted in order of the predictions
+  d = data.frame(predcol=predcol,truthcol=truthcol)
+  predord = order(d[['predcol']], decreasing=TRUE) # reorder, with highest first
+  wizard = order(d[['truthcol']], decreasing=TRUE)
+  npop = dim(d)[1]
   
-  results <- data.frame(pctpop= (1:npop)/npop,
-                       model = cumsum(d[predord,'ycol'])/sum(d[['ycol']]),
-                       wizard = cumsum(d[wizard, 'ycol'])/sum(d[['ycol']]))
-  wideIDX <- which.max(results$model-results$pctpop)
-  wFrame <- data.frame(wideX=results[wideIDX,'pctpop',drop=TRUE],
-     wideY=results[wideIDX,'model',drop=TRUE])
-  maxvgap <- wFrame$wideY-wFrame$wideX
-  idealArea <- areaCalc(results$pctpop,results$wizard)
-  modelArea <- areaCalc(results$pctpop,results$model)
-  giniScore <- modelArea/idealArea
+  # data frame the cumulative prediction/truth as a function
+  # of the fraction of the population we're considering, highest first
+  results = data.frame(pctpop= (1:npop)/npop,
+                       model = cumsum(d[predord,'truthcol'])/sum(d[['truthcol']]),
+                       wizard = cumsum(d[wizard, 'truthcol'])/sum(d[['truthcol']]))
   
-  results <- melt(results, id.vars="pctpop", measure.vars=c("model", "wizard"),
+  # calculate the areas under each curve
+  # gini score is 2* (area - 0.5)
+  idealArea = areaCalc(results$pctpop,results$wizard) - 0.5
+  modelArea = areaCalc(results$pctpop,results$model) - 0.5
+  giniScore = modelArea/idealArea # actually, normalized gini score
+  
+  # melt the frame into the tall form, for plotting
+  results = melt(results, id.vars="pctpop", measure.vars=c("model", "wizard"),
                  variable.name="sort_criterion", value.name="pct_outcome")
   
-  gplot <- ggplot(data=results, aes(x=pctpop, y=pct_outcome, color=sort_criterion)) + 
+  gplot = ggplot(data=results, aes(x=pctpop, y=pct_outcome, color=sort_criterion)) + 
     geom_point() + geom_line() + 
     geom_abline(color="gray") +
     ggtitle(paste("Gain curve,", title, '\n', 
-       'relative Gini score', format(giniScore,digits=2), '\n',
-       'Spearman rank correlation', format(spearStat,digits=2) , '\n',
-       'maxVGap',format(maxvgap,digits=2))) +
+       'relative Gini score', format(giniScore,digits=2))) +
        xlab("% items in score order") + ylab("% total category") +
-       geom_segment(data=wFrame,
-          aes(x=wideX,y=wideX,xend=wideX,yend=wideY),color="gray") +
        scale_x_continuous(breaks=seq(0,1,0.1)) +
-       scale_y_continuous(breaks=seq(0,1,0.1))
+       scale_y_continuous(breaks=seq(0,1,0.1)) +
+    scale_color_manual(values=c('model'='darkblue', 'wizard'='darkgreen'))
   gplot
 }
+
 
 plotROC <- function(title,outcol,predcol) {
   pred <- prediction(predcol,outcol)
@@ -170,12 +169,12 @@ report <- function(d,modelName,title,epsilon=1.0e-2) {
   print(plotROC(paste(title,'test'),
                 d[d$isTest==TRUE,yColumn],
                 d[d$isTest==TRUE,modelName])$plot)
-  print(gainCurve(paste(title,'train'),
-                d[d$isTest==FALSE,yColumn],
-                d[d$isTest==FALSE,modelName]))
-  print(gainCurve(paste(title,'test'),
-                d[d$isTest==TRUE,yColumn],
-                d[d$isTest==TRUE,modelName]))
+  print(gainCurve(d[d$isTest==FALSE,yColumn],
+                d[d$isTest==FALSE,modelName],
+                paste(title,'train')))
+  print(gainCurve(d[d$isTest==TRUE,yColumn],
+                d[d$isTest==TRUE,modelName],
+                paste(title,'test')))
   print("***********")
 }
 ```
