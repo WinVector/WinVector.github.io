@@ -1,0 +1,484 @@
+---
+title: "EvaluatingModels"
+author: "Nina Zumel"
+date: "February 16, 2015"
+output: html_document
+---
+
+Demonstration code for model evaluation
+
+First, load all libraries needed for the examples
+```{r}
+#
+# This is the vtreat library that will be discussed in the 
+# Missing Values lesson. Uncomment the next two lines
+# to install the package
+#
+# library(devtools)
+# install_github('WinVector/vtreat')
+library(vtreat)
+
+library(ggplot2) # for plotting
+library(reshape2) # for the melt command
+library(ROCR)  # for ROC plots
+
+# set the random number generator seed, so the random assignments are the same every time
+set.seed(45433622) 
+```
+
+# Regression
+
+We will use the Baseball salaries data.
+```{r}
+# load data
+salaryData = readRDS("salaryData.rds")
+
+# set the outcome variable, and the input variables
+outcome = "logSalary"
+vars = setdiff(colnames(salaryData), c("Salary", "Player", "logSalary"))
+```
+
+Split the data into a training set and a test set.
+```{r}
+nr = nrow(salaryData)
+# make the train/test assignments (set aside 25% of the data for test)
+isTest = runif(nr)<=0.25
+
+# split the data
+test = salaryData[isTest,]
+train = salaryData[!isTest, ]
+
+salaryData$isTest = isTest  # put the test marker back in the data, for reproducibility
+```
+
+Train a linear regression model on the training set 
+```{r}
+fmla = paste(outcome, "~", paste(vars, collapse="+")) # set up the variables
+model1 = lm(fmla, data=train)
+summary(model1)
+
+# the model summary will report training set statistics
+summ1 = summary(model1)
+err = summ1$residuals # response - prediction
+sqrt(mean(err^2))  # the root mean squared error  (0.2211)
+
+# the residual error in the summary report is root of the sum of squared error,
+# divided by the degrees of freedom
+sqrt(sum(err^2)/model1$df)
+
+# r-squared and adjusted r-squared
+summ1$r.squared
+summ1$adj.r.squared
+```
+
+Evaluate the model on test data
+
+## Root mean squared error and R-squared
+
+```{r}
+#
+# first, wrap the evaluations in functions
+#
+
+# root mean squared error
+rmse = function(truth, pred) {
+  err = truth-pred
+  sqrt(mean(err^2))
+}
+
+# R-squared 
+# We won't look at adjusted R2, because it's really
+# just an estimate of R-squared on holdout data, which
+# we can calculate directly
+R2 = function(truth, pred) {
+  err = truth-pred
+  meany = mean(truth)
+  null_err = truth-meany
+  
+  1 - (sum(err^2)/sum(null_err^2))
+}
+
+# make the predictions on the salaryData frame
+salPred = predict(model1, newdata=salaryData)
+
+# set up a frame with the outcomes
+perf = data.frame(logSalary = salaryData[[outcome]], 
+                  pred = salPred, isTest=salaryData$isTest)
+
+perfTrain = perf[!isTest,]
+perfTest = perf[isTest,]
+
+# check the training stats came out as reported
+rmse(perfTrain$logSalary, perfTrain$pred)
+R2(perfTrain$logSalary, perfTrain$pred)
+
+# check test set performance
+rmse(perfTest$logSalary, perfTest$pred)
+R2(perfTest$logSalary, perfTest$pred)
+
+```
+
+
+## Plots
+
+**Plot predictions**
+```{r}
+ggplot(perf, aes(x=pred, y=logSalary, color=isTest)) + 
+  geom_point(aes(shape=isTest)) +  
+  geom_abline(slope=1) + 
+  scale_color_manual(values = c("FALSE" = "darkgray", "TRUE" = "darkblue")) +
+  coord_fixed()
+```
+
+**Plot residuals**
+```{r}
+ggplot(perf, aes(x=pred, y=logSalary-pred, color=isTest)) + 
+  geom_point(aes(shape=isTest)) +  
+  geom_abline(slope=0) + 
+  scale_color_manual(values = c("FALSE" = "darkgray", "TRUE" = "darkblue")) +
+  coord_fixed()
+```
+
+**The Gain Curve**
+```{r}
+#
+# Let's make this a function, since we'll use it again
+#
+
+# calculate area under the curve of numeric vectors x,y
+# length(x)==length(y)
+# y>=0, 0<=x<=1 and x increasing
+areaCalc = function(x,y) {
+   # append extra points to get rid of degenerate cases
+   x = c(0,x,1)
+   y = c(0,y,1)
+   n = length(x)
+   sum(0.5*(y[-1]+y[-n])*(x[-1]-x[-n]))
+}
+
+
+gainCurve = function(truthcol, predcol, title) {
+  # data frame of pred and truth, sorted in order of the predictions
+  d = data.frame(predcol=predcol,truthcol=truthcol)
+  predord = order(d[['predcol']], decreasing=TRUE) # reorder, with highest first
+  wizard = order(d[['truthcol']], decreasing=TRUE)
+  npop = dim(d)[1]
+  
+  # data frame with the cumulative prediction/truth as a function
+  # of the fraction of the population we're considering, highest first
+  results = data.frame(pctpop= (1:npop)/npop,
+                       model = cumsum(d[predord,'truthcol'])/sum(d[['truthcol']]),
+                       wizard = cumsum(d[wizard, 'truthcol'])/sum(d[['truthcol']]))
+  
+  # calculate the areas under each curve
+  # gini score is 2* (area - 0.5)
+  idealArea = areaCalc(results$pctpop,results$wizard) - 0.5
+  modelArea = areaCalc(results$pctpop,results$model) - 0.5
+  giniScore = modelArea/idealArea # actually, normalized gini score
+  
+  # melt the frame into the tall form, for plotting
+  results = melt(results, id.vars="pctpop", measure.vars=c("model", "wizard"),
+                 variable.name="sort_criterion", value.name="pct_outcome")
+  
+  gplot = ggplot(data=results, aes(x=pctpop, y=pct_outcome, color=sort_criterion)) + 
+    geom_point() + geom_line() + 
+    geom_abline(color="gray") +
+    ggtitle(paste("Gain curve,", title, '\n', 
+       'relative Gini score', format(giniScore,digits=2))) +
+       xlab("% items in score order") + ylab("% total category") +
+       scale_x_continuous(breaks=seq(0,1,0.1)) +
+       scale_y_continuous(breaks=seq(0,1,0.1)) +
+    scale_color_manual(values=c('model'='darkblue', 'wizard'='darkgreen'))
+  gplot
+}
+```
+
+Now we can plot the gain curves, one for training and one for test.
+We'll plot salary, not log salary.
+
+```{r}
+gainCurve(10^perfTrain$logSalary, 10^perfTrain$pred, "Baseball salaries, training:")
+
+gainCurve(10^perfTest$logSalary, 10^perfTest$pred, "Baseball salaries, test:")
+
+```
+
+# Classification (Class probabilities) 
+
+Task: Predict the onset of diabetes within 5 years
+
+Load the data
+```{r}
+
+d = read.table("pima-indians-diabetes.data.txt", header=FALSE, sep=",", stringsAsFactors=FALSE)
+
+# 1. Number of times pregnant
+# 2. Plasma glucose concentration a 2 hours in an oral glucose tolerance test
+# 3. Diastolic blood pressure (mm Hg)
+# 4. Triceps skin fold thickness (mm)
+# 5. 2-Hour serum insulin (mu U/ml)
+# 6. Body mass index (weight in kg/(height in m)^2)
+# 7. Diabetes pedigree function
+# 8. Age (years)
+# 9. Class variable (0 or 1)
+
+colnames(d) = c("npregnant",
+             "glucose",
+             "blood_pressure",
+             "tricep_skin_fold_thickness",
+             "insulin",
+             "bmi",
+             "diabetes_pedigree",
+             "age",
+             "diabetic")  # 1=diagnosed as diabetic within 5 years/0=not diagnosed after 5 years
+d$diabetic = d$diabetic>0.5 # switch outcome to logical
+```
+
+Find missing data. Note: although the dataset donors claim there are no missing values, some of the zeros are clearly actually missing values. I am going to treat 0 as 'missing' for glucose, blood_pressure, skin fold thickness, and bmi.
+
+```{r}
+zero_as_missing = c("glucose",
+             "blood_pressure",
+             "tricep_skin_fold_thickness",
+             "bmi")
+leave = setdiff(colnames(d), zero_as_missing)
+
+d0 = as.data.frame(lapply(d[,zero_as_missing], 
+                          FUN=function(x) ifelse(x==0, NA, x)))
+
+d = cbind(d[,leave], d0)
+```
+
+Set outcome and iput variables, split into training and test
+```{r}
+yColumn = 'diabetic'
+vars = setdiff(colnames(d),c(yColumn, "isTest", "dataLabel"))
+d$isTest = runif(nrow(d))<0.25
+d$dataLabel = ifelse(d$isTest,"test data","train data")
+# a nicety, so that train plots above test when we facet wrap below
+d$dataLabel = reorder(d$dataLabel, ifelse(d$dataLabel=='train data', 1, 2), FUN=mean)
+```
+
+Now treat the missing values, by substituting mean value for them
+and adding an additional informational column. We will use the vtreat library
+to do this.
+ 
+```{r}
+dtrain = d[!d$isTest, ]
+treatPlan = designTreatmentsC(dtrain, vars, yColumn, TRUE, verbose=FALSE)
+
+dtrainTreat = prepare(treatPlan, dtrain, pruneLevel=NULL, doCollar=FALSE)
+# the treated data has all NAs replaced by the mean value of the variable,
+# and additional columns to mark which values were formerly NAs
+head(dtrainTreat)
+# get the new variable names
+newvars = setdiff(colnames(dtrainTreat), yColumn)
+```
+
+Train the model (glm)
+```{r}
+# make the formula
+fmla = paste(yColumn, "~", paste(newvars, collapse="+"))
+model2 = glm(fmla, data=dtrainTreat, family=binomial(link="logit"))
+summary(model2)
+
+# model reports training data diagnostics
+# deviance
+model2$deviance
+
+#pseudo-Rsquared
+1 - (model2$deviance/model2$null.deviance)
+```
+
+Make predictions
+```{r}
+# treat all the data first
+dTreat = prepare(treatPlan, d, pruneLevel=NULL, doCollar=FALSE)
+
+# put the predictions back into the original frame
+d$model2 = predict(model2, newdata=dTreat, type='response')
+```
+
+Evaluate the model on training and test data.
+
+## Deviance and Pseudo-R-squared
+```{r}
+# Convenience functions
+
+# deviance
+# epsilon > 0 is needed for smoothing for models that can return 0 or 1 probablities, 
+# which a properly converged logistic regression model can't
+deviance = function(truth,pred,epsilon=0) {
+  pred = pmax(pred, epsilon)
+  pred = pmin(pred, 1-epsilon)
+  S = 0.0 # assumed log-likelihood of saturated model
+  -2*(sum(ifelse(truth,log(pred),log(1-pred)))-S)
+}
+
+# pseudo-R-squared
+pseudoR2 = function(truth, pred, epsilon=0) {
+  dev = deviance(truth, pred)
+  nulldev = deviance(truth, mean(truth))
+  1-(dev/nulldev)
+}
+
+dtrain = d[!d$isTest,]
+dtest = d[d$isTest,]
+
+# training deviance
+deviance(dtrain[[yColumn]], dtrain$model2)
+
+# test deviance
+deviance(dtest[[yColumn]], dtest$model2)
+
+# remember, deviance can't be compared across data sets
+# pseudo-R-squared can be compared across data sets
+
+# training
+pseudoR2(dtrain[[yColumn]], dtrain$model2)
+
+# test
+pseudoR2(dtest[[yColumn]], dtest$model2)
+```
+
+## Plots
+
+**Double density plot**
+```{r}
+ggplot(d, aes_string(x='model2', color=yColumn)) + geom_density(adjust=0.5) + 
+  facet_wrap(~dataLabel, ncol=1) 
+```
+
+**ROC plot***
+```{r}
+plotROC = function(title,outcol,predcol) {
+  #
+  # prediction and performance are in the ROCR package
+  # 
+  pred = prediction(predcol,outcol)
+  perf = performance(pred,'tpr','fpr')
+  # get the auc
+  auc = as.numeric(performance(pred,'auc')@y.values)
+  
+  # pull the information out of the perf structure so
+  # we can plot it with ggplot
+  pf = data.frame(
+    FalsePositiveRate=perf@x.values[[1]],
+    TruePositiveRate=perf@y.values[[1]])
+  plot=ggplot() +
+    geom_ribbon(data=pf,aes(x=FalsePositiveRate,ymax=TruePositiveRate,ymin=0),
+      fill='blue',alpha=0.3) +
+      geom_point(data=pf,aes(x=FalsePositiveRate,y=TruePositiveRate)) +
+      geom_line(aes(x=c(0,1),y=c(0,1))) + coord_fixed() +
+      ggtitle(paste(title,'\nAUC:',format(auc,digits=2)))
+  
+ plot
+}
+
+# plot the ROC for training and test sets
+plotROC("Training data", d[!d$isTest, yColumn], d[!d$isTest, "model2"])
+plotROC("Test data", d[d$isTest, yColumn], d[d$isTest, "model2"])
+```
+
+**Gain Curve**
+```{r}
+gainCurve(d[!d$isTest, yColumn], d[!d$isTest, "model2"], "Training data")
+gainCurve(d[d$isTest, yColumn], d[d$isTest, "model2"], "Test data")
+```
+
+# Classification (Class Labels) 
+
+If you use a classification model that returns class probabilities, you can
+turn the probabilities into labels by thresholding. Thresholding at 50% is the most
+straightforward; you are simply assigning the more probable label.
+
+```{r}
+d$predLabel = d$model2 >=0.5
+```
+
+For simplicity, in this section we'll calculate the performance stats over the 
+whole set.
+
+## Confusion matrix
+Many classification measures are summarized by the confusion matrix.
+
+```{r}
+# the rows are true outcome, the columns predicted outcome
+cmat = table(diabetic=d[[yColumn]], pred=d$predLabel)
+cmat
+```
+
+**Accuracy**
+Accuracy is the sum of the diagonals of the confusion matrix
+```{r}
+accuracy = function(cmat) {sum(diag(cmat))/sum(cmat)}
+accuracy(cmat)
+```
+
+**False Positive Rate, False Negative Rate**
+```{r}
+# false positives: predicted diabetic but really not. Upper right corner
+# false positive rate - the fraction of non-diabetics misdiagnosed as diabetic
+fpr = function(cmat) {cmat[1, 2]/sum(cmat[1,])}
+fpr(cmat)
+
+# false negatives: predicted not diabetic but really are. Lower left corner
+# false negative rate - fraction of diabetics misdiagnosed as non-diabetic
+fnr = function(cmat) {cmat[2,1]/sum(cmat[2,])}
+fnr(cmat)
+```
+
+**Precision and Recall**
+```{r}
+# precision - of all the subjects in the population of interest (female Pima indians)
+# who test positive, how many are true diabetics?
+precision = function(cmat) {cmat[2,2]/sum(cmat[,2])}
+precision(cmat)
+
+# recall - of all the diabetics in the population of interest, how many does this test identify?
+recall = function(cmat) {cmat[2,2]/sum(cmat[2,])}
+recall(cmat)
+```
+
+**Sensitivity and Specificity**
+```{r}
+# sensitivity - the true positive rate, or the rate at which diabetics are correctly diagnosed
+# Same as recall
+sensitivity = function(cmat){cmat[2,2]/sum(cmat[2,])}
+sensitivity(cmat)
+
+# specificity - the true negative rate, or the rate at which non-diabetics are correctly diagnosed
+specificity = function(cmat) {cmat[1,1]/sum(cmat[1,])}
+specificity(cmat)
+```
+
+Note that sensitivity and specificity are independent of the population distribution, but accuracy and precision are not.
+
+```{r}
+
+# posit a test with a given sensitivity/specificity
+# and populations with different prevalences of diabetes
+scenario = function(sens, spec, prevalence) {
+  npos = prevalence
+  nneg = 1-prevalence
+  
+  tPos = npos*sens  # true positives
+  tNeg = nneg*spec  # true negatives
+  
+  fPos = nneg - tNeg # false positives (negatives mis-diagnosed)
+  fNeg = npos - tPos # false negatives (positives mis-diagnosed)
+  
+  print(paste("accuracy = ", (tPos + tNeg))) # what we got right
+  print(paste("precision = ", (tPos/(tPos + fPos))))  # the number predicted positive that really are
+}
+
+
+prev_pima = sum(d$diabetic/nrow(d))
+prev_pima
+
+scenario(sensitivity(cmat), specificity(cmat), prev_pima)
+scenario(sensitivity(cmat), specificity(cmat), 0.1)
+scenario(sensitivity(cmat), specificity(cmat), 0.9)
+
+```
+
