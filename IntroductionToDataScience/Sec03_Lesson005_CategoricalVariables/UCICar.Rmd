@@ -1,0 +1,70 @@
+---
+title: "UCICar"
+output: html_document
+---
+
+
+```{r}
+library('glmnet')
+library('ggplot2')
+
+d <- read.table('car.data',header=FALSE,sep=',',stringsAsFactors=TRUE)
+yColumn <- 'rating'
+vars <- c('buying', 'maint', 'doors', 'persons', 
+                 'lug_boot', 'safety')
+colnames(d) <- c(vars,yColumn)
+summary(d)
+# View(d)
+set.seed(53525)
+d$isTest <- runif(nrow(d))<0.2
+d$want <- d[,yColumn]!='unacc'
+
+f <- paste('want',paste(vars,collapse=' + '),sep=' ~ ')
+```
+
+```{r}
+# try glmnet on original data
+tryCatch(
+   model1 <- cv.glmnet(x=as.matrix(d[!d$isTest,vars,drop=FALSE]),
+                    y=d[!d$isTest,'want',drop=TRUE],
+                    family='binomial'),
+   
+   warning = function(w) {w},
+   error = function(e) {e})
+# errors out due to non-numeric features
+```
+
+```{r}
+# try to fix it the wrong way- convert to numeric
+# (either through ordinal levels or through "hashed features")
+dN <- d
+for(v in vars) {
+  dN[,v] <- as.numeric(d[,v])
+}
+
+model2 <- cv.glmnet(x=as.matrix(dN[!dN$isTest,vars,drop=FALSE]),
+                    y=dN[!dN$isTest,'want',drop=TRUE],
+                    family='binomial')
+d$predN <- predict(model2,
+                    newx=as.matrix(dN[,vars,drop=FALSE]),
+                    type='response')[,1]
+ggplot(data=d[d$isTest,]) + 
+  geom_density(aes(x=predN,color=want))
+print(table(truth=d[d$isTest,'want'],decision=d[d$isTest,'predN']>0.5))
+print(table(truth=d[d$isTest,'want'],decision=d[d$isTest,'predN']>median(d[d$isTest,'predN'])))
+```
+
+```{r}
+# fix it the right way: model.matrix()
+dM <- model.matrix(as.formula(f),d)
+print(head(dM))
+model3 <- cv.glmnet(x=dM[!d$isTest,,drop=FALSE],
+                    y=d[!d$isTest,'want',drop=TRUE],
+                    family='binomial')
+d$predC <- predict(model3,
+                    newx=dM,
+                    type='response')[,1]
+ggplot(data=d[d$isTest,]) + 
+  geom_density(aes(x=predC,color=want))
+print(table(truth=d[d$isTest,'want'],decision=d[d$isTest,'predC']>0.5))
+```

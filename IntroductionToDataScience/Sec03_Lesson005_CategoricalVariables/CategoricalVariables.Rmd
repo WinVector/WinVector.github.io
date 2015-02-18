@@ -1,0 +1,34 @@
+---
+title: "CategoricalVariables"
+output: html_document
+---
+
+
+```{r}
+d <- data.frame(ResState=c('CA', 'NV', 'OR', 'CA', 'CA', NA, 'WA', 'OR', 'WA'))
+print(d)
+print(model.matrix(~ResState,data=d))
+# row 6 missing!
+```
+
+```{r}
+d$ResState <- addNA(d$ResState,ifany=TRUE)
+print(model.matrix(~ResState,data=d))
+```
+
+```{r}
+print(model.matrix(~0+ResState,data=d))
+```
+
+```{r}
+# two incompatible factors
+f1 <- factor(c("a","b","c"))
+print(f1)
+print(as.numeric(f1))
+print(attr(f1,'levels'))
+f2 <- factor(c("a","b","c"),levels=c("c","b","a"))
+print(f2)
+print(as.numeric(f2))
+```
+
+
