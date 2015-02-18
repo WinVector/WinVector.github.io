@@ -154,6 +154,8 @@ coef[1:10,]</code></pre>
 # finds the best lambda parameter by cross validation
 # and returns the corresponding model
 # glmnet doesn't take formulas
+# Nota bene: as.matrix is only safe to call on data frames that are entirely
+# numeric, as isolet is.
 model2 &lt;- cv.glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
                 family='binomial')
 lambda = model2$lambda.1se # the value of lambda used by default

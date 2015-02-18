@@ -170,6 +170,8 @@ report(d,'modelTree',"decision tree (with some missing values)")
 ```{r}
 # build a GLMNET model
 glmNetModelPred <- function(d,vars) {
+  # Nota bene: only save to all as.matrix() on a dataframe that is all numeric
+  # is it is in this example.
   cv <- cv.glmnet(x=as.matrix(d[!d$isTest,vars]),y=d[!d$isTest,yColumn,drop=TRUE],
                 family='binomial')
   predict(cv,newx=as.matrix(d[,vars]),type='response')[,1]
