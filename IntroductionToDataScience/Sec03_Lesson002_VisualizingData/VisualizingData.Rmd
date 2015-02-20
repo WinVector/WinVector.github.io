@@ -1,0 +1,369 @@
+---
+title: "Visualizing Data"
+author: "Nina Zumel"
+date: "February 18, 2015"
+output: html_document
+---
+# Visualizing Data
+
+Example plots from Visualizing Data lesson. The examples are in ggplot, but it is possible to make these graphs with other graphing packages, including R's base graphics. The goals of this lesson were to demonstrate the different graphs and what they are for, not to teach ggplot. We include a brief primer on ggplot below, along with a pointer to the online documentation.
+
+## A Brief Primer on ggplot
+
+* Graphs in ggplot2 can only be defined on data frames. The variables in the graph -- x variables, y variables, the variables that define the color or size of the points -- are called aesthetics, and are declared by using the *aes* function
+
+* The _ggplot()_ function declares the graph object. The arguments to _ggplot()_ can include the data frame of interest and the aesthetics. The _ggplot()_ function doesn't of itself produce a visualization: visualizations are produced by layers.
+
+* Layers produce the plots and plot transformations and are added to a given graph object using the + operator. Each layer can also take a data frame and aesthetics as arguments, in addition to plot-specific parameters. Examples of layers are *geom_point* for a scatterplot or *geom_line* for a line plot.
+
+The syntax should become clearer below. For online documentation, see http://docs.ggplot2.org/current/index.html.
+
+## Preliminaries
+Load libraries. Set random seed for reproducible graphs.
+
+You may need to install the packages first; for example to 
+install the hexbin package use 
+the command "install.packages('hexbin')".
+```{r}
+library(ggplot2)
+library(hexbin) # for making hexbin plots
+library(GGally) # for the pair plots
+library(mvtnorm) # for the multivariate gaussians
+
+set.seed(32534557)
+```
+
+## Using Color
+
+You should try to use color to guide the viewer to points of interest in the graph
+
+```{r}
+scurve = function(x) {2*(1+exp(-x))^-1 - 1}
+
+N = 12 # multiple of 12
+x = 1:N
+month = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+oursales = 100*(scurve(x-1) + 0.15*rnorm(N))
+usf = data.frame(x=x, month=month, units_sold=oursales, company="us")
+theirsales = 100*(sin(0.05*pi*x) + 0.15*rnorm(N))
+tsf = data.frame(x=x, month=month, units_sold=theirsales, company="them")
+
+dataf = rbind(usf, tsf)
+```
+
+Without color emphasis:
+```{r}
+ggplot(dataf, aes(x=x, y=units_sold, color=company)) + 
+  geom_point() + geom_line() +
+  scale_x_continuous("Month", breaks=dataf$x, labels=dataf$month) + 
+  ggtitle("Sales Volume")
+```
+
+With color emphasis:
+```{r}
+ggplot(dataf, aes(x=x, y=units_sold, color=company)) + 
+  geom_point() + geom_line() +
+  scale_x_continuous("Month", breaks=dataf$x, labels=dataf$month) +
+  scale_color_manual(values=c("us" = "darkblue", "them" = "darkgray")) +
+  ggtitle("Sales Volume")
+
+```
+
+
+## Examining a Single Variable
+
+Create the data set.
+```{r}
+N = 1000
+
+# continuous variable: mixture of gaussians
+centers = sample(1:4, size=N, replace=TRUE)
+x = centers + rnorm(N, sd=1)
+
+# discrete variable: letters of the alphabet
+# frequencies of letters in english 
+# source: http://en.algoritmy.net/article/40379/Letter-frequency-English
+letterFreqs = c(8.167, 1.492, 2.782, 4.253, 12.702, 2.228,
+2.015, 6.094, 6.966, 0.153, 0.772, 4.025, 2.406, 6.749, 7.507, 1.929,
+0.095, 5.987, 6.327, 9.056, 2.758, 0.978, 2.360, 0.150, 1.974, 0.074)
+letterFreqs = letterFreqs/100
+
+# draw letters proportional to their frequency in English
+tokens = sample(letters, size=N, replace=TRUE, prob=letterFreqs)
+
+df = data.frame(x=x, tokens=tokens)                      
+```
+
+**Histograms**
+```{r}
+# histogram defaults to binwidth range/30. Here we set it explicitly
+ggplot(df, aes(x=x)) + geom_histogram(binwidth=0.5)
+```
+
+**Density Plots**
+```{r}
+ggplot(df, aes(x=x)) + geom_density(adjust=0.5)  # set the smoothing kernel to half the default, for a little more detail
+```
+**Dotplots**
+```{r}
+# the easy way to do this is with geom_bar (bar plot)
+ggplot(df, aes(x=tokens)) + geom_bar()
+
+# Cleveland prefers dot plots, which are a bit more complicated
+zero = function (x) {0}  # A function that only returns 0
+ggplot(df, aes(x=tokens)) + geom_point(stat="bin") +
+                            stat_summary(aes(y=1), fun.ymin=zero, fun.ymax=sum, geom="linerange") +
+                            theme(axis.text.x=element_text(size=12, color="black")) # make the font more legible
+
+# Cleveland also recommends that we sort the letters by frequency, to make the plot
+# easier to read.
+# To do that in ggplot, we have to reorder the factor levels in sorted order
+# (it's easier in baseplot)
+n = length(df$tokens)
+unit = numeric(n)-1 # a vector of all negative 1s
+df$tokens = reorder(df$tokens, unit, FUN=sum) # now sorted by frequency, descending
+
+ggplot(df, aes(x=tokens)) + geom_point(stat="bin") +
+                            stat_summary(aes(y=1), fun.ymin=zero, fun.ymax=sum, geom="linerange") +
+                            theme(axis.text.x=element_text(size=12, color="black"))
+
+# compare with the bar chart
+ggplot(df, aes(x=tokens)) + geom_bar()
+
+```
+
+## Examining the Relationship Between Two Continuous Variables
+
+Create the data set.
+```{r}
+
+# we'll do this as a function, so we can create sets of different sizes
+ makedata = function(N) {
+   x = rnorm(N, sd=5)
+   u  = 3+sin(0.05*pi*x)
+   v = (1+exp(-x))^-1 + 0.25*rnorm(N) # noisy sigmoid
+   
+   centers = sample(1:4, size=N, replace=TRUE)
+   w = centers + rnorm(N, sd=1)
+   map =c("gp1", "gp2", "gp3", "gp4")
+   gp = map[centers] # gp is now a categorical variable
+   
+   data.frame(x=x,u=u,v=v,gp=gp,w=w)
+  }
+
+df = makedata(1000)
+```
+
+**Line Plots**
+```{r}
+ggplot(df, aes(x=x, y=u)) + geom_line()
+```
+
+**Scatterplots**
+```{r}
+ggplot(df, aes(x=x,y=v)) + geom_point() 
+```
+
+**Smoothing Curves**
+```{r}
+ggplot(df, aes(x=x,y=v)) + geom_point() + geom_smooth()
+```
+
+**Hexbin Plot**
+```{r}
+densef = makedata(10000)
+# you can see the general shape, but you lose some of the internal detail
+ggplot(densef, aes(x=x,y=v)) + geom_point() + geom_smooth()
+
+# remember hexbin requires the hexbin package (see library call, above)
+# as with geom_histogram, you can custom set the binwidth "(binwidth=c(xwidth, ywidth))"
+# but we'll leave it as the default
+ggplot(densef, aes(x=x,y=v)) + geom_hex() +
+  geom_smooth(color="white", se=F) # add the smoothing curve, turn off the standard error ribbon
+```
+
+## Examine the Relationship Between a Continuous and Discrete Variable
+
+**Conditional Densityplots**
+```{r}
+ggplot(subset(df, df$gp %in% c("gp1", "gp2")), aes(w, color=gp)) + geom_density()
+
+# we can do all four categories, but it gets harder to read
+ggplot(df, aes(w, color=gp)) + geom_density()
+
+```
+
+**Faceting for Conditional Densityplots**
+Aka Trellis plots, or faceting in R.
+```{r}
+ggplot(df, aes(x=w)) + geom_density() + facet_wrap(~gp)
+```
+
+**Box and Whisker Plot**
+```{r}
+# the default style
+ggplot(df, aes(x=gp, y=w)) + geom_boxplot()
+
+# my preferred style, with the points jittered beneath
+ggplot(df, aes(x=gp, y=w)) + geom_boxplot(outlier.size=0) + # turn off the outlier points
+   geom_point(position=position_jitter(width=0.4), alpha=0.2)
+   # add the actual points, slightly jittered along x and made partially transparent
+
+
+```
+
+**General Trellis Plots**
+```{r}
+ggplot(df, aes(x=x,y=w+u)) + geom_point() + geom_smooth() + facet_wrap(~gp)
+```
+
+## Examining the Relationship Between Two Discrete Variables
+
+Create the data set.
+```{r}
+N=1000
+categories = c("gp1", "gp2", "gp3", "gp4")
+coins = c(0.4, 0.2, 0.75, 0.9)
+catfreq = c(1,2,3,4); catfreq = catfreq/sum(catfreq)
+
+gp = sample(categories, size=N, replace=TRUE, prob=catfreq)
+target = character(N) # an empty character vector of length N
+
+# not the most efficient way to do this, but easy to read
+for(i in 1:4) {
+  ix = which(gp==categories[i]) # find which gp members are in category (their indices)
+  nx = length(ix)
+  target[ix] = ifelse(runif(nx) <= coins[i], "blue", "gray")
+  # category i has target="blue" with probability coins[i]
+}
+
+# gp has 4 possible values, target has 2
+df = data.frame(gp=gp, target=target)
+
+```
+
+**Stacked Bar Charts**
+```{r}
+ggplot(df, aes(x=gp, fill=target)) + geom_bar() +
+  scale_fill_manual(values=c("blue" = "darkblue", "gray"="darkgray")) # set the colors manually
+```
+
+**Side-by-side Bar Charts**
+```{r}
+ggplot(df, aes(x=gp, fill=target)) + geom_bar(position="dodge") +
+  scale_fill_manual(values=c("blue" = "darkblue", "gray"="darkgray")) # set the colors manually
+```
+
+**Ratio Bar Charts**
+```{r}
+ggplot(df, aes(x=gp, fill=target)) + geom_bar(position="fill") +
+  scale_fill_manual(values=c("blue" = "darkblue", "gray"="darkgray")) # set the colors manually
+```
+
+***Conditional Bar Charts**
+Aka Trellis plots. Called "faceting" in ggplot. A more complicated data set, where target has four possible values.
+
+```{r}
+# make this a function, because we'll use it again
+makecolors = function(gp) {
+  n = length(gp)
+  categories = sort(unique(gp))
+  target=character(n)
+  colors = c("blue", "gray", "green", "brown")
+  # this assumes gp has at most 4 unique values.
+  # I should fix it, but I don't need to, for this knitr doc
+  coins = list(c(1,2,3,4)/10, c(2,3,4,1)/10, c(3,4,1,2)/10, c(4,1,2,3)/10)
+  for(i in 1:4) {
+    ix = which(gp==categories[i]) # same gp vector as before
+    nx = length(ix)
+    target[ix] = sample(colors, size=nx, replace=TRUE, prob=coins[[i]])
+    }
+  target
+}
+df4 = data.frame(gp=gp, target=makecolors(gp))
+```
+
+Now plot.
+```{r}
+# Let's try a side-by-side, first. You should try all the others,
+# just to see what they look like. What is obvious and what is not obvious from 
+# each graph?
+ggplot(df4, aes(x=gp, fill=target)) + geom_bar(position="dodge") + 
+  scale_fill_manual(values=c("blue"="darkblue", "gray"="darkgray", "green"="darkgreen", "brown"="saddlebrown"))
+
+# now faceted on target
+ggplot(df4, aes(x=gp)) + geom_bar(position="dodge") + 
+  facet_wrap(~target, scales="free_y") # let each facet scale y on its own
+
+# or on gp
+ggplot(df4, aes(x=target, fill=target)) + geom_bar(position="dodge") + 
+  scale_fill_manual(values=c("blue"="darkblue", "gray"="darkgray", "green"="darkgreen", "brown"="saddlebrown")) + 
+  facet_wrap(~gp, scales="free_y") # let each facet scale y on its own
+```
+
+
+## Examining Many Variables At Once
+ **Pair Plots*
+```{r}
+# go back to some earlier datasets
+df = makedata(1000)
+df$color = makecolors(df$gp)
+
+# plot all the columns but x and u
+# the lists that go to upper and lower
+# tell ggpairs that continuous-countinouous plots should be scatterplots
+# and continuous-discrete plots should be faceted density plots
+# and discrete-discrete plots should be "bar" plot
+ggpairs(df[, c("v", "gp", "w", "color")], 
+        axisLabels="internal", # put the axis labels in the diagonals (default is to put them outside)
+        upper=list(continuous='points', combo='facetdensity'),
+        lower=list(continuous='points', combo='facetdensity'))
+       
+```
+
+**Multidimensional Scaling**
+Multidimensional scaling is a way of visualising points in a high dimensional space in 2D (or 3D)
+
+Make the data.
+```{r}
+N = 600
+
+c1 = c(0,0,0,0)
+c2 = c(0,3,0,0)
+c3 = c(0,1,0,3)
+
+# rmvnorm is in package mvtnorm and returns 
+# points drawn from a multivariate gaussian with mean mean and 
+# covariance matrix sigma (which defaults to the identity)
+blue = as.data.frame(rmvnorm(N/3, mean=c1))
+blue$color="blue"
+
+brown = as.data.frame(rmvnorm(N/3, mean=c2))
+brown$color="brown"
+
+green=as.data.frame(rmvnorm(N/3, mean=c3))
+green$color="green"
+
+# each row is a point in 4-d, plus a color
+points=rbind(rbind(blue, brown), green)
+summary(points)
+```
+Now plot.
+```{r}
+# plot the data points (columns 1:4), coded by color
+ggpairs(points, 1:4, color="color")
+
+# get the distance matrix (the distances between all points in the dataset
+pdists = dist(points[,1:4])
+
+# get the 2d projection
+project2d = as.data.frame(cmdscale(pdists, k=2))
+summary(project2d)
+project2d$color=points$color
+
+# plot it
+ggplot(project2d, aes(x=V1, y=V2, color=color, shape=color)) + geom_point() + 
+  scale_color_manual(values=c("blue"="darkblue", "brown"="saddlebrown", "green"="darkgreen"))
+
+```
+
