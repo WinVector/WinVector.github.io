@@ -4,4 +4,5 @@ Support files for the video course
   Nina Zumel
   John Mount
 
-Course to be released late February 2015.
+https://www.udemy.com/introduction-to-data-science/?couponCode=IntroToDataScienceC1
+
