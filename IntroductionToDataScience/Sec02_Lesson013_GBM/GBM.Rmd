@@ -153,13 +153,14 @@ report <- function(d,modelName,title,epsilon=1.0e-2) {
 help(gbm)
 modelGBM <- gbm(as.formula(formula),data=d[!d$isTest,],
          distribution='bernoulli',
-         n.trees=1000,
+         n.trees=100,
          interaction.depth=3,
          shrinkage=0.05,
          bag.fraction=0.5,
-         train.fraction=0.5,
+         train.fraction=1.0,
          keep.data=FALSE)
-d$modelGBM <- predict(modelGBM,newdata=d,type='response')
+d$modelGBM <- predict(modelGBM,newdata=d,type='response',
+                      n.trees=100)
 report(d,'modelGBM',"GBM")
 ```
 
