@@ -170,10 +170,9 @@ modelGBM <- gbm(as.formula(formula),
          cv.folds=5)
 nTrees <- gbm.perf(modelGBM)
 print(nTrees)
-summary(modelGBM)
+print(summary(modelGBM))
 d$modelGBM <- predict(modelGBM,newdata=d,type='response',
                       n.trees=nTrees)
-print(summary(d$modelGBM))
 report(d,'modelGBM',"GBM")
 ```
 
