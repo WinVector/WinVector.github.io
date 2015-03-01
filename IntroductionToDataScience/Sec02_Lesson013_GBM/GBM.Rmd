@@ -150,17 +150,30 @@ report <- function(d,modelName,title,epsilon=1.0e-2) {
 
 ```{r}
 # do the GBM modeling
-help(gbm)
-modelGBM <- gbm(as.formula(formula),data=d[!d$isTest,],
+#help(gbm)
+# modelGBM <- gbm.fit(x=d[!d$isTest,vars,drop=FALSE],
+#                     y=d[!d$isTest,yColumn],
+#          distribution='bernoulli',
+#          n.trees=400,
+#          interaction.depth=3,
+#          shrinkage=0.05,
+#          bag.fraction=0.5,
+#          keep.data=FALSE)
+modelGBM <- gbm(as.formula(formula),
+                data=d[!d$isTest,,drop=FALSE],
          distribution='bernoulli',
-         n.trees=100,
+         n.trees=400,
          interaction.depth=3,
          shrinkage=0.05,
          bag.fraction=0.5,
-         train.fraction=1.0,
-         keep.data=FALSE)
+         keep.data=FALSE,
+         cv.folds=5)
+nTrees <- gbm.perf(modelGBM)
+print(nTrees)
+summary(modelGBM)
 d$modelGBM <- predict(modelGBM,newdata=d,type='response',
-                      n.trees=100)
+                      n.trees=nTrees)
+print(summary(d$modelGBM))
 report(d,'modelGBM',"GBM")
 ```
 
