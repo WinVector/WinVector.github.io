@@ -1,0 +1,80 @@
+---
+title: "stripGLM"
+author: "John Mount"
+date: "March 27, 2015"
+output: html_document
+---
+
+
+```{r}
+library('biglm')
+
+datn <- function(n) {
+   d <- data.frame(x=runif(n))
+   d$y <- d$x>=runif(nrow(d))
+   d
+}
+
+d <- datn(100000)
+formula <- 'y~x'
+
+fitter <- function(formula,d) {
+  model <- bigglm(as.formula(formula),d,family=binomial(link='logit'))
+  list(predict=function(newd) {predict(model,newdata=newd,type='response')[,1]})
+}
+
+model <- fitter(formula,d)
+print(head(model$predict(d)))
+
+sizeTest1 <- function(d) {
+  model <- fitter(formula,d)
+  length(serialize(model, NULL))
+}
+
+for(n in c(1000,10000,100000)) {
+  print(sizeTest1(datn(n)))
+}
+
+#' build a new funcion with a smaller environment
+#' @param f input function
+#' @param varaibles names we are allowing to be captured in the closere
+#' @return new function with closure restricted to varaibles
+#' @export
+restrictEnvironment <- function(f,varList) {
+  oldEnv <- environment(f)
+  newEnv <- new.env(parent=parent.env(oldEnv))
+  for(v in varList) {
+    assign(v,get(v,envir=oldEnv),envir=newEnv)
+  }
+  environment(f) <- newEnv
+  f
+}
+
+fitter <- function(formula,d) {
+  model <- bigglm(as.formula(formula),d,family=binomial(link='logit'))
+  model$family$variance <- c()
+  model$family$dev.resids <- c()
+  model$family$aic <- c()
+  model$family$mu.eta <- c()
+  model$family$initialize <- c()
+  model$family$validmu <- c()
+  model$family$valideta <- c()
+  model$family$simulate <- c()
+  environment(model$terms) <- new.env(parent=parent.env(environment()))
+  list(predict=
+         restrictEnvironment(function(newd) {
+           predict(model,newdata=newd,type='response')[,1]
+          },
+          'model'))
+}
+
+
+
+model <- fitter(formula,d)
+print(head(model$predict(d)))
+
+for(n in c(1000,10000,100000)) {
+  print(sizeTest1(datn(n)))
+}
+```
+
