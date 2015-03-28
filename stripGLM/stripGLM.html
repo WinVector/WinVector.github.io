@@ -86,8 +86,8 @@ fitter &lt;- function(formula,d) {
 
 model &lt;- fitter(formula,d)
 print(head(model$predict(d)))</code></pre>
-<pre><code>##          1          2          3          4          5          6 
-## 0.42921136 0.07810523 0.82603542 0.86188617 0.09470163 0.09841972</code></pre>
+<pre><code>##         1         2         3         4         5         6 
+## 0.7647654 0.2430422 0.8328889 0.6044318 0.2571307 0.6681064</code></pre>
 <pre class="r"><code>sizeTest1 &lt;- function(d) {
   model &lt;- fitter(formula,d)
   length(serialize(model, NULL))
@@ -96,9 +96,9 @@ print(head(model$predict(d)))</code></pre>
 for(n in c(1000,10000,100000)) {
   print(sizeTest1(datn(n)))
 }</code></pre>
-<pre><code>## [1] 81038
-## [1] 189038
-## [1] 1269038</code></pre>
+<pre><code>## [1] 81006
+## [1] 189006
+## [1] 1269006</code></pre>
 <pre class="r"><code>#' build a new funcion with a smaller environment
 #' @param f input function
 #' @param varaibles names we are allowing to be captured in the closere
@@ -136,14 +136,63 @@ fitter &lt;- function(formula,d) {
 
 model &lt;- fitter(formula,d)
 print(head(model$predict(d)))</code></pre>
-<pre><code>##          1          2          3          4          5          6 
-## 0.42921136 0.07810523 0.82603542 0.86188617 0.09470163 0.09841972</code></pre>
+<pre><code>##         1         2         3         4         5         6 
+## 0.7647654 0.2430422 0.8328889 0.6044318 0.2571307 0.6681064</code></pre>
 <pre class="r"><code>for(n in c(1000,10000,100000)) {
   print(sizeTest1(datn(n)))
 }</code></pre>
-<pre><code>## [1] 44480
-## [1] 44480
-## [1] 44480</code></pre>
+<pre><code>## [1] 44448
+## [1] 44448
+## [1] 44448</code></pre>
+<pre class="r"><code># trying to observe address
+f &lt;- function() {
+  a &lt;- list(b = 1)
+  print(pryr::address(a))
+  a$b &lt;- 2
+  print(pryr::address(a))
+  a$b &lt;- 3
+  print(pryr::address(a))
+}
+f()</code></pre>
+<pre><code>## [1] &quot;0x7ff60f3ff638&quot;
+## [1] &quot;0x7ff6100f92a8&quot;
+## [1] &quot;0x7ff6100f9aa8&quot;</code></pre>
+<pre class="r"><code># timing
+f1c &lt;- function(n,verbose,shadow) {
+  v &lt;- 1:n
+  vLast &lt;- c()
+  if(shadow) {
+    vLast &lt;- v
+  }
+  if(verbose) {
+    print(pryr::address(v))
+  }
+  for(i in 1:n) {
+    v[i] &lt;- v[i]^2
+    if(shadow) {
+       vLast &lt;- v
+    }
+    if(verbose) {
+       print(pryr::address(v))
+    }
+  }
+  c()
+}
+
+f1c(5,TRUE,FALSE)</code></pre>
+<pre><code>## [1] &quot;0x7ff60e748958&quot;
+## [1] &quot;0x7ff60e376750&quot;
+## [1] &quot;0x7ff60e3767b8&quot;
+## [1] &quot;0x7ff60e376820&quot;
+## [1] &quot;0x7ff60e376888&quot;
+## [1] &quot;0x7ff60e35e408&quot;</code></pre>
+<pre><code>## NULL</code></pre>
+<pre class="r"><code>print(system.time(f1c(30000,FALSE,FALSE)))</code></pre>
+<pre><code>##    user  system elapsed 
+##   0.033   0.002   0.035</code></pre>
+<pre class="r"><code>print(system.time(f1c(30000,FALSE,TRUE)))</code></pre>
+<pre><code>##    user  system elapsed 
+##   2.157   1.027   3.187</code></pre>
 
 
 </div>

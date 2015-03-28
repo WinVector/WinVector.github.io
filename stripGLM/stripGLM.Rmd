@@ -78,3 +78,43 @@ for(n in c(1000,10000,100000)) {
 }
 ```
 
+```{r}
+# trying to observe address
+f <- function() {
+  a <- list(b = 1)
+  print(pryr::address(a))
+  a$b <- 2
+  print(pryr::address(a))
+  a$b <- 3
+  print(pryr::address(a))
+}
+f()
+
+# timing
+f1c <- function(n,verbose,shadow) {
+  v <- 1:n
+  vLast <- c()
+  if(shadow) {
+    vLast <- v
+  }
+  if(verbose) {
+    print(pryr::address(v))
+  }
+  for(i in 1:n) {
+    v[i] <- v[i]^2
+    if(shadow) {
+       vLast <- v
+    }
+    if(verbose) {
+       print(pryr::address(v))
+    }
+  }
+  c()
+}
+
+f1c(5,TRUE,FALSE)
+
+print(system.time(f1c(30000,FALSE,FALSE)))
+print(system.time(f1c(30000,FALSE,TRUE)))
+```
+
