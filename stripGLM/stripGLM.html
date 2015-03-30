@@ -86,8 +86,8 @@ fitter &lt;- function(formula,d) {
 
 model &lt;- fitter(formula,d)
 print(head(model$predict(d)))</code></pre>
-<pre><code>##         1         2         3         4         5         6 
-## 0.1020668 0.8537970 0.0995833 0.3949068 0.7550761 0.5172836</code></pre>
+<pre><code>##          1          2          3          4          5          6 
+## 0.07929895 0.21976475 0.34121709 0.46146785 0.52353363 0.89666527</code></pre>
 <pre class="r"><code>sizeTest1 &lt;- function(d) {
   model &lt;- fitter(formula,d)
   length(serialize(model, NULL))
@@ -96,9 +96,9 @@ print(head(model$predict(d)))</code></pre>
 for(n in c(1000,10000,100000)) {
   print(sizeTest1(datn(n)))
 }</code></pre>
-<pre><code>## [1] 81002
-## [1] 189002
-## [1] 1269002</code></pre>
+<pre><code>## [1] 80704
+## [1] 188704
+## [1] 1268704</code></pre>
 <pre class="r"><code>#' build a new funcion with a smaller environment
 #' @param f input function
 #' @param varaibles names we are allowing to be captured in the closere
@@ -124,7 +124,7 @@ fitter &lt;- function(formula,d) {
   model$family$validmu &lt;- c()
   model$family$valideta &lt;- c()
   model$family$simulate &lt;- c()
-  environment(model$terms) &lt;- new.env(parent=parent.env(globalenv()))
+  environment(model$terms) &lt;- new.env(parent=globalenv())
   list(predict=
          restrictEnvironment(function(newd) {
            predict(model,newdata=newd,type='response')[,1]
@@ -136,17 +136,14 @@ fitter &lt;- function(formula,d) {
 
 model &lt;- fitter(formula,d)
 print(head(model$predict(d)))</code></pre>
-<pre><code>##         1         2         3         4         5         6 
-## 0.1020668 0.8537970 0.0995833 0.3949068 0.7550761 0.5172836</code></pre>
+<pre><code>##          1          2          3          4          5          6 
+## 0.07929895 0.21976475 0.34121709 0.46146785 0.52353363 0.89666527</code></pre>
 <pre class="r"><code>for(n in c(1000,10000,100000)) {
   print(sizeTest1(datn(n)))
 }</code></pre>
-<pre><code>## Warning: 'package:biglm' may not be available when loading</code></pre>
-<pre><code>## [1] 44473</code></pre>
-<pre><code>## Warning: 'package:biglm' may not be available when loading</code></pre>
-<pre><code>## [1] 44473</code></pre>
-<pre><code>## Warning: 'package:biglm' may not be available when loading</code></pre>
-<pre><code>## [1] 44473</code></pre>
+<pre><code>## [1] 44146
+## [1] 44146
+## [1] 44146</code></pre>
 <pre class="r"><code># trying to observe address
 f &lt;- function() {
   a &lt;- list(b = 1)
@@ -157,9 +154,9 @@ f &lt;- function() {
   print(pryr::address(a))
 }
 f()</code></pre>
-<pre><code>## [1] &quot;0x7fd3b420c0f8&quot;
-## [1] &quot;0x7fd3b4a9fcc8&quot;
-## [1] &quot;0x7fd3b4aa04c8&quot;</code></pre>
+<pre><code>## [1] &quot;0x7f990cc16638&quot;
+## [1] &quot;0x7f990cb976a8&quot;
+## [1] &quot;0x7f990cb97ea8&quot;</code></pre>
 <pre class="r"><code># timing
 f1c &lt;- function(n,verbose,shadow) {
   v &lt;- 1:n
@@ -183,19 +180,19 @@ f1c &lt;- function(n,verbose,shadow) {
 }
 
 f1c(5,TRUE,FALSE)</code></pre>
-<pre><code>## [1] &quot;0x7fd3b4aafcc8&quot;
-## [1] &quot;0x7fd3b1d9c670&quot;
-## [1] &quot;0x7fd3b1d9c6d8&quot;
-## [1] &quot;0x7fd3b1d9c7a8&quot;
-## [1] &quot;0x7fd3b1d9c9b0&quot;
-## [1] &quot;0x7fd3b1d9cae8&quot;</code></pre>
+<pre><code>## [1] &quot;0x7f990cc49d58&quot;
+## [1] &quot;0x7f990aed26e8&quot;
+## [1] &quot;0x7f990aed2750&quot;
+## [1] &quot;0x7f990aed27b8&quot;
+## [1] &quot;0x7f990aed2820&quot;
+## [1] &quot;0x7f990aed28f0&quot;</code></pre>
 <pre><code>## NULL</code></pre>
 <pre class="r"><code>print(system.time(f1c(30000,FALSE,FALSE)))</code></pre>
 <pre><code>##    user  system elapsed 
-##   0.033   0.001   0.035</code></pre>
+##   0.064   0.003   0.082</code></pre>
 <pre class="r"><code>print(system.time(f1c(30000,FALSE,TRUE)))</code></pre>
 <pre><code>##    user  system elapsed 
-##   2.154   1.025   3.182</code></pre>
+##   2.238   1.076   3.347</code></pre>
 
 
 </div>
