@@ -60,7 +60,7 @@ fitter <- function(formula,d) {
   model$family$validmu <- c()
   model$family$valideta <- c()
   model$family$simulate <- c()
-  environment(model$terms) <- new.env(parent=parent.env(environment()))
+  environment(model$terms) <- new.env(parent=parent.env(globalenv()))
   list(predict=
          restrictEnvironment(function(newd) {
            predict(model,newdata=newd,type='response')[,1]
