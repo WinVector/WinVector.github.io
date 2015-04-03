@@ -1,0 +1,354 @@
+---
+title: "modelSize.Rmd"
+author: "John Mount"
+date: "March 29, 2015"
+output: html_document
+---
+
+
+
+
+```{r}
+library('biglm')
+library('gbm')
+library('randomForest')
+library('ggplot2')
+library('rpart')
+library('caret')
+
+
+### printing/examination helpers
+
+#' @return a size estimate of an object
+fullSize <- function(obj) {
+  length(serialize(obj, NULL))
+}
+
+# calc size, doing this in a function so we see sizes of items in 
+# environment (which is hidden for base and library environments)
+calcSize <- function(vars,d,fitter) {
+  model <- fitter(vars,d)
+  fullSize(model)
+}
+
+# inspect lexical envornment stack
+envStack <- function(env) {
+  ret <- list()
+  nm <- pryr::address(env)
+  if(nm!=pryr::address(globalenv()))  {
+    sub <- envStack(parent.env(env))
+    ret[[nm]] <- ls(envir=env)
+    ret <- c(ret,sub)
+  } else {
+    nm <- paste(nm,"G")
+    ret[[nm]] <- ls(envir=env)
+  }
+  ret
+}
+
+# try to print sizes of components
+breakItDown = function(mod) {
+  attr <- names(attributes(mode))
+  if(is.function(mod)) {
+     return(list(env=breakItDown(environment(mod)),
+                 formals=breakItDown(formals(mod)),
+                 body=breakItDown(body(mod)),
+                 attr=attr))
+  } 
+  return(list(items=lapply(mod, FUN=function(x){length(serialize(x, NULL))}),
+              attr=attr))
+}
+```
+
+```{r}
+## model wrappers and adapters
+
+
+
+# model a glm model
+# return a function that takes new data and returns a vector of probability predictions
+# The wrapping is to work around irregularities in the generic S3 predict funciton
+# (needed to set type='response' in some case and so on) and to regularize return value
+# to a vector of probability predicitons (some models return per-class matrices).
+# The wrapping should not be done in-place as the current environment and it lexical
+# parents get saved as the closure (causing reference leaks see: 
+# http://www.win-vector.com/blog/2015/03/using-closures-as-objects-in-r/ ) so we
+# do the wrapping ( where the function keyword is used ) here in function defined
+# at either the global or library scope (which is considered a clean lexical environment).
+wrapGLM <- function(model) {
+    force(model) # instantiate model so it is no longer a promise that would be extra environment alive
+    function(newd) {predict(model,newdata=newd,type='response')}
+}
+
+
+wrapGLMbroken <- function(model) {
+    function(newd) {predict(model,newdata=newd,type='response')}
+}
+
+# strip large structures out of a glm model while leaving enough to call predict()
+# cm: a glm object
+# stompEnvironments: boolean if true replace environments of some items (needed to make things small)
+# from http://www.win-vector.com/blog/2014/05/trimming-the-fat-from-glm-models-in-r/
+stripGlmLR <- function(cm,stompEnvironments=TRUE) {
+  cm$y = c()
+  cm$model = c() 
+  cm$residuals = c()
+  cm$fitted.values = c()
+  cm$effects = c()
+  cm$qr$qr = c()  
+  cm$linear.predictors = c()
+  cm$weights = c()
+  cm$prior.weights = c()
+  cm$data = c()  
+  cm$family$variance = c()
+  cm$family$dev.resids = c()
+  cm$family$aic = c()
+  cm$family$validmu = c()
+  cm$family$simulate = c()
+  if(stompEnvironments) {
+     attr(cm$terms,".Environment") = new.env(parent=globalenv())
+     attr(cm$formula,".Environment") = new.env(parent=globalenv())
+  }
+  cm
+}
+
+# All fitter examples:
+#  take vars and data return a predict function that scores new data frames
+#  exampel: predictor <- glmExample(vars,datn(vars,100))
+#           predictor(datn(vars,10))
+#           trains on 100 rows and then applied ot 10 new rows
+glmExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- glm(as.formula(formula),d,family=binomial(link='logit'))
+  wrapGLM(model)
+}
+
+
+glmWExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- glm(as.formula(formula),d,family=binomial(link='logit'))
+  model <- stripGlmLR(model,TRUE)
+  wrapGLMbroken(model)
+}
+
+glmWMExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- glm(as.formula(formula),d,family=binomial(link='logit'))
+  model <- stripGlmLR(model,TRUE)
+  wrapGLM(model)
+}
+
+
+
+
+
+# remove big structures froma biglm model, leaving enough to call predict()
+# model a biglm model
+stripBIGLM <- function(model) {
+  model$family$variance <- c()
+  model$family$dev.resids <- c()
+  model$family$aic <- c()
+  model$family$mu.eta <- c()
+  model$family$initialize <- c()
+  model$family$validmu <- c()
+  model$family$valideta <- c()
+  model$family$simulate <- c()
+  environment(model$terms) <- new.env(parent=globalenv()) 
+  model
+}
+
+wrapBIGGLM <- function(model) {
+  force(model)
+  function(newd) {predict(model,newdata=newd,type='response')[,1]}
+}
+
+
+bigglmExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- bigglm(as.formula(formula),d,family=binomial(link='logit'))
+  model <- stripBIGLM(model)
+  wrapBIGGLM(model)
+}
+
+
+
+
+
+wrapGBM <- function(model,ntrees) {
+  force(model)
+  force(ntrees)
+  function(newd) {predict(model,newdata=newd,type='response',n.trees=ntrees)}
+}
+
+gbmExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- gbm(as.formula(formula),
+     data=d,
+     distribution='bernoulli',
+     n.trees=10,
+     interaction.depth=1,
+     shrinkage=0.05,
+     bag.fraction=0.5,
+     keep.data=FALSE,
+     cv.folds=5,
+     verbose=FALSE)
+  ntrees <- gbm.perf(model,plot.it=FALSE,method='cv')
+  model$fit <- c()
+  model$cv.fitted <- c()
+  attr(model$Terms,".Environment") = new.env(parent=globalenv())
+  wrapGBM(model,ntrees)
+}
+
+
+
+
+
+wrapStripRF <- function(model) {
+  force(model)
+  model$oob.times <- c()
+  model$predicted <- c()
+  model$votes <- c()
+  model$y <- c()
+  function(newd) {predict(model,newdata=newd,type='prob')[,'TRUE']}
+}
+
+rfExample <- function(vars,d) {
+  model <- randomForest(x=d[,vars,drop=FALSE],
+                        y=as.factor(d[,'y',drop=TRUE]),
+                        ntree=10,
+                        maxnodes=10)
+  wrapStripRF(model)
+}
+
+
+
+
+
+
+wrapStripRpart <- function(model) {
+  force(model)
+  model$where <- c()
+  attr(model$terms,".Environment") = new.env(parent=globalenv())
+  function(newd) {predict(model,newdata=newd,type='prob')[,'TRUE']}
+}
+
+rpartExample <- function(vars,d) {
+  formula <- paste('y',paste(vars,collapse=' + '),sep=' ~ ')
+  model <- rpart(as.formula(formula),d,method='class',
+                 x=FALSE,y=FALSE,
+                 control=rpart.control(maxdepth=3))
+  wrapStripRpart(model)
+}
+```
+
+
+```{r}
+### examples
+
+
+
+# data examples
+vars <- c('x1','x2','x3')
+
+# build an example classification data frame y~TRUE/FALSE approximate function
+# of numeric vars.  n-rows long.
+datn <- function(vars,n) {
+   d <- as.data.frame(matrix(data=0,nrow=n,ncol=length(vars)))
+   names(d) <- vars
+   for(vi in vars) {
+     d[,vi] <- runif(n)
+   }
+   d$y <- d$x1+d$x2+d$x3>=3*runif(nrow(d))
+   d
+}
+```
+
+
+
+
+```{r}
+# wrapping appears to cause reference leaks
+# this is because there are always reference leaks, but
+# leaks in the base environment are hidden because the
+# base environment are not serialized (so down count towards size)
+
+# First example: fit a glm and strip out obvious large data fields by hand
+# after the stirp the model appears small, however it does still have
+# references to the original data set (keeping that data set alive)
+# in some function closures.  we don't see that because we ran the
+# in the base environment, so those references are not serialzed and
+# don't appear in our size estimate.
+d <- datn(vars,10000)
+# fit directly
+model <- glm(as.factor(y)~x1+x2+x3,d,family=binomial(link='logit'))
+# big
+print(fullSize(model))
+# appears small, is hiding data refs in environment
+print(fullSize(stripGlmLR(model,FALSE)))
+# is small
+print(fullSize(stripGlmLR(model,TRUE)))
+rm(list='model')
+```
+
+
+```{r}
+# Second example: use a fitting wrapper such as caret to perform the fit
+# Now the same leaked references are detectable because they are to an
+# environment that is not the base environment- so this will now 
+# serialize and both be visible in our counts and cause problems when
+# saving models.
+# 
+# fails: cmodel <- train(y~x1+x2+x3,data=d,family=binomial,method='glm')
+cmodel <- train(as.factor(y)~x1+x2+x3,data=d,family=binomial,method='glm')
+model <- cmodel$finalModel
+# big
+print(fullSize(model))
+# (because fit was run in caret wrapper, not caret's fault fault of running not in the base environment)
+print(fullSize(stripGlmLR(model,FALSE)))
+# is small
+print(fullSize(stripGlmLR(model,TRUE)))
+rm(list=c('cmodel','model'))
+```
+
+```{r}
+# Third example: almost all R model leak references because almost all R model
+# return functions in their model object.  Most of these functions capture the 
+# training environment and therefore capture at least a reference to the training
+# data.
+fitters <- list(
+   glm=glmExample,
+   wrappedGLMbroken=glmWExample,
+   wrappedGLMthunked=glmWMExample,
+   wrappedBigglm=bigglmExample,
+   wrappedRandomForest=rfExample,
+   wrappedRpart=rpartExample,
+   wrappedGBM=gbmExample
+   )
+
+
+# show all fitters work
+dExample <- datn(vars,100)
+for(fN in names(fitters)) {
+  fitter <- fitters[[fN]]
+  model <- fitter(vars,dExample)
+  print(fN)
+  print(head(model(dExample)))
+}
+
+# build size graphs
+gFrame <- c()
+for(sz in c(100,1000,10000,100000)) {
+  dExample <- datn(vars,sz)
+  for(fN in names(fitters)) {
+    fitter <- fitters[[fN]]
+    ms <- calcSize(vars,dExample,fitter)
+    gFrame <- rbind(gFrame,data.frame(dataSize=sz,model=fN,modelSize=ms))
+  }
+}
+   
+ggplot(data=gFrame,aes(x=dataSize,y=modelSize,color=model)) + 
+  geom_point() + geom_line() + 
+  coord_fixed() +
+  scale_x_log10() + scale_y_log10() + facet_wrap(~model)
+```
+
