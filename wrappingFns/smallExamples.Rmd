@@ -1,0 +1,76 @@
+---
+title: "small examples"
+author: "John Mount"
+date: "April 3, 2015"
+output: html_document
+---
+
+
+```{r}
+library('randomForest')
+library('ggplot2')
+
+
+rfFitter <- function(vars,yTarget,data) {
+  model <- randomForest(x=data[,vars,drop=FALSE],
+    y=as.factor(as.character(data[,yTarget,drop=TRUE])),
+    ntree=100,
+    maxnodes=10)
+  function(newd) {
+    predict(model,newdata=newd,type='prob')[,'TRUE']
+  }
+}
+
+
+logisticFitter <- function(vars,yTarget,data) {
+  formula <- paste(yTarget,
+      paste(vars,collapse=' + '),sep=' ~ ')
+  model <- glm(as.formula(formula),data,
+               family=binomial(link='logit'))
+  function(newd) {
+    predict(model,newdata=newd,type='response')
+  }
+}
+
+
+fitters <- list(
+  RandomForest=rfFitter,
+  Logistic=logisticFitter
+  )
+
+# data examples
+vars <- c('x1','x2','x3')
+
+# build an example classification data frame y~TRUE/FALSE approximate function
+# of numeric vars.  n-rows long.
+datn <- function(vars,n) {
+   d <- as.data.frame(matrix(data=0,nrow=n,ncol=length(vars)))
+   names(d) <- vars
+   for(vi in vars) {
+     d[,vi] <- runif(n)
+   }
+   d$y <- d$x1+d$x2+d$x3>=1.5+rnorm(nrow(d))
+   d
+}
+
+dTrain <- datn(vars,1000)
+dTest <- datn(vars,100)
+
+rfFitter(vars,'y',dTrain)(dTest)
+logisticFitter(vars,'y',dTrain)(dTest)
+
+runExperiment <- function(fitterName) {
+  print(fitterName)
+  fitter <- fitters[[fitterName]]
+  predictor <- fitter(vars,'y',dTrain)
+  predictions <- predictor(dTest)
+  data.frame(fitter=fitterName,truth=dTest[['y']],prediction=predictions)
+}
+
+results <- do.call('rbind',lapply(names(fitters),runExperiment))
+ggplot(data=results) +
+  geom_density(aes(x=prediction,color=truth)) +
+  facet_wrap(~fitter,ncol=1)
+
+
+```
