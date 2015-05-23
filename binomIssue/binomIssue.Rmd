@@ -5,7 +5,7 @@ date: "May 23, 2015"
 output: html_document
 ---
 
-I am going to recount "my favorite R bug."  It isn't a bug in [R](http://cran.r-project.org).  It is a bug in some code I wrote in R.  I call it my favorite bug, as it is easy to commit and (thanks to R's overly helpful nature) takes longer than it should to find.
+In [this note](http://winvector.github.io/binomIssue/binomIssue.html) am going to recount "my favorite R bug."  It isn't a bug in [R](http://cran.r-project.org).  It is a bug in some code I wrote in R.  I call it my favorite bug, as it is easy to commit and (thanks to R's overly helpful nature) takes longer than it should to find.
 
 
 The original problem I was working on was generating
@@ -92,7 +92,9 @@ tf[c(0,0,0),]
 
 Ah, yet another gift from R's  [irregular bracket operator](http://www.win-vector.com/blog/2015/01/r-bracket-is-a-bit-irregular/).  I admit, I messed up and gave a vector of integers where I meant to give a vector of logicals.  However, R didn't help me by signaling the problem, even though many of my indices were invalid.  Instead of throwing an exception, or warning, or returning NA, it just does nothing (which delayed our finding our own mistake).
 
-The fix is to calculate sel as one of
+The fix is to calculate sel as one of:
+
+Binomial done right.
 
 ```{r}
 sel <- rbinom(nrow(tf),1,0.5)>0
@@ -101,12 +103,16 @@ summary(sel)
 summary(test)
 ```
 
+Cutting a uniform sample.
+
 ```{r}
 sel <- runif(nrow(tf))>=0.5
 test <- !sel
 summary(sel)
 summary(test)
 ```
+
+Or, set of integers.
 
 ```{r}
 sel <- sample.int(nrow(tf),floor(nrow(tf)/2))
@@ -128,9 +134,9 @@ Oh it is just summary() displaying our numbers to only four significant figures 
 
 Don't get me wrong: I love R and it is my first choice for analysis.  But I wish it had simpler to explain semantics (not so many weird cases on the bracket operator), signaled errors much closer to where you make them (cutting down how far you have to look and how many obvious assumptions you have to test when debugging), and was a bit more faithful in how it displayed data (I don't like it claiming a vector integers has a maximum value of 40050, when 40053 is in fact in the list).
 
-Often the feedback is "just be more careful and don't write bugs."  I am careful, I write few bugs- but I find them quickly because I check a lot of my intermediate results.
+One could say “just be more careful and don’t write bugs.” I am careful, I write few bugs- but I find them quickly because I check a lot of my intermediate results.  I write about them as I research new ways to prevent and detect them.
 
-
+For discussion visit [the main article](http://www.win-vector.com/blog/2015/05/my-favorite-r-bug/) on the [Win-Vector blog](http://www.win-vector.com/blog/).
 
 
 
