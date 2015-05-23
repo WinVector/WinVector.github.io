@@ -1,0 +1,137 @@
+---
+title: "binomIssue"
+author: "John Mount"
+date: "May 23, 2015"
+output: html_document
+---
+
+I am going to recount "my favorite R bug."  It isn't a bug in [R](http://cran.r-project.org).  It is a bug in some code I wrote in R.  I call it my favorite bug, as it is easy to commit and (thanks to R's overly helpful nature) takes longer than it should to find.
+
+
+The original problem I was working on was generating
+a training set as a subset of a simple data frame.
+
+```{r}
+# read our data
+tf <- read.table('tf.csv.gz',header=TRUE,sep=',')
+print(summary(tf))
+
+# Set our random seed to our last state for 
+# reproducibility.  I initially did not set the
+# seed, I was just using R version 3.2.0 (2015-04-16) -- "Full of Ingredients"
+# on OSX 10.10.3
+# But once I started seeing the effect, I saved the state for
+# reproducibility.
+.Random.seed = readRDS('Random.seed')
+
+# For my application tf was a data frame with a modeling
+# variable x (floating point) and an outcome y (logical).
+# I wanted a training sample that was non-degenerate
+# (has variation in both x and y) and I thought I would
+# find such a sample by using rbinom(nrow(tf),1,0.5)
+# to pick random training sets and then inspect I had 
+# a nice training set (and had left at least one row out
+# for test)
+goodTrainingSample <- function(selection) {
+  (sum(selection)>0) && (sum(selection)<nrow(tf)) &&
+    (max(tf$x[selection])>min(tf$x[selection])) &&
+    (max(tf$y[selection])>min(tf$y[selection]))
+}
+
+# run my selection
+sel <- rbinom(nrow(tf),1,0.5)
+summary(sel)
+sum(sel)
+```
+
+Now I used rbinom(nrow(tf),1,0.5) (which gives a sample that should be about
+half the data) instead of sample.int(nrow(tf),floor(nrow(tf)/2)) because I had
+been intending to build a model on the training data and then score that on the
+hold-out data.  So I thought referring to the test set as !sel 
+instead of setdiff(seq_len(nrow(tf)),sel)
+would be convenient.  
+
+```{r}
+# and it turns out to not be a good training set
+print(goodTrainingSample(sel))
+
+# one thing that failed is y is a constant on this subset
+print(max(tf$y[sel])>min(tf$y[sel]))
+
+print(summary(tf[sel,]))
+# Whoops! everything is constant on the subset!
+
+# okay no, problem that is why we figured we might have to
+# generate and test multiple times.
+```
+
+But wait, lets bound the odds of failing.  Even missing the "y varies" condition is so
+unlikely we should not expect see that happen.  Y is true 2943 times.  So the odds of missing
+all the true values when we are picking each row with 50/50 probability is exactly
+2^(-2943).  Or about one chance in 10^885 of happening.
+
+We have a bug.  Here is some excellent advice on debugging:
+
+> “Finding your bug is a process of confirming the many things that you believe are true — until you find one which is not true.” —Norm Matloff 
+
+We saved the state of the pseudo random number generator, as it would be treacherous to try
+and debug someting it is involved with without first having saved its state.  But that doesn't
+mean we are accusing the pseudo random number generator (though one does wonder, it is common for
+some poor pseudo random generators to alternate the lower bit in some situations).
+Lets instead work through our example carefully.  Other people have used R and our code is new, so we really want to look at our own assumptions and actions.  Our big assumption was that we called rbinom() correctly and got a usable selection.  We even called summary(sel) to check that sel was near 50/50.  But wait- that summary doesn't look quite right.  You can sum() logicals, but they have a slightly different summary.
+
+```{r}
+str(sel)
+```
+
+Aha! sel is an array if integers, not a logical.  That makes sense it represents how many successes you get in 1 trial for each row.  So using it to sample doesn't give us a sample of 19974 rows, but instead 19974 copies of the first row.  But what about the zeros?
+
+```{r}
+tf[c(0,0,0),]
+```
+
+Ah, yet another gift from R's  [irregular bracket operator](http://www.win-vector.com/blog/2015/01/r-bracket-is-a-bit-irregular/).  I admit, I messed up and gave a vector of integers where I meant to give a vector of logicals.  However, R didn't help me by signaling the problem, even though many of my indices were invalid.  Instead of throwing an exception, or warning, or returning NA, it just does nothing (which delayed our finding our own mistake).
+
+The fix is to calculate sel as one of
+
+```{r}
+sel <- rbinom(nrow(tf),1,0.5)>0
+test <- !sel
+summary(sel)
+summary(test)
+```
+
+```{r}
+sel <- runif(nrow(tf))>=0.5
+test <- !sel
+summary(sel)
+summary(test)
+```
+
+```{r}
+sel <- sample.int(nrow(tf),floor(nrow(tf)/2))
+test <- setdiff(seq_len(nrow(tf)),sel)
+summary(sel)
+summary(test)
+```
+
+Wait, does that last example say that sel and test have the same max (40050) and therefore share an element?  They were supposed to be disjoint.
+
+```{r}
+max(sel)
+max(test)
+str(sel)
+str(test)
+```
+
+Oh it is just summary() displaying our numbers to only four significant figures even though they are in fact integers and without warning us by turning on scientific notation.
+
+Don't get me wrong: I love R and it is my first choice for analysis.  But I wish it had simpler to explain semantics (not so many weird cases on the bracket operator), signaled errors much closer to where you make them (cutting down how far you have to look and how many obvious assumptions you have to test when debugging), and was a bit more faithful in how it displayed data (I don't like it claiming a vector integers has a maximum value of 40050, when 40053 is in fact in the list).
+
+Often the feedback is "just be more careful and don't write bugs."  I am careful, I write few bugs- but I find them quickly because I check a lot of my intermediate results.
+
+
+
+
+
+
