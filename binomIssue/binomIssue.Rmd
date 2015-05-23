@@ -136,6 +136,8 @@ Don't get me wrong: I love R and it is my first choice for analysis.  But I wish
 
 One could say “just be more careful and don’t write bugs.” I am careful, I write few bugs- but I find them quickly because I check a lot of my intermediate results.  I write about them as I research new ways to prevent and detect them.
 
+You are going to have to write and debug code to work as a data scientist, just understand time spent debugging is not time spent in analysis. So you want to make bugs hard to write, and easy to find and fix.
+
 For discussion visit [the main article](http://www.win-vector.com/blog/2015/05/my-favorite-r-bug/) on the [Win-Vector blog](http://www.win-vector.com/blog/).
 
 
