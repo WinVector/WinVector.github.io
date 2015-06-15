@@ -1,0 +1,120 @@
+---
+title: "casino"
+author: "John Mount"
+date: "June 14, 2015"
+output: html_document
+---
+
+
+```{r}
+options(gsubfn.engine = "R")
+library('sqldf')
+library('ggplot2')
+
+# simulate playing a casino up to 10 times or stopping at first win-streak of length 3 (8=2^3)
+pWin=1/8
+vWin = 3500000
+vLoss =-400000
+
+d <- c()
+pStage <- 1
+cumulative <- 0
+i <- 1
+while(i<=10) {
+  pWi <- pStage*pWin
+  di <- data.frame(key=paste('s',i,'win'),
+                   prob=pWi,
+                   value=vWin+cumulative)
+  d <- rbind(d,di)
+  cumulative <- cumulative + vLoss
+  pStage <- (1-pWin)*pStage
+  i <- i+1
+}
+di <- data.frame(key=paste('s',i-1,'loss'),
+                 prob=pStage,
+                 value=cumulative)
+d <- rbind(d,di)
+d$expectedImpact <- d$prob*d$value
+
+dens <- density(d$value,weights=d$prob,adjust=0.2)
+
+# plot(dens)
+# fails
+
+ggplot(aes(x=value,y=density),data=data.frame(value=dens$x,density=dens$y)) + geom_line()
+
+print(d)
+print(sum(d$prob))
+print(sum(d$prob[d$value>=0]))
+print(sum(d$prob*d$value))
+dPlus <- d[d$value>=0,]
+print(sum(dPlus$prob*dPlus$value)/sum(dPlus$prob))
+xm <- sum(d$value*d$prob)/sum(d$prob)
+var <- sum(d$prob*(d$value-xm)^2)/sum(d$prob)
+sd <- sqrt(var)
+SharpeRatio <- xm/sd
+print(SharpeRatio)
+
+
+#' @param d1 data frame with columns value, prob (prob non-negative, sums to 1 or less), and optional nwin
+#' @param d2 data frame with columns value, prob (prob non-negative, sums to 1 or less), and optional nwin
+#' @return data frame with columns value and prob (prob non-negative, sums to 1) representing the probility any of sum of d1.value+d2.value would be seen when one event is draw from the first frame (with probability d1.prob) and another event is draw from the second frame (with probability d2.prob).  This is commonly called a convolution of discrete probability distributions.
+convoluteDist <- function(d1,d2) {
+  if(!('nwin' %in% colnames(d1))) {
+    d1$nwin <- ifelse(d1$value>0,1,0)
+  }
+  if(!('nwin' %in% colnames(d2))) {
+    d2$nwin <- ifelse(d2$value>0,1,0)
+  }
+  sqldf('SELECT
+           d1.nwin + d2.nwin as nwin,
+           d1.value + d2.value as value,
+           SUM(d1.prob * d2.prob) as prob
+        FROM
+           d1
+        JOIN
+           d2
+        WHERE
+           d1.prob>0 AND d2.prob>0
+        GROUP BY
+           d1.nwin + d2.nwin,
+           d1.value + d2.value
+        ORDER BY
+           d1.value + d2.value,
+           d1.nwin + d2.nwin')
+}
+
+#' @param d data frame with columns value and prob (prob non-negative, sums to 1)
+#' @param k integer >0
+#' @return d convoluted with itself k times.  repersents the distibutions of outcomes of sums of k-events
+convK <- function(d,k) {
+  d2 <- d
+  for(i in seq_len(k-1)) {
+    d2 <- convoluteDist(d,d2)
+  }
+  d2
+}
+
+
+# simulate playing at 4 casinos
+dK <- convK(d,4)
+
+
+# report
+dens <- density(dK$value,weights=dK$prob,adjust=0.2)
+ggplot(aes(x=value,y=density),data=data.frame(value=dens$x,density=dens$y)) + geom_line()
+
+print(sum(dK$prob))
+print(sum(dK$prob[dK$value>=0]))
+print(sum(dK$prob*dK$value))
+xm <- sum(dK$value*dK$prob)/sum(dK$prob)
+var <- sum(dK$prob*(dK$value-xm)^2)/sum(dK$prob)
+sd <- sqrt(var)
+SharpeRatio <- xm/sd
+print(SharpeRatio)
+
+# see what we know condition on winning exactly 3 times out of 4 casinos
+d3 <- dK[dK$nwin==3,]
+print(sum(d3$prob))
+print(sum(d3$prob*d3$value)/sum(d3$prob))
+```
