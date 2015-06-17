@@ -1,0 +1,143 @@
+---
+title: "SolveB"
+author: "John Mount"
+date: "June 10, 2015"
+output: html_document
+---
+
+
+```{r}
+
+library('ggplot2')
+library('reshape2')
+
+source('fns.R')
+
+
+mkScoreWorker <- function(stratTable,scorePlan,pA) {
+  # copy into captured environment
+  force(stratTable)
+  force(scorePlan)
+  force(pA)
+  function(pB) {
+    scorePlan(stratTable,pA,pB)
+  }
+}
+
+cl <- parallel::makeCluster(4)
+
+doit <- function(workList,worker) {
+  if(is.null(cl)) {
+    lapply(workList,worker)
+  } else {
+    parallel::parLapply(cl,workList,worker)
+  }
+}
+
+
+pA <- 0.01
+
+demos = list('100 trials, 1$ payoff (bounded prior)'=buildBayesPlan(100,pA,
+                             alpha0=pA/2,beta0=(1-pA/2),pBbound=2*pA),
+             '10000 trials, 1$ payoff (bounded prior)'=buildBayesPlan(10000,pA,
+                             alpha0=pA/2,beta0=(1-pA/2),pBbound=2*pA),
+             '10000 trials, 1$ payoff (uninformative prior)'=buildBayesPlan(10000,pA),
+             '10000 trials, 1$ payoff (optimistic prior)'=buildBayesPlan(10000,pA,
+                             alpha0=10,beta0=100))
+for(dname in names(demos)) {
+  print("********************")
+  print(dname)
+  stratTable <- demos[[dname]]
+  maxSteps <- length(stratTable)
+  soln <- data.frame(nBTrials=0:(maxSteps-1),decisionCount=stratTable)
+  
+  print(head(soln))
+  
+  soln$cutRate <- soln$decisionCount/pmax(1,soln$nBTrials)
+  
+  #print(soln)
+  print(ggplot(soln,aes(x=nBTrials,y=cutRate)) + 
+    geom_ribbon(aes(ymin=cutRate),ymax=pA,alpha=0.5,fill='green') +
+    geom_ribbon(aes(ymax=cutRate,ymin=0),alpha=0.5,fill='red') +
+    geom_line() + geom_point() +
+    ggtitle(paste(dname,"\nsensing plan (in rates)")))
+
+  print(ggplot(soln,aes(x=nBTrials,y=decisionCount)) +
+          geom_ribbon(aes(ymin=decisionCount),ymax=maxSteps,alpha=0.5,fill='green') +
+          geom_ribbon(aes(ymax=decisionCount,ymin=0),alpha=0.5,fill='red') +
+          geom_line() + geom_point() + 
+          ggtitle(paste(dname,"\nesensing plan (in counts)")))
+  
+  if(maxSteps>1000) {
+    print(ggplot(soln,aes(x=nBTrials,y=cutRate)) + 
+            geom_ribbon(aes(ymin=cutRate),ymax=pA,alpha=0.5,fill='green') +
+            geom_ribbon(aes(ymax=cutRate,ymin=0),alpha=0.5,fill='red') +
+            geom_line() + geom_point() + coord_cartesian(xlim = c(0,1000)) +
+            ggtitle(paste(dname,"\n\nearly sensing plan (in rates)")))
+    
+    print(ggplot(soln,aes(x=nBTrials,y=decisionCount)) +
+            geom_ribbon(aes(ymin=decisionCount),ymax=maxSteps,alpha=0.5,fill='green') +
+            geom_ribbon(aes(ymax=decisionCount,ymin=0),alpha=0.5,fill='red') +
+            geom_line() + geom_point() + 
+            coord_cartesian(xlim = c(0,1000), ylim = c(0,10)) +
+            ggtitle(paste(dname,"\nearly sensing plan (in counts)")))
+  }
+  comparisonFrame <- data.frame(pB=seq(from=0,to=2*pA,length.out=25))
+  comparisonFrame$theoreticalValue <- pmax(comparisonFrame$pB,pA)*maxSteps
+  res <- doit(comparisonFrame$pB,mkScoreWorker(stratTable,scorePlan,pA))
+  comparisonFrame$stratValue <- as.numeric(res)
+  comparisonFrame$efficiency <- comparisonFrame$stratValue/comparisonFrame$theoreticalValue
+  print(ggplot(comparisonFrame,aes(x=pB,y=efficiency)) + 
+    geom_hline(y=1.0,color='blue',linetype=2) +
+    geom_line() + 
+    ggtitle(paste(dname,"\nefficiency versus (unobtainable) ideal")))
+  
+  comparisonFrame$improvement <- comparisonFrame$stratValue/(pA*maxSteps)
+  print(ggplot(comparisonFrame,aes(x=pB,y=improvement)) + 
+    geom_hline(y=1.0,color='blue',linetype=2) +
+    geom_line() + 
+    ggtitle(paste(dname,"\nvalue relative to pA")))
+  print("********************")
+}
+
+
+
+mkPlanner <- function(buildBayesPlanG,pA) {
+ force(buildBayesPlanG)
+  force(pA)
+  function(alpha0) {
+    strat <- buildBayesPlanG(10000,pA,buildGraph=FALSE,alpha0=alpha0,beta0=100)$stratTable
+  }
+}
+
+alpha0seq <- seq(0,2.0,0.25)
+strats <- doit(alpha0seq,mkPlanner(buildBayesPlanG,pA))
+maxSteps <- length(strats[[1]])
+pBseq <- seq(from=0,to=2*pA,length.out=25)
+theoreticalValue <- pmax(pBseq,pA)*maxSteps
+comparisonFrame <- c()
+for(i in seq_len(length(alpha0seq))) {
+  alpha0 <- alpha0seq[[i]]
+  dname <- paste('10000 trials, 1$ payoff,\n(',alpha0,',100) prior',sep='')
+  stratTable <- strats[[i]]
+  res <- doit(pBseq,mkScoreWorker(stratTable,scorePlan,pA))
+  stratValue <- as.numeric(res)
+  comparisonFrameI <- data.frame(pB=pBseq,
+                                 efficiency=stratValue/theoreticalValue,
+                                 prior=dname,
+                                 stringsAsFactors=FALSE)
+  comparisonFrame <- rbind(comparisonFrame,comparisonFrameI)
+}
+
+print(ggplot(comparisonFrame,aes(x=pB,y=efficiency)) + 
+    geom_hline(y=1.0,color='blue',linetype=2) +
+    geom_line() + facet_wrap(~prior) +
+    coord_cartesian(ylim = c(0.95,1.0)) +
+    ggtitle("efficiency versus (unobtainable) ideal"))
+
+
+if(!is.null(cl)) {
+  parallel::stopCluster(cl)
+  cl <- NULL
+}
+```

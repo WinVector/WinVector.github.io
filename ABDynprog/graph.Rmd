@@ -1,0 +1,56 @@
+---
+title: "graph"
+author: "John Mount"
+date: "June 15, 2015"
+output: html_document
+---
+
+```{r}
+# From: http://www.bioconductor.org/packages/release/bioc/html/Rgraphviz.html
+# source("http://bioconductor.org/biocLite.R")
+# biocLite("Rgraphviz")
+
+library("Rgraphviz")
+source('fns.R')
+
+plan <- buildBayesPlanG(4,0.5,buildGraph=TRUE,alpha0=1.0e-6,beta0=1.0e-6)
+```
+
+```{r}
+graph <- mkPlanGraph(plan,minBStep=4)
+renderGraph(graph)
+```
+
+```{r}
+graph <- mkPlanGraph(plan,minBStep=3)
+renderGraph(graph)
+```
+
+```{r}
+graph <- mkPlanGraph(plan,minBStep=2)
+renderGraph(graph)
+```
+
+```{r}
+graph <- mkPlanGraph(plan,minBStep=1)
+renderGraph(graph)
+```
+
+```{r}
+graph <- mkPlanGraph(plan)
+renderGraph(graph)
+```
+
+```{r}
+planB <- buildBayesPlanG(4,0.5,buildGraph=TRUE,alpha0=0.5,beta0=1.5)
+graph <- mkPlanGraph(planB)
+renderGraph(graph)
+```
+
+```{r}
+planB <- buildBayesPlanG(20,0.5,buildGraph=TRUE,alpha0=0.5,beta0=1.5)
+graph <- mkPlanGraph(planB,smallLabel=TRUE)
+renderGraph(graph)
+```
+
+
