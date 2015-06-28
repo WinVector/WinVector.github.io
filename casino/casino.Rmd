@@ -11,7 +11,8 @@ options(gsubfn.engine = "R")
 library('sqldf')
 library('ggplot2')
 
-# simulate playing a casino up to 10 times or stopping at first win-streak of length 3 (8=2^3)
+# simulate playing a casino up to nStep times or stopping at first win-streak of length 3 (8=2^3)
+nStep=10
 pWin=1/8
 vWin = 3500000
 vLoss =-400000
@@ -20,7 +21,7 @@ d <- c()
 pStage <- 1
 cumulative <- 0
 i <- 1
-while(i<=10) {
+while(i<=nStep) {
   pWi <- pStage*pWin
   di <- data.frame(key=paste('s',i,'win'),
                    prob=pWi,
@@ -46,7 +47,11 @@ ggplot(aes(x=value,y=density),data=data.frame(value=dens$x,density=dens$y)) + ge
 print(d)
 print(sum(d$prob))
 print(sum(d$prob[d$value>=0]))
-print(sum(d$prob*d$value))
+expectedProfit <- sum(d$prob*d$value)
+print(expectedProfit)
+stake <- abs(min(d$value))
+print(stake)
+print(expectedProfit/stake)
 dPlus <- d[d$value>=0,]
 print(sum(dPlus$prob*dPlus$value)/sum(dPlus$prob))
 xm <- sum(d$value*d$prob)/sum(d$prob)
@@ -104,10 +109,14 @@ dK <- convK(d,4)
 dens <- density(dK$value,weights=dK$prob,adjust=0.2)
 ggplot(aes(x=value,y=density),data=data.frame(value=dens$x,density=dens$y)) + geom_line()
 
+interestRate <- 1.05^(10/365)-1
+print(interestRate)
+costOfMoney <- interestRate*stake
+print(costOfMoney)
 print(sum(dK$prob))
 print(sum(dK$prob[dK$value>=0]))
 print(sum(dK$prob*dK$value))
-xm <- sum(dK$value*dK$prob)/sum(dK$prob)
+xm <- (sum(dK$value*dK$prob)-costOfMoney)/sum(dK$prob)
 var <- sum(dK$prob*(dK$value-xm)^2)/sum(dK$prob)
 sd <- sqrt(var)
 SharpeRatio <- xm/sd
