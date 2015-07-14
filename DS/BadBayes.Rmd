@@ -1,0 +1,182 @@
+---
+title: "BadBayes"
+author: "John Mount"
+date: "July 13, 2015"
+output: html_document
+---
+
+See http://www.win-vector.com/blog/2014/02/bad-bayes-an-example-of-why-you-need-hold-out-testing/
+
+```{r}
+library('WVPlots')
+
+# make an example data set with no meaningfull signal
+mkData <- function(rows,features,ndup) {
+  yValues <- factor(c('A','B'))
+  xValues <- factor(c('a','b'))
+  yData = sample(yValues,replace=TRUE,size=rows)
+  d <- data.frame(y=yData,stringsAsFactors=FALSE)
+  mkRandVar <- function(v) {
+    sample(xValues,replace=TRUE,size=rows)
+  }
+  varNames <- paste('v',seq_len(features),sep='_')
+  # don't use replicate as it turns factors back to strings 
+  varValues <- data.frame(lapply(varNames,mkRandVar),
+                          stringsAsFactors = FALSE)
+  colnames(varValues) <- varNames
+  d <- cbind(d,varValues)
+  if(ndup>0) {
+    d <- d[rep(seq_len(rows),ndup+1),,drop=FALSE]
+  }
+  list(d=d,varNames=varNames,xValues=xValues,yValues=yValues)
+}
+
+runExample <- function(rows,features,trainer,predictor,ndup=0,title) {
+  print('********************')
+  print(title)
+  print(sys.call(0)) # print call and arguments
+  defs <- mkData(rows,features,ndup)
+  dTrain <- defs$d
+  xValues <- defs$xValues
+  yValues <- defs$yValues
+  varNames <- defs$varNames
+  dTest <- mkData(rows,features,ndup)$d
+  model <- trainer(yName='y',varNames=varNames,yValues=yValues,
+                   data=dTrain)
+  dTrain$predScore <- predictor(model,newdata=dTrain,yValues=yValues)
+  dTrain$pred <- ifelse(dTrain$predScore>=0.5,yValues[[2]],yValues[[1]])
+  tabTrain <- table(truth=dTrain$y,
+                    predict=dTrain$pred)
+  print('train set results')
+  print(tabTrain)
+  if(length(unique(dTrain$pred))>1) {
+     print(fisher.test(tabTrain))
+     print(ROCPlot(dTrain,'predScore','y',title=paste('Train',title,'ROC plot')))
+  }
+  dTest$predScore <- predictor(model,newdata=dTest,yValues=yValues)
+  dTest$pred <- ifelse(dTest$predScore>=0.5,yValues[[2]],yValues[[1]])
+  tabTest <- table(truth=dTest$y,
+                   predict=dTest$pred)
+  print('hold-out test set results')
+  print(tabTest)
+  if(length(unique(dTest$pred))>1) {
+     print(fisher.test(tabTest))
+     print(ROCPlot(dTest,'predScore','y',title=paste('Test',title,'ROC plot')))
+  }
+  print('********************')
+  list(tabTrain=tabTrain,tabTest=tabTest)
+}
+```
+
+```{r}
+library(e1071)
+set.seed(123525)   # make result more repeatable
+res <- runExample(rows=800,features=400,title='Naive Bayes',
+                  trainer=function(yName,varNames,yValues,data) {
+                    formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
+                                                sep=' ~ '))
+                    naiveBayes(formula,data) 
+                  },
+                  predictor=function(model,newdata,yValues) { 
+                    predict(model,newdata,type='raw')[,yValues[[2]],drop=TRUE]
+                  }
+)
+```
+
+```{r}
+library(rpart)
+res <- runExample(rows=800,features=400,title='Decision Tree',
+   trainer=function(yName,varNames,yValues,data) {
+     formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
+        sep=' ~ '))
+     rpart(formula,data) 
+   },
+   predictor=function(model,newdata,yValues) { 
+      predict(model,newdata,type='prob')[,yValues[[2]],drop=TRUE]
+   }
+)
+```
+
+```{r}
+# glm example
+set.seed(123525)   # make result more repeatable
+res <- runExample(rows=800,features=400,title='GLM',
+   trainer=function(yName,varNames,yValues,data) {
+      formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
+         sep=' ~ '))
+      glm(formula,data,family=binomial(link='logit')) 
+   },
+   predictor=function(model,newdata,yValues) { 
+      predict(model,newdata=newdata,type='response')
+   }
+)
+```
+
+```{r}
+library(randomForest)
+res <- runExample(rows=800,features=400,title='Random Forest ROC plot',
+   trainer=function(yName,varNames,yValues,data) {
+      formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
+         sep=' ~ '))
+      randomForest(formula,data) 
+   },
+   predictor=function(model,newdata,yValues) { 
+      predict(model,newdata,type='prob')[,yValues[[2]],drop=TRUE]
+   }
+)
+```
+
+```{r}
+library('kernlab')
+set.seed(123525)   # make result more repeatable
+res <- runExample(rows=800,features=400,title='SVM',
+   trainer=function(yName,varNames,yValues,data) {
+      formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
+         sep=' ~ '))
+      ksvm(formula,data=data,kernel ="rbfdot", prob.model=TRUE) 
+   },
+   predictor=function(model,newdata,yValues) { 
+      predict(model,newdata,type='prob')[,yValues[[2]],drop=TRUE]
+   }
+)
+```
+
+```{r}
+library('glmnet')
+set.seed(123525)   # make result more repeatable
+res <- runExample(rows=800,features=400,ndup=5,title='Elastic Net',
+   trainer=function(yName,varNames,yValues,data) {
+      formula <- as.formula(paste('',paste(c(varNames),collapse=' + '),
+         sep=' ~ '))
+      z <- model.matrix(formula,data)
+      z <- z[,setdiff(colnames(z),'(Intercept)'),drop=FALSE]
+      cv <- cv.glmnet(x=z,y=data$y,alpha=0.5,family='binomial')
+      model <- list(model=cv,formula=formula)
+      model
+   },
+   predictor=function(model,newdata,yValues) { 
+      z <- model.matrix(model$formula,newdata)
+      z <- z[,setdiff(colnames(z),'(Intercept)'),drop=FALSE]
+      predict(model$model,newx=z,type='response')
+   }
+)
+```
+
+```{r}
+# doesn't fit on train (good behavior)
+library(gbm)
+set.seed(123525)   # make result more repeatable
+res <- runExample(rows=800,features=400,ndup=5,title='Gradient Boost',
+                  trainer=function(yName,varNames,yValues,data) {
+                    yTerm <- paste('ifelse(',yName,'=="',yValues[[1]],'",1,0)',sep='')
+                    formula <- as.formula(paste(yTerm,paste(varNames,collapse=' + '),
+                                                sep=' ~ '))
+                    gbm(formula,data=data,distribution='bernoulli',n.trees=100,
+                        interaction.depth=3) 
+                  },
+                  predictor=function(model,newdata,yValues) { 
+                    predict(model,newdata,n.trees=100,type='response')
+                  }
+)
+```
+
