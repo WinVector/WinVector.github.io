@@ -44,7 +44,10 @@ runExample <- function(rows,features,trainer,predictor,ndup=0,title) {
   model <- trainer(yName='y',varNames=varNames,yValues=yValues,
                    data=dTrain)
   dTrain$predScore <- predictor(model,newdata=dTrain,yValues=yValues)
-  dTrain$pred <- ifelse(dTrain$predScore>=0.5,yValues[[2]],yValues[[1]])
+  scoreThreshold <- median(dTrain$predScore)
+  dTrain$pred <- ifelse(dTrain$predScore>=scoreThreshold,
+                        as.character(yValues[[2]]),
+                        as.character(yValues[[1]]))
   tabTrain <- table(truth=dTrain$y,
                     predict=dTrain$pred)
   print('train set results')
@@ -54,7 +57,9 @@ runExample <- function(rows,features,trainer,predictor,ndup=0,title) {
      print(ROCPlot(dTrain,'predScore','y',title=paste('Train',title,'ROC plot')))
   }
   dTest$predScore <- predictor(model,newdata=dTest,yValues=yValues)
-  dTest$pred <- ifelse(dTest$predScore>=0.5,yValues[[2]],yValues[[1]])
+  dTest$pred <- ifelse(dTest$predScore>=scoreThreshold,
+                       as.character(yValues[[2]]),
+                       as.character(yValues[[1]]))
   tabTest <- table(truth=dTest$y,
                    predict=dTest$pred)
   print('hold-out test set results')
@@ -166,9 +171,9 @@ res <- runExample(rows=800,features=400,ndup=5,title='Elastic Net',
 # doesn't fit on train (good behavior)
 library(gbm)
 set.seed(123525)   # make result more repeatable
-res <- runExample(rows=800,features=400,ndup=5,title='Gradient Boost',
+res <- runExample(rows=800,features=400,title='Gradient Boost',
                   trainer=function(yName,varNames,yValues,data) {
-                    yTerm <- paste('ifelse(',yName,'=="',yValues[[1]],'",1,0)',sep='')
+                    yTerm <- paste('ifelse(',yName,'=="',yValues[[2]],'",1,0)',sep='')
                     formula <- as.formula(paste(yTerm,paste(varNames,collapse=' + '),
                                                 sep=' ~ '))
                     gbm(formula,data=data,distribution='bernoulli',n.trees=100,
