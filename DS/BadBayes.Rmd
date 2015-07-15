@@ -168,19 +168,25 @@ res <- runExample(rows=800,features=400,ndup=5,title='Elastic Net',
 ```
 
 ```{r}
-# doesn't fit on train (good behavior)
 library(gbm)
 set.seed(123525)   # make result more repeatable
 res <- runExample(rows=800,features=400,title='Gradient Boost',
                   trainer=function(yName,varNames,yValues,data) {
-                    yTerm <- paste('ifelse(',yName,'=="',yValues[[2]],'",1,0)',sep='')
-                    formula <- as.formula(paste(yTerm,paste(varNames,collapse=' + '),
+                    data[[yName]] <- ifelse(data[[yName]]==yValues[[2]],1,0)
+                    formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
                                                 sep=' ~ '))
-                    gbm(formula,data=data,distribution='bernoulli',n.trees=100,
-                        interaction.depth=3) 
+                    # GBM has problems with complicated formulas or extra columns in frame
+                    # http://stackoverflow.com/questions/25514484/error-in-r-gbm-function-when-cv-folds-0
+                    model <- gbm(formula,data=data[,c(yName,varNames),drop=FALSE],
+                        distribution='bernoulli',
+                        n.trees=100,cv.folds=3,
+                        interaction.depth=3)
+                    ntrees <- gbm.perf(model,plot.it=FALSE)
+                    #print(paste('ntrees',ntrees))
+                    list(model=model,ntrees=ntrees)
                   },
                   predictor=function(model,newdata,yValues) { 
-                    predict(model,newdata,n.trees=100,type='response')
+                    predict(model$model,newdata,n.trees=model$ntrees,type='response')
                   }
 )
 ```
