@@ -114,7 +114,7 @@ res <- runExample(rows=800,features=400,title='GLM',
 
 ```{r}
 library(randomForest)
-res <- runExample(rows=800,features=400,title='Random Forest ROC plot',
+res <- runExample(rows=800,features=400,title='Random Forest',
    trainer=function(yName,varNames,yValues,data) {
       formula <- as.formula(paste(yName,paste(varNames,collapse=' + '),
          sep=' ~ '))
