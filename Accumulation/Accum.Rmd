@@ -1,0 +1,192 @@
+---
+title: "Accum.Rmd"
+author: "John Mount"
+date: "July 24, 2015"
+output: html_document
+---
+
+
+Function to populate a row of data.
+
+```{r}
+mkRow <- function(nCol) {
+  x <- as.list(rnorm(nCol))
+  x[[1]] <- ifelse(x[[1]]>0,'pos','neg')
+  names(x) <- paste('x',seq_len(nCol),sep='.')
+  x
+}
+```
+
+The common wrong-way to accumulate the rows of data into a single data frame.
+
+```{r}
+mkFrameForLoop <- function(nRow,nCol) {
+  d <- c()
+  for(i in seq_len(nRow)) {
+    ri <- mkRow(nCol)
+    di <- data.frame(ri,
+                     stringsAsFactors=FALSE)
+    d <- rbind(d,di)
+  }
+  d
+}
+```
+
+Timing showing the quadratic runtime.
+
+```{r}
+library('microbenchmark')
+library('ggplot2')
+set.seed(23525) # make run more repeatable
+
+nCol <- 50
+timeSeq <- seq.int(100,2000,100)
+timings <- list()
+for(nRow in timeSeq) {
+  ti <- microbenchmark(
+    mkFrameForLoop(nRow,nCol),
+    times=10)
+  ti <- data.frame(ti,
+                   stringsAsFactors=FALSE)
+  ti$nRow <- nRow
+  ti$nCol <- nCol
+  timings[[length(timings)+1]] <- ti
+}
+timings <- do.call(rbind,timings)
+
+ggplot(data=timings,aes(x=nRow,y=time)) +
+  geom_point() + geom_smooth()
+
+timings1 <- timings
+```
+
+A few roughly equivilent right ways to accumlate the rows.
+
+```{r}
+# Simplest fix, collect the data in a list and
+# grow the list.  Exploits the fact that R can mutate
+# common objects when object visibility is limited.
+mkFrameForList <- function(nRow,nCol) {
+  d <- as.list(seq_len(nRow))
+  for(i in seq_len(nRow)) {
+    ri <- mkRow(nCol)
+    di <- data.frame(ri,
+                     stringsAsFactors=FALSE)
+    d[[i]] <- di
+  }
+  do.call(rbind,d)
+}
+
+# Cleanest fix- wrap procedure in a function and
+# use lapply.
+mkFrameList <- function(nRow,nCol) {
+  d <- lapply(seq_len(nRow),function(i) {
+    ri <- mkRow(nCol)
+    data.frame(ri,
+                     stringsAsFactors=FALSE)
+  })
+  do.call(rbind,d)
+}
+
+# Mucking with environments fix.  Environments
+# are mutable and tend to be faster than lists.
+# However any "improvement" is surely drown out
+# by the costs of conversion to list and rbind,
+# so the notational compromise is not worth it.
+mkFrameEnv <- function(nRow,nCol) {
+  e <- new.env(hash=TRUE,parent=emptyenv())
+  for(i in seq_len(nRow)) {
+    ri <- mkRow(nCol)
+    di <- data.frame(ri,
+                     stringsAsFactors=FALSE)
+    assign(as.character(i),di,envir=e)
+  }
+  do.call(rbind,as.list(e))
+}
+
+# Another possibility, working in place.
+# In a mutable language this pre-allocation
+# would work.  In R 3.2.0 the fact that data frames
+# are collections of columns (not rows) means the
+# "limitted visibility" allows true in-place 
+# alteration of objects hack is not available and
+# this code is slow.
+mkFrameInPlace <- function(nRow,nCol) {
+  r1 <- mkRow(nCol)
+  d <- data.frame(lapply(r1,
+                         function(col) {
+                           replicate(nRow,col)
+                           }),
+                  stringsAsFactors=FALSE)
+  if(nRow>1) {
+    for(i in seq.int(2,nRow,1)) {
+      ri <- mkRow(nCol)
+      di <- data.frame(ri,
+                     stringsAsFactors=FALSE)
+      d[i,] <- di
+    }
+  }
+  d
+}
+
+nCol <- 10
+
+timings <- list()
+for(nRow in timeSeq) {
+  ti <- microbenchmark(
+    mkFrameForList(nRow,nCol),
+    mkFrameList(nRow,nCol),
+    times=10)
+  ti <- data.frame(ti,
+                   stringsAsFactors=FALSE)
+  ti$nRow <- nRow
+  ti$nCol <- nCol
+  timings[[length(timings)+1]] <- ti
+}
+timings <- do.call(rbind,timings)
+
+ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+  geom_point() + geom_smooth() 
+
+timings <- rbind(timings,timings1)
+
+ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+  geom_point() + geom_smooth() 
+```
+
+Show the in-place alteration of objects in a simpler setting.
+
+```{r}
+computeSquares <- function(n,messUpVisibility) {
+  # pre-allocate v
+  # (doesn't actually help!)
+  v <- 1:n
+  if(messUpVisibility) {
+     vLast <- v
+  }
+  # print details of v
+  .Internal(inspect(v))
+  for(i in 1:n) {
+    v[[i]] <- i^2
+    if(messUpVisibility) {
+      vLast <- v
+    }
+    # print details of v
+    .Internal(inspect(v))
+  }
+  v
+}
+```
+
+Show how if the value associated with v is visible only to the variable name "v" that R will start performing in-place replacement (making calculation much cheaper).
+
+```{r}
+computeSquares(5,FALSE)
+```
+
+Show how if the value associated with v is visible to more than one variable that R will not performing in-place replacement (making calcultion much more expensive).
+
+```{r}
+computeSquares(5,TRUE)
+```
+
