@@ -66,13 +66,16 @@ A few roughly equivilent right ways to accumlate the rows.
 # Simplest fix, collect the data in a list and
 # grow the list.  Exploits the fact that R can mutate
 # common objects when object visibility is limited.
-mkFrameForList <- function(nRow,nCol) {
+mkFrameForList <- function(nRow,nCol,verbose=FALSE) {
   d <- as.list(seq_len(nRow))
   for(i in seq_len(nRow)) {
     ri <- mkRow(nCol)
     di <- data.frame(ri,
                      stringsAsFactors=FALSE)
     d[[i]] <- di
+    if(verbose) {
+      print(pryr::address(d))
+    }
   }
   do.call(rbind,d)
 }
@@ -128,7 +131,17 @@ mkFrameInPlace <- function(nRow,nCol) {
   }
   d
 }
+```
 
+Confirm value getting altered in place (effiency depends on interior columns also not chaning address, which is also the case).
+
+```{r}
+mkFrameForList(10,5,TRUE)
+```
+
+Get more timings and plots.
+
+```{r}
 nCol <- 10
 
 timings <- list()
@@ -157,7 +170,9 @@ ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
 Show the in-place alteration of objects in a simpler setting.
 
 ```{r}
-computeSquares <- function(n,messUpVisibility) {
+computeSquares <- function(n,
+                           messUpVisibility,
+                           usePRYR=FALSE) {
   # pre-allocate v
   # (doesn't actually help!)
   v <- 1:n
@@ -166,6 +181,9 @@ computeSquares <- function(n,messUpVisibility) {
   }
   # print details of v
   .Internal(inspect(v))
+  if(usePRYR) {
+    print(pryr::address(v))
+  }
   for(i in 1:n) {
     v[[i]] <- i^2
     if(messUpVisibility) {
@@ -173,6 +191,9 @@ computeSquares <- function(n,messUpVisibility) {
     }
     # print details of v
     .Internal(inspect(v))
+    if(usePRYR) {
+      print(pryr::address(v))
+    }
   }
   v
 }
@@ -188,5 +209,11 @@ Show how if the value associated with v is visible to more than one variable tha
 
 ```{r}
 computeSquares(5,TRUE)
+```
+
+Check if we can use PRYR for addresses in this case.
+
+```{r}
+computeSquares(5,FALSE,usePRYR=TRUE)
 ```
 
