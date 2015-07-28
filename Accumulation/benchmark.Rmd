@@ -1,0 +1,178 @@
+---
+title: "benchmark"
+author: "John Mount"
+date: "March 13, 2015"
+output: html_document
+---
+
+
+```{r}
+library('microbenchmark')
+library('pryr')
+library('plyr')
+library('ggplot2')
+
+
+# standard naive "non-R" way to square items in a vector
+f1 <- function() {
+  v <- 1:n
+  for(i in 1:n) {
+    v[i] <- v[i]^2
+  }
+  v
+}
+```
+
+Show address of value referred by by v is stable (indicating in-place alteration of vector, likely due to limited visibility of the value referred to).
+
+```{r}
+# same naive loop with pryr:address() inspection
+# doesn't trigger visibile value address changes, but very slow
+f1p <- function(verbose=FALSE) {
+  v <- 1:n
+  addr <- pryr::address(v)
+  if(verbose) {
+    print(addr)
+  }
+  for(i in 1:n) {
+    v[i] <- v[i]^2
+    addr <- pryr::address(v)
+    if(verbose) {
+      print(addr)
+    }
+  }
+  v
+}
+
+# same naive loop with .Internal(inspect(v))
+f1b <- function(verbose=FALSE) {
+  v <- 1:n
+  if(verbose) {
+    .Internal(inspect(v))
+  }
+  for(i in 1:n) {
+    v[i] <- v[i]^2
+    if(verbose) {
+       .Internal(inspect(v))
+    }
+  }
+  v
+}
+
+# even worse case: vLast shares reference to value referred to by v,
+# causing address to change (evidence of more object copying)
+f1c <- function(verbose=FALSE) {
+  v <- 1:n
+  vLast <- v
+  if(verbose) {
+    .Internal(inspect(v))
+  }
+  for(i in 1:n) {
+    v[i] <- v[i]^2
+    vLast <- v
+    if(verbose) {
+      .Internal(inspect(v))
+    }
+  }
+  v
+}
+
+
+
+# address not changing
+n <- 5
+f1b(TRUE)
+
+# address not changing
+n <- 5
+f1p(TRUE)
+
+# address changing
+f1c(TRUE)
+
+# pryr::address(v) seems uniquely slower than the other f1X() functions
+microbenchmark(f1(),f1b(),f1p(),f1c())
+```
+
+
+Obviously using built-ins is way faster than any interpretted loop or apply.
+
+```{r}
+# vector apply way of squaring items
+f2 <- function(v) {
+   v <- 1:n
+   v <- vapply(v,function(x) {x*x},numeric(1))
+   v
+}
+
+# true vector method of squaring items
+f3 <- function() {
+  v <- 1:n
+  v <- v^2
+  v
+}
+
+n <- 1000
+microbenchmark(f1(),f2(),f3())
+```
+
+```{r}
+powseq <- function(min,max,nstep) {
+  mul <- (max/min)^(1/nstep)
+  sort(unique(c(min,round(min*mul^(1:nstep)),max)))
+}
+
+m <- c()
+for(n in powseq(10,10000,40)) {
+   mi <- as.data.frame(microbenchmark(f1(),f2(),f3()))
+   mi$n <- n
+   m <- rbind(m,mi)
+   # si <- ddply(mi,'expr',summarize,time=mean(time))
+}
+
+qSummary = function(ycol){
+  data.frame(y=median(ycol),
+             ymin=quantile(ycol, 0.25),
+             ymax=quantile(ycol, 0.75))
+}
+ggplot(data=m,aes(x=n,y=time,color=expr)) + 
+  stat_summary(fun.y=mean,geom='point') +
+  stat_summary(fun.data=qSummary,geom='errorbar') +
+  geom_smooth()
+
+# confirm f3() moving
+ggplot(data=m,aes(x=n,y=time,color=expr)) + 
+  stat_summary(fun.y=mean,geom='point') +
+  stat_summary(fun.data=qSummary,geom='errorbar') + 
+  geom_smooth() +
+  scale_y_log10() + scale_x_log10()
+
+for(expr in sort(unique(m$expr))) {
+  print(expr)
+  print(summary(lm(time~I(n*n)+n,data=m[m$expr==expr,])))
+}
+
+
+m <- c()
+for(n in powseq(10,1000,40)) {
+   mi <- as.data.frame(microbenchmark(f1(),f1p(),f2(),f3(),f1c()))
+   mi$n <- n
+   m <- rbind(m,mi)
+   # si <- ddply(mi,'expr',summarize,time=mean(time))
+}
+
+qSummary = function(ycol){
+  data.frame(y=median(ycol),
+             ymin=quantile(ycol, 0.25),
+             ymax=quantile(ycol, 0.75))
+}
+ggplot(data=m,aes(x=n,y=time,color=expr)) + 
+  stat_summary(fun.y=mean,geom='point') +
+  stat_summary(fun.data=qSummary,geom='errorbar') +
+  geom_smooth()
+
+for(expr in sort(unique(m$expr))) {
+  print(expr)
+  print(summary(lm(time~I(n*n)+n,data=m[m$expr==expr,])))
+}
+```
