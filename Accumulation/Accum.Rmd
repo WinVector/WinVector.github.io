@@ -5,6 +5,16 @@ date: "July 24, 2015"
 output: html_document
 ---
 
+Set up some shared stuff
+
+```{r}
+library('microbenchmark')
+library('ggplot2')
+set.seed(23525) # make run more repeatable
+
+nCol <- 10
+timeSeq <- seq.int(100,2000,100)
+```
 
 Function to populate a row of data.
 
@@ -35,12 +45,6 @@ mkFrameForLoop <- function(nRow,nCol) {
 Timing showing the quadratic runtime.
 
 ```{r}
-library('microbenchmark')
-library('ggplot2')
-set.seed(23525) # make run more repeatable
-
-nCol <- 10
-timeSeq <- seq.int(100,2000,100)
 timings <- list()
 for(nRow in timeSeq) {
   ti <- microbenchmark(
@@ -248,6 +252,40 @@ timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
+```
+
+Fast method from https://twitter.com/drob/status/626146450842497028
+
+```{r}
+library('dplyr')
+
+mkFrameBind <- function(nRow,nCol) {
+ bind_rows(replicate(nRow, 
+                     data.frame(mkRow(nCol),stringsAsFactors=FALSE), 
+                     simplify=FALSE))
+}
+```
+
+```{r}
+timings <- list()
+for(nRow in timeSeq) {
+  ti <- microbenchmark(
+    mkFrameBind(nRow,nCol),
+    mkFrameForList(nRow,nCol),
+    mkFrameList(nRow,nCol),
+    mkFrameInPlace(nRow,nCol),
+    times=10)
+  ti <- data.frame(ti,
+                   stringsAsFactors=FALSE)
+  ti$nRow <- nRow
+  ti$nCol <- nCol
+  timings[[length(timings)+1]] <- ti
+}
+timings <- do.call(rbind,timings)
+
+ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+  geom_point() + geom_smooth() 
+
 ```
 
 
