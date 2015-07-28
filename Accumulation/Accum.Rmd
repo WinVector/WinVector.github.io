@@ -55,8 +55,7 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time)) +
-  geom_point() + geom_smooth() +
-  theme(legend.position="bottom")
+  geom_point() + geom_smooth() 
 
 timings1 <- timings
 ```
@@ -68,7 +67,7 @@ A few roughly equivilent right ways to accumlate the rows.
 # grow the list.  Exploits the fact that R can mutate
 # common objects when object visibility is limited.
 mkFrameForList <- function(nRow,nCol,verbose=FALSE) {
-  d <- as.list(seq_len(nRow))
+  d <- as.list(seq_len(nRow)) # pre-alloc destination
   for(i in seq_len(nRow)) {
     ri <- mkRow(nCol)
     di <- data.frame(ri,
@@ -117,12 +116,10 @@ mkFrameEnv <- function(nRow,nCol) {
 # this code is slow.
 mkFrameInPlace <- function(nRow,nCol) {
   r1 <- mkRow(nCol)
-  d <- data.frame(lapply(r1,
-                         function(col) {
-                           replicate(nRow,col)
-                           }),
-                  stringsAsFactors=FALSE)
+  d <- data.frame(r1,
+                    stringsAsFactors=FALSE)
   if(nRow>1) {
+    d <- d[rep.int(1,nRow),]
     for(i in seq.int(2,nRow,1)) {
       ri <- mkRow(nCol)
       di <- data.frame(ri,
@@ -158,14 +155,12 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() +
-  theme(legend.position="bottom")
+  geom_point() + geom_smooth() 
 
 timings <- rbind(timings,timings1)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() +
-  theme(legend.position="bottom")
+  geom_point() + geom_smooth() 
 ```
 
 Show the in-place alteration of objects in a simpler setting.
@@ -218,7 +213,7 @@ Check if we can use PRYR for addresses in this case.
 computeSquares(5,FALSE,usePRYR=TRUE)
 ```
 
-Show slowdown of incremental method versus others as a function of number of row.  Someting seems to chage at around 1250 rows.
+Show slowdown of incremental method versus others as a function of number of row.
 
 ```{r}
 timings$isIncremental <- timings$expr=='mkFrameForLoop(nRow, nCol)'
@@ -231,4 +226,28 @@ dInc$slowDown <-  dInc$time/dRest$time
 ggplot(data=dInc,aes(x=nRow,y=slowDown)) +
   geom_point() + geom_smooth()
 ```
+
+Still more timings.
+
+```{r}
+timings <- list()
+for(nRow in timeSeq) {
+  ti <- microbenchmark(
+    mkFrameForLoop(nRow,nCol),
+    mkFrameForList(nRow,nCol),
+    mkFrameList(nRow,nCol),
+    mkFrameInPlace(nRow,nCol),
+    times=10)
+  ti <- data.frame(ti,
+                   stringsAsFactors=FALSE)
+  ti$nRow <- nRow
+  ti$nCol <- nCol
+  timings[[length(timings)+1]] <- ti
+}
+timings <- do.call(rbind,timings)
+
+ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+  geom_point() + geom_smooth() 
+```
+
 
