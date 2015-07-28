@@ -39,7 +39,7 @@ library('microbenchmark')
 library('ggplot2')
 set.seed(23525) # make run more repeatable
 
-nCol <- 50
+nCol <- 10
 timeSeq <- seq.int(100,2000,100)
 timings <- list()
 for(nRow in timeSeq) {
@@ -142,8 +142,6 @@ mkFrameForList(10,5,TRUE)
 Get more timings and plots.
 
 ```{r}
-nCol <- 10
-
 timings <- list()
 for(nRow in timeSeq) {
   ti <- microbenchmark(
