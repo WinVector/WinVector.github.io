@@ -55,7 +55,8 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time)) +
-  geom_point() + geom_smooth()
+  geom_point() + geom_smooth() +
+  theme(legend.position="bottom")
 
 timings1 <- timings
 ```
@@ -157,12 +158,14 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+  geom_point() + geom_smooth() +
+  theme(legend.position="bottom")
 
 timings <- rbind(timings,timings1)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+  geom_point() + geom_smooth() +
+  theme(legend.position="bottom")
 ```
 
 Show the in-place alteration of objects in a simpler setting.
@@ -213,5 +216,19 @@ Check if we can use PRYR for addresses in this case.
 
 ```{r}
 computeSquares(5,FALSE,usePRYR=TRUE)
+```
+
+Show slowdown of incremental method versus others as a function of number of row.  Someting seems to chage at around 1250 rows.
+
+```{r}
+timings$isIncremental <- timings$expr=='mkFrameForLoop(nRow, nCol)'
+agg <- aggregate(time~isIncremental+nRow,data=timings,FUN=median)
+dInc <- agg[agg$isIncremental,]
+dInc <- dInc[order(dInc$nRow),]
+dRest <- agg[!agg$isIncremental,]
+dRest <- dRest[order(dRest$nRow),]
+dInc$slowDown <-  dInc$time/dRest$time
+ggplot(data=dInc,aes(x=nRow,y=slowDown)) +
+  geom_point() + geom_smooth()
 ```
 
