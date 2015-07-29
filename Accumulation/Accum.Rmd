@@ -60,8 +60,6 @@ timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time)) +
   geom_point() + geom_smooth() 
-
-timings1 <- timings
 ```
 
 A few roughly equivilent right ways to accumlate the rows.
@@ -112,24 +110,27 @@ mkFrameEnv <- function(nRow,nCol) {
 }
 
 # Another possibility, working in place.
-# In a mutable language this pre-allocation
-# would work.  In R 3.2.0 the fact that data frames
-# are collections of columns (not rows) means the
-# "limitted visibility" allows true in-place 
-# alteration of objects hack is not available and
-# this code is slow.
-mkFrameInPlace <- function(nRow,nCol) {
+mkFrameInPlace <- function(nRow,nCol,classHack=TRUE) {
   r1 <- mkRow(nCol)
   d <- data.frame(r1,
                     stringsAsFactors=FALSE)
   if(nRow>1) {
     d <- d[rep.int(1,nRow),]
+    if(classHack) {
+      # lose data.frame class for a while
+      # changes what S3 methods implement
+      # assignment.
+      d <- as.list(d) 
+    }
     for(i in seq.int(2,nRow,1)) {
       ri <- mkRow(nCol)
       for(j in seq_len(nCol)) {
         d[[j]][i] <- ri[[j]]
       }
     }
+  }
+  if(classHack) {
+     d <- data.frame(d,stringsAsFactors=FALSE)
   }
   d
 }
@@ -144,6 +145,7 @@ mkFrameForList(10,5,TRUE)
 Get more timings and plots.
 
 ```{r}
+timingsPrev <- timings
 timings <- list()
 for(nRow in timeSeq) {
   ti <- microbenchmark(
@@ -161,7 +163,7 @@ timings <- do.call(rbind,timings)
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
 
-timings <- rbind(timings,timings1)
+timings <- rbind(timings,timingsPrev)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
@@ -220,6 +222,7 @@ computeSquares(5,FALSE,usePRYR=TRUE)
 Show slowdown of incremental method versus others as a function of number of row.
 
 ```{r}
+timingsPrev <- timings
 timings$isIncremental <- timings$expr=='mkFrameForLoop(nRow, nCol)'
 agg <- aggregate(time~isIncremental+nRow,data=timings,FUN=median)
 dInc <- agg[agg$isIncremental,]
@@ -237,9 +240,6 @@ Still more timings.
 timings <- list()
 for(nRow in timeSeq) {
   ti <- microbenchmark(
-    mkFrameForLoop(nRow,nCol),
-    mkFrameForList(nRow,nCol),
-    mkFrameList(nRow,nCol),
     mkFrameInPlace(nRow,nCol),
     times=10)
   ti <- data.frame(ti,
@@ -249,6 +249,7 @@ for(nRow in timeSeq) {
   timings[[length(timings)+1]] <- ti
 }
 timings <- do.call(rbind,timings)
+timings <- rbind(timings,timingsPrev)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
@@ -328,14 +329,12 @@ mkFrameVector <- function(nRow,nCol) {
 ```
 
 ```{r}
+timingsPrev <- timings
 timings <- list()
 for(nRow in timeSeq) {
   ti <- microbenchmark(
     mkFrameBind(nRow,nCol),
     mkFrameLDPLY(nRow,nCol),
-    mkFrameForList(nRow,nCol),
-    mkFrameList(nRow,nCol),
-    mkFrameInPlace(nRow,nCol),
     mkFrameMat(nRow,nCol),
     mkFrameVector(nRow,nCol),
     times=10)
@@ -346,6 +345,8 @@ for(nRow in timeSeq) {
   timings[[length(timings)+1]] <- ti
 }
 timings <- do.call(rbind,timings)
+timings <- rbind(timings,timingsPrev)
+
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
