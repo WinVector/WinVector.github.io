@@ -126,9 +126,9 @@ mkFrameInPlace <- function(nRow,nCol) {
     d <- d[rep.int(1,nRow),]
     for(i in seq.int(2,nRow,1)) {
       ri <- mkRow(nCol)
-      di <- data.frame(ri,
-                     stringsAsFactors=FALSE)
-      d[i,] <- di
+      for(j in seq_len(nCol)) {
+        d[[j]][i] <- ri[[j]]
+      }
     }
   }
   d
@@ -272,6 +272,59 @@ mkFrameLDPLY <- function(nRow,nCol) {
  ldply(seq_len(nRow),function(i) data.frame(mkRow(nCol),
                                             stringsAsFactors=FALSE))
 }
+
+# try to avoid all storage re-alloc, name checking, and type checking
+mkFrameMat <- function(nRow,nCol) {
+  r1 <- mkRow(nCol)
+  isNum <- vapply(r1,is.numeric,logical(1))
+  numIndices <- seq_len(nCol)[isNum]
+  strIndices <- seq_len(nCol)[!isNum]
+  dN <- matrix(data="",
+     nrow=nRow,ncol=length(numIndices))
+  dC <- matrix(data="",
+     nrow=nRow,ncol=length(strIndices))
+  dN[1,] <- as.numeric(r1[numIndices])
+  dC[1,] <- as.character(r1[strIndices])
+  if(nRow>1) {
+    for(i in seq.int(2,nRow,1)) {
+      ri <- mkRow(nCol)
+      dN[i,] <- as.numeric(ri[numIndices])
+      dC[i,] <- as.character(ri[strIndices])
+    }
+  }
+  dN <- data.frame(dN,stringsAsFactors=FALSE)
+  names(dN) <- names(r1)[numIndices]
+  dC <- data.frame(dC,stringsAsFactors=FALSE)
+  names(dC) <- names(r1)[strIndices]
+  cbind(dC,dN)
+}
+
+
+# allocate the vectors indpendently
+# seems to be avoiding some overhead by not having data.frame class
+# (close to current mkFrameInPlace, but faster)
+# Adapted from: https://gist.github.com/jimhester/e725e1ad50a5a62f3dee#file-accumulation-r-L43-L57
+mkFrameVector <- function(nRow,nCol) {
+  r1 <- mkRow(nCol)
+  res <- lapply(r1,function(cv) { 
+    if(is.numeric(cv)) {
+      col = numeric(nRow)
+    } else {
+      col = character(nRow)
+    }
+    col[[1]] = cv
+    col
+    })
+  if(nRow>1) {
+    for(i in seq.int(2,nRow,1)) {
+      ri <- mkRow(nCol)
+      for(j in seq_len(nCol)) {
+        res[[j]][i] <- ri[[j]]
+      }
+    }
+  }
+  data.frame(res, stringsAsFactors = FALSE)
+}
 ```
 
 ```{r}
@@ -283,6 +336,8 @@ for(nRow in timeSeq) {
     mkFrameForList(nRow,nCol),
     mkFrameList(nRow,nCol),
     mkFrameInPlace(nRow,nCol),
+    mkFrameMat(nRow,nCol),
+    mkFrameVector(nRow,nCol),
     times=10)
   ti <- data.frame(ti,
                    stringsAsFactors=FALSE)
@@ -294,7 +349,4 @@ timings <- do.call(rbind,timings)
 
 ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
   geom_point() + geom_smooth() 
-
 ```
-
-
