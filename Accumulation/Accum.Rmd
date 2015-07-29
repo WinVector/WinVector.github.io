@@ -42,6 +42,26 @@ mkFrameForLoop <- function(nRow,nCol) {
 }
 ```
 
+```{r}
+# build function to plot timings
+# devtools::install_github("WinVector/WVPlots")
+library('WVPlots')
+plotTimings <- function(timings) {
+  timings$expr <- reorder(timings$expr,-timings$time,FUN=max)
+  ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+    geom_point(alpha=0.8) + geom_smooth(alpha=0.8) 
+  nmax <- max(timings$nRow)
+  tsub <- timings[timings$nRow==nmax,]
+  tsub$expr <- reorder(tsub$expr,tsub$time,FUN=median)
+  list(
+    ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+      geom_point(alpha=0.8) + geom_smooth(alpha=0.8),
+    ScatterBoxPlot(tsub,'expr','time',title=paste('nRow = ',nmax)) +
+      coord_flip()
+  )
+}
+```
+
 Timing showing the quadratic runtime.
 
 ```{r}
@@ -58,8 +78,7 @@ for(nRow in timeSeq) {
 }
 timings <- do.call(rbind,timings)
 
-ggplot(data=timings,aes(x=nRow,y=time)) +
-  geom_point() + geom_smooth() 
+print(plotTimings(timings))
 ```
 
 A few roughly equivilent right ways to accumlate the rows.
@@ -160,13 +179,11 @@ for(nRow in timeSeq) {
 }
 timings <- do.call(rbind,timings)
 
-ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+print(plotTimings(timings))
 
 timings <- rbind(timings,timingsPrev)
 
-ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+print(plotTimings(timings))
 ```
 
 Show the in-place alteration of objects in a simpler setting.
@@ -251,8 +268,7 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 timings <- rbind(timings,timingsPrev)
 
-ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+print(plotTimings(timings))
 ```
 
 
@@ -326,6 +342,27 @@ mkFrameVector <- function(nRow,nCol) {
   }
   data.frame(res, stringsAsFactors = FALSE)
 }
+
+# Efficient method that doesn't need to know how many rows are coming
+# devtools::install_github("WinVector/daccum")
+library('daccum')
+mkFrameDaccum <- function(nRow,nCol) {
+  collector <- mkColletor()
+  for(i in seq_len(nRow)) {
+    ri <- mkRow(nCol)
+    collect(collector,ri)
+  }
+  unwrap(collector)
+}
+
+# From Arun Srinivasan's comment
+library('data.table')
+dt_rbindlist <- function(nRow, nCol) {
+  v = vector("list", nRow)
+  for (i in seq_len(nRow))
+    v[[i]] = mkRow(nCol)
+  rbindlist(v)
+}
 ```
 
 ```{r}
@@ -337,6 +374,8 @@ for(nRow in timeSeq) {
     mkFrameLDPLY(nRow,nCol),
     mkFrameMat(nRow,nCol),
     mkFrameVector(nRow,nCol),
+    mkFrameDaccum(nRow,nCol),
+    dt_rbindlist(nRow,nCol),
     times=10)
   ti <- data.frame(ti,
                    stringsAsFactors=FALSE)
@@ -347,7 +386,5 @@ for(nRow in timeSeq) {
 timings <- do.call(rbind,timings)
 timings <- rbind(timings,timingsPrev)
 
-
-ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
-  geom_point() + geom_smooth() 
+print(plotTimings(timings))
 ```
