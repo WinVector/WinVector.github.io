@@ -45,7 +45,7 @@ mkFrameForLoop <- function(nRow,nCol) {
 ```{r}
 # build function to plot timings
 # devtools::install_github("WinVector/WVPlots")
-library('WVPlots')
+# library('WVPlots')
 plotTimings <- function(timings) {
   timings$expr <- reorder(timings$expr,-timings$time,FUN=max)
   ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
@@ -59,7 +59,8 @@ plotTimings <- function(timings) {
     ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
       geom_point(alpha=0.8) + geom_smooth(alpha=0.8) +
       scale_y_log10(),
-    ScatterBoxPlot(tsub,'expr','time',title=paste('nRow = ',nmax)) +
+    WVPlots::ScatterBoxPlot(tsub,'expr','time',
+                            title=paste('nRow = ',nmax)) +
       coord_flip()
   )
 }
@@ -68,8 +69,9 @@ plotTimings <- function(timings) {
 Timing showing the quadratic runtime.
 
 ```{r}
-timings <- list()
-for(nRow in timeSeq) {
+timings <-  vector("list", length(timeSeq))
+for(i in seq_len(length(timeSeq))) {
+  nRow <- timeSeq[[i]]
   ti <- microbenchmark(
     mkFrameForLoop(nRow,nCol),
     times=10)
@@ -77,9 +79,9 @@ for(nRow in timeSeq) {
                    stringsAsFactors=FALSE)
   ti$nRow <- nRow
   ti$nCol <- nCol
-  timings[[length(timings)+1]] <- ti
+  timings[[i]] <- ti
 }
-timings <- do.call(rbind,timings)
+timings <- data.table::rbindlist(timings)
 
 print(plotTimings(timings))
 ```
@@ -110,52 +112,12 @@ mkFrameList <- function(nRow,nCol) {
   d <- lapply(seq_len(nRow),function(i) {
     ri <- mkRow(nCol)
     data.frame(ri,
-                     stringsAsFactors=FALSE)
+               stringsAsFactors=FALSE)
   })
   do.call(rbind,d)
 }
 
-# Mucking with environments fix.  Environments
-# are mutable and tend to be faster than lists.
-# However any "improvement" is surely drown out
-# by the costs of conversion to list and rbind,
-# so the notational compromise is not worth it.
-mkFrameEnv <- function(nRow,nCol) {
-  e <- new.env(hash=TRUE,parent=emptyenv())
-  for(i in seq_len(nRow)) {
-    ri <- mkRow(nCol)
-    di <- data.frame(ri,
-                     stringsAsFactors=FALSE)
-    assign(as.character(i),di,envir=e)
-  }
-  do.call(rbind,as.list(e))
-}
 
-# Another possibility, working in place.
-mkFrameInPlace <- function(nRow,nCol,classHack=TRUE) {
-  r1 <- mkRow(nCol)
-  d <- data.frame(r1,
-                    stringsAsFactors=FALSE)
-  if(nRow>1) {
-    d <- d[rep.int(1,nRow),]
-    if(classHack) {
-      # lose data.frame class for a while
-      # changes what S3 methods implement
-      # assignment.
-      d <- as.list(d) 
-    }
-    for(i in seq.int(2,nRow,1)) {
-      ri <- mkRow(nCol)
-      for(j in seq_len(nCol)) {
-        d[[j]][i] <- ri[[j]]
-      }
-    }
-  }
-  if(classHack) {
-     d <- data.frame(d,stringsAsFactors=FALSE)
-  }
-  d
-}
 ```
 
 Confirm value getting altered in place (effiency depends on interior columns also not chaning address, which is also the case).
@@ -168,8 +130,9 @@ Get more timings and plots.
 
 ```{r}
 timingsPrev <- timings
-timings <- list()
-for(nRow in timeSeq) {
+timings <-  vector("list", length(timeSeq))
+for(i in seq_len(length(timeSeq))) {
+  nRow <- timeSeq[[i]]
   ti <- microbenchmark(
     mkFrameForList(nRow,nCol),
     mkFrameList(nRow,nCol),
@@ -178,9 +141,9 @@ for(nRow in timeSeq) {
                    stringsAsFactors=FALSE)
   ti$nRow <- nRow
   ti$nCol <- nCol
-  timings[[length(timings)+1]] <- ti
+  timings[[i]] <- ti
 }
-timings <- do.call(rbind,timings)
+timings <- data.table::rbindlist(timings)
 
 print(plotTimings(timings))
 
@@ -254,21 +217,80 @@ ggplot(data=dInc,aes(x=nRow,y=slowDown)) +
   geom_point() + geom_smooth()
 ```
 
+```{r}
+# From Arun Srinivasan's comment
+# http://www.win-vector.com/blog/2015/07/efficient-accumulation-in-r/comment-page-1/#comment-65994
+# library('data.table')
+mkFrameDataTableFor <- function(nRow, nCol) {
+  v = vector("list", nRow)
+  for (i in seq_len(nRow)) {
+    v[[i]] = mkRow(nCol)
+  }
+  data.table::rbindlist(v)
+}
+
+mkFrameDataTableLapply <- function(nRow, nCol) {
+  v <- lapply(seq_len(nRow),function(i) {
+    mkRow(nCol)
+  })
+  data.table::rbindlist(v)
+}
+
+# Mucking with environments fix.  Environments
+# are mutable and tend to be faster than lists.
+mkFrameEnvDataTable <- function(nRow,nCol) {
+  e <- new.env(hash=TRUE,parent=emptyenv())
+  for(i in seq_len(nRow)) {
+    ri <- mkRow(nCol)
+    assign(as.character(i),ri,envir=e)
+  }
+  data.table::rbindlist(as.list(e))
+}
+
+# Another possibility, working in place.
+mkFrameInPlace <- function(nRow,nCol,classHack=TRUE) {
+  r1 <- mkRow(nCol)
+  d <- data.frame(r1,
+                    stringsAsFactors=FALSE)
+  if(nRow>1) {
+    d <- d[rep.int(1,nRow),]
+    if(classHack) {
+      # lose data.frame class for a while
+      # changes what S3 methods implement
+      # assignment.
+      d <- as.list(d) 
+    }
+    for(i in seq.int(2,nRow,1)) {
+      ri <- mkRow(nCol)
+      for(j in seq_len(nCol)) {
+        d[[j]][[i]] <- ri[[j]]
+      }
+    }
+  }
+  if(classHack) {
+     d <- data.frame(d,stringsAsFactors=FALSE)
+  }
+  d
+}
+```
+
 Still more timings.
 
 ```{r}
-timings <- list()
-for(nRow in timeSeq) {
+timings <-  vector("list", length(timeSeq))
+for(i in seq_len(length(timeSeq))) {
+  nRow <- timeSeq[[i]]
   ti <- microbenchmark(
     mkFrameInPlace(nRow,nCol),
+    mkFrameDataTableFor(nRow,nCol),
     times=10)
   ti <- data.frame(ti,
                    stringsAsFactors=FALSE)
   ti$nRow <- nRow
   ti$nCol <- nCol
-  timings[[length(timings)+1]] <- ti
+  timings[[i]] <- ti
 }
-timings <- do.call(rbind,timings)
+timings <- data.table::rbindlist(timings)
 timings <- rbind(timings,timingsPrev)
 
 print(plotTimings(timings))
@@ -277,21 +299,24 @@ print(plotTimings(timings))
 
 
 ```{r}
-library('dplyr')
-
+# library('dplyr')
 # Fast method from https://twitter.com/drob/status/626146450842497028
-mkFrameBind <- function(nRow,nCol) {
- bind_rows(replicate(nRow, 
-                     data.frame(mkRow(nCol),stringsAsFactors=FALSE), 
+mkFrameDplyrBind <- function(nRow,nCol) {
+ dplyr::bind_rows(replicate(nRow, 
+                     data.frame(mkRow(nCol),
+                                stringsAsFactors=FALSE), 
                      simplify=FALSE))
 }
 
-library('plyr')
+
+# library('plyr')
 # Idiomatic plyr https://www.reddit.com/r/rstats/comments/3ex31f/efficient_accumulation_in_r/ctjl9lq
-mkFrameLDPLY <- function(nRow,nCol) {
- ldply(seq_len(nRow),function(i) data.frame(mkRow(nCol),
-                                            stringsAsFactors=FALSE))
+mkFramePlyrLdply <- function(nRow,nCol) {
+  plyr::ldply(seq_len(nRow),
+              function(i) data.frame(mkRow(nCol),
+                                     stringsAsFactors=FALSE))
 }
+
 
 # try to avoid all storage re-alloc, name checking, and type checking
 mkFrameMat <- function(nRow,nCol) {
@@ -339,54 +364,47 @@ mkFrameVector <- function(nRow,nCol) {
     for(i in seq.int(2,nRow,1)) {
       ri <- mkRow(nCol)
       for(j in seq_len(nCol)) {
-        res[[j]][i] <- ri[[j]]
+        res[[j]][[i]] <- ri[[j]]
       }
     }
   }
-  data.frame(res, stringsAsFactors = FALSE)
+  data.frame(res,stringsAsFactors=FALSE)
 }
 
 # Efficient method that doesn't need to know how many rows are coming
 # devtools::install_github("WinVector/daccum")
-library('daccum')
+# library('daccum')
 mkFrameDaccum <- function(nRow,nCol) {
-  collector <- mkColletor()
+  collector <- daccum::mkColletor()
   for(i in seq_len(nRow)) {
     ri <- mkRow(nCol)
-    collect(collector,ri)
+    daccum::collectRows(collector,ri)
   }
-  unwrap(collector)
-}
-
-# From Arun Srinivasan's comment
-library('data.table')
-dt_rbindlist <- function(nRow, nCol) {
-  v = vector("list", nRow)
-  for (i in seq_len(nRow))
-    v[[i]] = mkRow(nCol)
-  rbindlist(v)
+  daccum::unwrapRows(collector)
 }
 ```
 
 ```{r}
 timingsPrev <- timings
-timings <- list()
-for(nRow in timeSeq) {
+timings <-  vector("list", length(timeSeq))
+for(i in seq_len(length(timeSeq))) {
+  nRow <- timeSeq[[i]]
   ti <- microbenchmark(
-    mkFrameBind(nRow,nCol),
-    mkFrameLDPLY(nRow,nCol),
+    mkFrameDplyrBind(nRow,nCol),
+    mkFramePlyrLdply(nRow,nCol),
     mkFrameMat(nRow,nCol),
     mkFrameVector(nRow,nCol),
     mkFrameDaccum(nRow,nCol),
-    dt_rbindlist(nRow,nCol),
+    mkFrameEnvDataTable(nRow,nCol),
+    mkFrameDataTableLapply(nRow,nCol),
     times=10)
   ti <- data.frame(ti,
                    stringsAsFactors=FALSE)
   ti$nRow <- nRow
   ti$nCol <- nCol
-  timings[[length(timings)+1]] <- ti
+  timings[[i]] <- ti
 }
-timings <- do.call(rbind,timings)
+timings <- data.table::rbindlist(timings)
 timings <- rbind(timings,timingsPrev)
 
 print(plotTimings(timings))
