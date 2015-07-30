@@ -56,6 +56,9 @@ plotTimings <- function(timings) {
   list(
     ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
       geom_point(alpha=0.8) + geom_smooth(alpha=0.8),
+    ggplot(data=timings,aes(x=nRow,y=time,color=expr)) +
+      geom_point(alpha=0.8) + geom_smooth(alpha=0.8) +
+      scale_y_log10(),
     ScatterBoxPlot(tsub,'expr','time',title=paste('nRow = ',nmax)) +
       coord_flip()
   )
