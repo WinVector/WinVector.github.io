@@ -1,0 +1,305 @@
+---
+title: "Variable Signal"
+author: "Nina Zumel"
+date: "July 31, 2015"
+output: html_document
+---
+
+
+**Functions**
+```{r functions}
+library(ggplot2)
+
+# get the theoretical significance glm model (wrt deviance)
+get_significance = function(model) {
+  delta_deviance = model$null.deviance - model$deviance
+  df = model$df.null - model$df.residual
+  sig = pchisq(delta_deviance, df, lower.tail=FALSE)
+}
+
+# return a frame of the deviance scores on the permuted data
+permutation_test = function(dataf, ycol, nperm) {
+  nrows = dim(dataf)[1]
+  y = dataf[[ycol]]
+  X = dataf[, setdiff(colnames(dataf), ycol), drop=FALSE]
+  varnames = colnames(X)
+  fmla = paste("y", paste(varnames, collapse=" + "), sep=" ~ ")
+  deviances = numeric(nperm)
+  for(i in seq_len(nperm)) {
+    # random order of rows
+    ord = sample.int(nrows, size=nrows, replace=FALSE)
+    model = glm(fmla, data=cbind(y=y[ord], X),
+                family=binomial(link="logit"))
+    #print(summary(model))
+    deviances[[i]] =model$deviance
+  }
+  deviances
+}
+
+score_variable = function(dframe, ycol, var, nperm,
+                          title='') {
+  df=data.frame(y=dframe[[ycol]], x=dframe[[var]])
+
+  mod = glm("y~x", data=df,
+             family=binomial(link="logit"))
+  vdev = mod$deviance
+  vperm = permutation_test(df, "y", nperm)
+  
+  print(summary(mod))
+
+  # count how many times vdev >= deviances from perm test
+  num = sum(vperm <= vdev)
+  vscore = num/nperm
+  print(ggplot(data.frame(nullperm=vperm), aes(x=nullperm)) +
+    geom_density() + geom_vline(xintercept=vdev, color='red') +
+    ggtitle(paste(title, "left tail area ~", vscore)))
+
+  print(paste("Chi-sq estimate:", get_significance(mod)))
+
+}
+
+
+
+# ----
+# for making data sets with both noise and weakly correlated variables
+# ----
+mkCoefs = function(ngood) {
+  nGoodN = ceiling(ngood/2)
+  nGoodC = ngood-nGoodN
+  coefs = list()
+  if(nGoodN>0) {
+    cN = lapply(seq_len(nGoodN),function(i) {
+      v = list()
+      v[[paste('gn', i, sep='_')]] = rnorm(1)
+      v
+    })
+    coefs = unlist(cN,recursive=FALSE)
+  }
+  if(nGoodN>0) {
+    cC = lapply(seq_len(nGoodC),function(i) {
+      v = list()
+      v[[paste('gc', i, sep='_')]] = list('a'=rnorm(1),
+                                          'b'=rnorm(1),
+                                          'c'=rnorm(1))
+      v
+    })
+    coefs = append(coefs,unlist(cC,recursive=FALSE))
+  }
+  coefs
+}
+
+# generate columns
+genColumns = function(nrow,prefix,nNum,nCat) {
+  cols = list()
+  if(nNum>0) {
+    numCols = lapply(seq_len(nNum),function(i) rnorm(nrow))
+    names(numCols) = paste(prefix,'n_',seq_len(nNum),sep='')
+    cols = append(cols,numCols)
+  }
+  if(nCat>0) {
+    cCols = lapply(seq_len(nCat),function(i) {
+      sample(c('a','b','c'),nrow,replace=TRUE)
+      })
+    names(cCols) = paste(prefix,'c_',seq_len(nCat),sep='')
+    cols = append(cols,cCols)
+  }
+  data.frame(cols,stringsAsFactors=FALSE)
+}
+
+# evaluate coefs on a data frame
+applyCoefs = function(coefs,d) {
+  v = numeric(nrow(d))
+  for(n in names(coefs)) {
+    cf = coefs[[n]]
+    if(is.list(cf)) {
+      # categorical
+      v = v + as.numeric(cf[d[,n,drop=TRUE]])
+    } else {
+      # numeric
+      v = v + cf[[1]]*d[,n,drop=TRUE]
+    }
+  }
+  v
+}
+
+# build a data frame with pure noise columns
+# and columns weakly correlated with y
+mkData = function(nrows, coefs, nnoise) {
+  noiseMagnitude = 1
+  d = data.frame(y = noiseMagnitude*rnorm(nrows),
+                 stringsAsFactors = FALSE)
+  ngood = length(coefs)
+  if(ngood>0) {
+    ngC = sum(vapply(coefs,is.list,numeric(1)))
+    ngN = ngood - ngC
+    gd = genColumns(nrows,'g',ngN,ngC)
+    d = cbind(d,gd)
+    d$y = d$y + applyCoefs(coefs,d)
+  }
+  if(nnoise > 0) {
+    nnN = ceiling(nnoise/2)
+    nnC = nnoise-nnN
+    nd = genColumns(nrows,'n',nnN,nnC)
+    d = cbind(d,nd)
+  }
+  d$y = d$y > 0
+  d
+}
+# ------
+
+# get the signal scores for the variables
+# in a data set
+# assume output is a binary variable named y
+get_chiscores = function(dframe, varnames) {
+  nvar = length(varnames)
+  scores = numeric(nvar)
+  for(i in seq_len(nvar)) {
+    model = glm(paste("y~",varnames[i]), dframe,
+                family=binomial(link="logit"))
+    scores[i] = get_significance(model)
+  }
+
+  sframe = data.frame(var=varnames,
+                      scores=scores, stringsAsFactors=FALSE)
+  sframe
+}
+
+#
+# Plot the scores of each variable
+# frm has columns var and scores
+# (output of get_chiscores)
+#
+scoreplot = function(frm, threshold, sort=1) {
+  n = dim(frm)[1]
+  frm$var = reorder(frm$var, frm$scores*sort, FUN=sum)
+  frm$goodvar = frm$scores < threshold
+
+  ggplot(frm, aes(x=var, y=scores, ymin=0, ymax=scores, color=goodvar)) +
+    geom_pointrange() +
+    geom_hline(yintercept=threshold, color="red", linetype=2) +
+    scale_color_manual(values=c("TRUE"="darkgreen", "FALSE"="darkgray")) +
+    theme(legend.position="none")
+}
+```
+
+**Example 1**
+Small example of evaluating a variable with signal, and without
+
+```{r smallexample}
+set.seed(3266)
+N = 1000
+s1 = rnorm(N)
+n1 = rnorm(N)
+y = 2*s1 + rnorm(N)
+dframe = data.frame(y=y>0, s1=s1, n1=n1)
+
+nperm=500
+score_variable(dframe, "y", "s1", nperm,
+               title='Signal variable deviance,')
+score_variable(dframe, "y", "n1", nperm,
+               title='Noise variable deviance,')
+```
+
+**Example 2**
+
+Small example of using chi-sq significance for variable filtering
+
+```{r smallchiexample}
+ngood = 5; nnoise = 5; N = 1000
+coefs = mkCoefs(ngood)
+dframe = mkData(N, coefs, nnoise)
+summary(dframe)
+varnames = setdiff(colnames(dframe), "y")
+
+
+sframe = get_chiscores(dframe, varnames)
+threshold = 0.05  # be generous in accepting a variable (1/20 false positive rate)
+scoreplot(sframe, threshold)
+print("Variables selected:")
+print(sframe[sframe$scores<threshold,])
+print("True coefficients of signal variables")
+print(coefs)
+```
+
+**Example 3**
+
+Larger example; lots of noise
+
+```{r bigchiexample}
+
+ngood = 5; nnoise = 2000; N = 2500
+coefs = mkCoefs(ngood)
+dframe = mkData(N, coefs, nnoise)
+varnames = setdiff(colnames(dframe), "y")
+
+print("True coefficients of signal variables")
+print(coefs)
+
+sframe = get_chiscores(dframe, varnames)
+
+# we should always pick the threshold first, but
+# we will use this as an example of what different
+# thresholds will do
+
+# 1/100 error rate, 1/40 error rate, 1/20 error rate
+thresholds = c(0.01, 0.025, 0.05)
+for(threshold in thresholds) {
+  n = sum(sframe$scores<threshold)
+  print(paste(n, "variables selected, threshold =", threshold))
+  print(sframe[sframe$scores<threshold,])
+}
+
+threshold = 0.01
+scoreplot(sframe, threshold, sort=-1) + coord_flip()
+```
+
+Not try fitting a random forest on this data.
+
+```{r badbayes}
+library('randomForest')
+# devtools::install_github("WinVector/WCPlots")
+library('WVPlots')
+
+# convert all character vectors to factor for randomForest
+dframe = as.data.frame(lapply(dframe, function(col) {
+                                        if(is.character(col)) {as.factor(col)} 
+                                        else {col}
+                                        }))
+
+allvars = sframe$var
+selvars = sframe$var[sframe$scores < 0.01]
+predframeTrain = data.frame(y=dframe$y)
+
+# model on all variables
+rfmodel_full = randomForest(x=dframe[,allvars], y=as.factor(dframe$y))
+predframeTrain$trainfull = predict(rfmodel_full, newdata=dframe[,allvars], type='prob')[,'TRUE']
+
+rfmodel_red = randomForest(dframe[,selvars], as.factor(dframe$y))
+predframeTrain$trainred = predict(rfmodel_red, newdata=dframe[,selvars], type='prob')[,'TRUE']
+
+testframe = mkData(N, coefs, nnoise)
+testframe = as.data.frame(lapply(testframe, function(col) {
+                                        if(is.character(col)) {as.factor(col)} 
+                                        else {col}
+                                        }))
+predframeTest = data.frame(y=testframe$y)
+
+predframeTest$testfull = predict(rfmodel_full, newdata=testframe[,allvars], type='prob')[,'TRUE']
+predframeTest$testred = predict(rfmodel_red, newdata=testframe[,selvars], type='prob')[,'TRUE']
+
+printutil = function(frame, column, yname, title) {
+  print(DoubleDensityPlot(frame, column, yname, title=title))
+  print(ROCPlot(frame, column, yname, title=title))
+}
+
+print("performance, all variables")
+printutil(predframeTrain, "trainfull", "y", "training performance, all variables")
+printutil(predframeTest, "testfull", "y", "test performance, all variables")
+
+print("performance, reduced variables")
+printutil(predframeTrain, "trainred", "y", "training performance, reduced variables")
+printutil(predframeTest, "testred", "y", "test performance, reduced variables")
+
+
+```
+

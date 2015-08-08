@@ -1,0 +1,262 @@
+---
+title: "Variable Selection: KDD 2009 Example"
+author: "Nina Zumel"
+date: "August 5, 2015"
+output: html_document
+---
+```{r libraries}
+# devtools::install_github("WinVector/vtreat")
+library('vtreat')  # This library isn't public yet, intall instructions: http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
+library('parallel')
+# devtools::install_github("WinVector/WCPlots")
+library('WVPlots')
+
+```
+
+**Read in the data**
+
+```{r kddexlibs, tidy=FALSE}
+library('gbm')
+
+# To make the html: echo "library(knitr); knit('KDD2009example.Rmd')" | R --vanilla ; pandoc KDD2009example.md -o KDD2009example.html
+# Example of working with KDD2009 data (just to show library at work).
+# For vtreat details see: http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
+# and Chapter 6 of Practical Data Science with R: http://www.amazon.com/Practical-Data-Science/dp/1617291560
+# For details on data see: https://github.com/WinVector/zmPDSwR/tree/master/KDD2009
+
+# load the data as in the book
+dir = '~/Documents/Projects/DataScienceBook/zmPDSwR/KDD2009/' # change this path to match your directory structure
+
+d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
+                header=T,sep='\t',na.strings=c('NA',''), stringsAsFactors=FALSE)
+churn = read.table(paste(dir,'orange_small_train_churn.labels.txt',sep=''),
+                    header=F,sep='\t')
+d$churn = churn$V1
+appetency = read.table(paste(dir,'orange_small_train_appetency.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$appetency = appetency$V1
+upselling = read.table(paste(dir,'orange_small_train_upselling.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$upselling = upselling$V1
+set.seed(729375)
+d$rgroup = runif(dim(d)[[1]])
+
+# Make the Training (modeling), Calibration (impact coding) and Test sets
+dTrainM = subset(d,rgroup<=0.5)  # set for building models
+dTrainC = subset(d,(rgroup>0.5) & (rgroup<=0.9)) # set for impact coding
+dTest = subset(d,rgroup>0.9) # set for evaluation
+
+# clean up
+rm(list=c('d','churn','appetency','upselling','dir'))
+
+# get variable and outcome columns
+outcomes = c('churn','appetency','upselling')
+vars = setdiff(colnames(dTrainM),
+                c(outcomes,'rgroup'))
+yName = 'churn'
+yTarget = 1
+```
+
+**Vtreat: automatic variable treatment**
+
+```{r kddextreat, tidy=FALSE}
+
+# get the standard degrees of freedom estimates
+estDF = function(d) {
+  vapply(d,function(v) {
+    df = length(unique(v)) - 1
+    if (is.character(v)) {
+      df = min(1,df)
+    }
+    df
+  },numeric(1))
+}
+
+# clean out the variables that are constants
+dfe = estDF(dTrainM[,vars])
+vars = names(dfe)[dfe>0]
+
+
+# try the automatic variable treatment
+
+set.seed(239525)
+
+cl = parallel::makeCluster(4)
+
+# build the data treatments on calibration data
+treatments = designTreatmentsC(dTrainC,
+    vars,yName,yTarget,
+    smFactor=2.0, forceCatNum = FALSE,
+    parallelCluster=cl,
+    scoreVars=FALSE)
+
+
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+
+# prepare the training and test sets
+# don't need to prepare the calibration set,
+# we only used to to fit data treatment parameters
+# and impact coded models
+treatedTrainM = prepare(treatments,dTrainM,
+                        pruneLevel=c())
+treatedTest = prepare(treatments,dTest,
+                       pruneLevel=c())
+varnames = treatments$vars
+
+# remove the catN impact coded variables; we'll use only the catB impact coded variable
+# catB: bayesian models
+# catN: linear regression model against 0/1 outcome (deprecated, but still there)
+isCatN = grepl("catN", varnames, fixed=TRUE)
+print(paste("Number of catN variables: ", sum(isCatN)))
+varnames = varnames[!isCatN]
+
+# yName is the y column
+# convert the outcome to TRUE/FALSE
+treatedTrainM[[yName]] = treatedTrainM[,yName]==yTarget
+treatedTest[[yName]] = treatedTest[,yName]==yTarget
+
+```
+
+**Load in the scoring functions**
+
+```{r scoringfunctions}
+
+get_utility = function(model) {
+   model$null.deviance - model$deviance
+}
+
+# get the chi-squared significance of a glm model (wrt deviance)
+get_significance = function(model, df=NULL) {
+  delta_deviance = model$null.deviance - model$deviance
+  if(is.null(df)) {
+    df = model$df.null - model$df.residual
+  }
+  pchisq(delta_deviance, df, lower.tail=FALSE)
+}
+
+# get the signal scores for the variables in a data set
+# assume output is a binary variable named y
+get_chiscores = function(dframe, yName, guessDF) {
+  nvar = length(varnames)
+  utils = numeric(nvar)
+  scores = numeric(nvar)
+  for(i in seq_len(nvar)) {
+    model = glm(paste(yName,"~",varnames[i]), dframe,
+                family=binomial(link="logit"))
+    
+    # this is a hack, added to try to adjust significance estimate for catB vars
+    df = 1
+    if((guessDF) && grepl("catB", varnames[i], fixed=TRUE)) {
+      df = length(unique(dframe[[ varnames[i] ]]))-1
+    }
+    utils[[i]] = get_utility(model)
+    scores[[i]] = get_significance(model, df)
+  }
+  
+  sframe = data.frame(var=varnames,
+                      scores=scores,
+                      utilities=utils,
+                      stringsAsFactors=FALSE)
+  sframe
+}
+
+#
+# Plot the scores of each variable
+# frm has columns var and scores
+# (output of get_chiscores)
+#
+scoreplot = function(frm, threshold, sort=1) {
+  n = dim(frm)[1]
+  frm$var = reorder(frm$var, frm$scores*sort, FUN=sum)
+  frm$goodvar = frm$scores < threshold
+
+  ggplot(frm, aes(x=var, y=scores, ymin=0, ymax=scores, color=goodvar)) +
+    geom_pointrange() +
+    geom_hline(yintercept=threshold, color="red", linetype=2) +
+    scale_color_manual(values=c("TRUE"="darkgreen", "FALSE"="darkgray")) +
+    theme(legend.position="none")
+}
+
+```
+
+**Prepare plotting frames**
+
+```{r kddexsv, tidy=FALSE}
+# prepare plotting frames
+treatedTrainP = treatedTrainM[, yName, drop=FALSE]
+treatedTestP = treatedTest[, yName, drop=FALSE]
+```
+
+**Do the variable selection, and fit gbm and glm models for comparison**
+
+```{r gbms}
+# Use training data to score variables.
+vScoresI = get_chiscores(treatedTrainM,yName,FALSE) 
+
+breaks=c(1e-6, 1e-5, 1e-4, 0.001, 0.01, 0.1, 1)
+ggplot(vScoresI, aes(x=scores+1e-6)) + geom_density(adjust=0.5) + scale_x_log10("scores", breaks=breaks)
+
+# threshold the significance scores
+threshold = 1e-4
+selVarsI = vScoresI$var[vScoresI$scores < threshold]
+print(paste("Number of candidate variables:", nrow(vScoresI)))
+print(paste("Number of variables selected:", length(selVarsI)))
+print(selVarsI)
+
+# Two cases: model with allvars, model with selected vars
+strats = list('allvars'=vScoresI$var,
+              'selected_vars'=selVarsI)
+
+for(strat in names(strats)) {
+  selVars = strats[[strat]]
+  formulaS = paste(yName,paste(selVars,collapse=' + '),sep=' ~ ')
+  for(mname in c('gbmPred','glmPred')) {
+    print("*****************************")
+    print(date())
+    print(paste(mname,strat,length(selVars)))
+    if(mname=='gbmPred') {
+      start = Sys.time()
+      modelGBMs = gbm(as.formula(formulaS),
+                      data=treatedTrainM,
+                      distribution='bernoulli',
+                      n.trees=500,
+                      interaction.depth=2,
+                      keep.data=FALSE,
+                      cv.folds=5)
+      end = Sys.time()
+      diff = end-start
+      print(paste(strat, mname, "time to fit:", diff))
+      nTrees = gbm.perf(modelGBMs)
+      treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrainM,type='response',
+                                       n.trees=nTrees) 
+      treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
+                                      n.trees=nTrees)
+    } else {
+      modelglms = glm(as.formula(formulaS),
+                      data=treatedTrainM,
+                      family=binomial(link='logit')
+      )
+      treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrainM,type='response')
+      treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
+    }
+    
+    t1 = paste(mname,'trainingT data',strat)
+    print(DoubleDensityPlot(treatedTrainP, mname, yName, 
+                            title=t1))
+    print(ROCPlot(treatedTrainP, mname, yName, 
+                  title=t1))
+    
+    t3 = paste(mname,'test data',strat)
+    print(DoubleDensityPlot(treatedTestP, mname, yName, 
+                            title=t3))
+    print(ROCPlot(treatedTestP, mname, yName, 
+                  title=t3))
+    print(date())
+    print("*****************************")
+  }
+}
+   
+```
