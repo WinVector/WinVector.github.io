@@ -4,5 +4,7 @@ Support files for the video course
   Nina Zumel
   John Mount
 
-https://www.udemy.com/introduction-to-data-science/?couponCode=IntroToDataScienceC1
+http://www.win-vector.com/blog/introduction-to-data-science/
+https://www.udemy.com/introduction-to-data-science/?couponCode=C2
+
 
