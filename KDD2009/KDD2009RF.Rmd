@@ -1,0 +1,92 @@
+---
+title: "KDD2009RF"
+author: "John Mount"
+date: "August 18, 2015"
+output: html_document
+---
+
+```{r kddrf, tidy=FALSE}
+#load some libraries
+# http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
+# devtools::install_github("WinVector/vtreat")
+library('vtreat')
+# devtools::install_github("WinVector/vtreat")
+library('WVPlots')
+library('parallel')
+library('randomForest')
+
+
+# load the data as in the book
+# change this path to match your directory structure
+dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
+
+d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
+                header=T,sep='\t',na.strings=c('NA',''), 
+               stringsAsFactors=FALSE)
+churn = read.table(paste(dir,'orange_small_train_churn.labels.txt',sep=''),
+                    header=F,sep='\t')
+d$churn = churn$V1
+appetency = read.table(paste(dir,'orange_small_train_appetency.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$appetency = appetency$V1
+upselling = read.table(paste(dir,'orange_small_train_upselling.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$upselling = upselling$V1
+set.seed(729375)
+d$rgroup = runif(dim(d)[[1]])
+dTrainM = subset(d,rgroup<=0.5)  # set for building models
+dTrainC = subset(d,(rgroup>0.5) & (rgroup<=0.9)) # set for impact coding
+dTest = subset(d,rgroup>0.9) # set for evaluation
+rm(list=c('d','churn','appetency','upselling','dir'))
+outcomes = c('churn','appetency','upselling')
+vars = setdiff(colnames(dTrainM),
+                c(outcomes,'rgroup'))
+yName = 'churn'
+yTarget = 1
+
+
+# build data treatments
+
+set.seed(239525)
+
+cl = parallel::makeCluster(4)
+
+# build treatments on just the coding data
+treatmentsC = designTreatmentsC(dTrainC,
+    vars,yName,yTarget,
+    smFactor=2.0, 
+    parallelCluster=cl,
+    scoreVars=TRUE)
+
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+
+
+kddPrune=0.999
+nK = 200
+trainP = prepare(treatmentsC,
+                   dTrainM,
+                   scale=TRUE,
+                   pruneLevel=kddPrune)
+selvars = setdiff(colnames(trainP),yName)
+
+testP = prepare(treatmentsC,
+                  dTest,
+                  scale=TRUE,
+                  pruneLevel=kddPrune)
+
+model <- randomForest(x=trainP[,selvars,drop=FALSE],
+                      y=as.factor(as.character(trainP[[yName]])))
+print(model)
+testP$pred <- predict(model,newdata=testP[,selvars,drop=FALSE],
+                type='prob')[,as.character(yTarget),drop=TRUE]
+testP[[yName]] = testP[[yName]]==yTarget
+ti = 'RF prediction on test'
+print(DoubleDensityPlot(testP, 'pred', yName, 
+                               title=ti))
+print(ROCPlot(testP, 'pred', yName, 
+                     title=ti))
+
+```
