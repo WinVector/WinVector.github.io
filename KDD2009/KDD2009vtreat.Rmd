@@ -137,6 +137,8 @@ for(mname in c('gbmPred','glmPred')) {
                     interaction.depth=3,
                     keep.data=FALSE,
                     cv.folds=5)
+    print(modelGBMs)
+    print(summary(modelGBMs))
     nTrees = gbm.perf(modelGBMs)
     treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrainM,type='response',
                                      n.trees=nTrees) 
@@ -147,6 +149,7 @@ for(mname in c('gbmPred','glmPred')) {
                     data=treatedTrainM,
                     family=binomial(link='logit')
     )
+    print(summary(modelglms))
     treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrainM,type='response')
     treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
   }
