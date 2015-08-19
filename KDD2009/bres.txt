@@ -1,0 +1,222 @@
+
+R version 3.2.1 (2015-06-18) -- "World-Famous Astronaut"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> 
+> source('Lfns.R')
+> source('Afns.R')
+Loading required package: ggplot2
+Loading required package: grid
+Loading required package: gridExtra
+Loading required package: reshape2
+Loading required package: ROCR
+Loading required package: gplots
+
+Attaching package: ‘gplots’
+
+The following object is masked from ‘package:stats’:
+
+    lowess
+
+Loading required package: plyr
+Loading required package: stringr
+Loading required package: survival
+Loading required package: lattice
+Loading required package: splines
+Loaded gbm 2.1.1
+randomForest 4.6-10
+Type rfNews() to see new features/changes/bug fixes.
+
+Attaching package: ‘dplyr’
+
+The following object is masked from ‘package:randomForest’:
+
+    combine
+
+The following objects are masked from ‘package:data.table’:
+
+    between, last
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> 
+> # load the data as in the book
+> # change this path to match your directory structure
+> #dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/'
+> dir = './'
+> 
+> d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
++                header=T,sep='\t',na.strings=c('NA',''), 
++                stringsAsFactors=FALSE)
+> churn = read.table(paste(dir,'orange_small_train_churn.labels.txt',sep=''),
++                    header=F,sep='\t')
+> d$churn = churn$V1
+> appetency = read.table(paste(dir,'orange_small_train_appetency.labels.txt',sep=''),
++                        header=F,sep='\t')
+> d$appetency = appetency$V1
+> upselling = read.table(paste(dir,'orange_small_train_upselling.labels.txt',sep=''),
++                        header=F,sep='\t')
+> d$upselling = upselling$V1
+> set.seed(729375)
+> d$rgroup = runif(dim(d)[[1]])
+> dTrainM = subset(d,rgroup<=0.7)  # set for building models
+> dTrainC = subset(d,(rgroup>0.7) & (rgroup<=0.9)) # set for impact coding
+> dTest = subset(d,rgroup>0.9) # set for evaluation
+> rm(list=c('d','churn','appetency','upselling','dir'))
+> outcomes = c('churn','appetency','upselling')
+> vars = setdiff(colnames(dTrainM),
++                c(outcomes,'rgroup'))
+> yName = 'churn'
+> yTarget = 1
+> 
+> set.seed(239525)
+> nCoreEstimate <-  parallel::detectCores()
+> print(paste('core estimate',nCoreEstimate))
+[1] "core estimate 32"
+> parallelCluster = parallel::makeCluster(nCoreEstimate)
+> 
+> # build treatments on just the coding data
+> treatmentsC = designTreatmentsC(dTrainC,
++                                 vars,yName,yTarget,
++                                 smFactor=2.0, 
++                                 parallelCluster=parallelCluster,
++                                 scoreVars=TRUE)
+[1] "desigining treatments Sun Aug 16 19:33:14 2015"
+[1] "scoring columns Sun Aug 16 19:33:16 2015"
+[1] "have treatment plan Sun Aug 16 19:33:27 2015"
+> 
+> 
+> # prepare data
+> treatedTrainM = prepare(treatmentsC,
++                         dTrainM,
++                         pruneLevel=c())
+> varSet = setdiff(colnames(treatedTrainM),yName)
+> treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
+> print(summary(treatedTrainM[[yName]]))
+   Mode   FALSE    TRUE    NA's 
+logical   32449    2572       0 
+> 
+> treatedTest = prepare(treatmentsC,
++                       dTest,
++                       pruneLevel=c())
+> treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+> print(summary(treatedTest[[yName]]))
+   Mode   FALSE    TRUE    NA's 
+logical    4619     353       0 
+> 
+> 
+> chosenVars <- names(treatmentsC$varScores)[treatmentsC$varScores<1]
+> 
+> 
+> # debug
+> # allFitters <- list('logistic regression'=doFitApplyLR,
+> #                   'null model'=doFitApplyNullModel)
+> 
+> 
+> # get performance on train and test
+> scoreFList <- list(train=treatedTrainM,test=treatedTest)
+> mkWorkerF1 <- function(allFitters,yName,chosenVars,treatedTrainM,scoreFList) {
++   force(allFitters)
++   force(yName)
++   force(chosenVars)
++   force(treatedTrainM)
++   force(scoreFList)
++   function(modelTitle) {
++     source('Lfns.R')
++     source('Afns.R')
++     fitter <- allFitters[[modelTitle]]
++     # not sure it is safe to pass parallel cluster to workers
++     bootScores <- fitter(yName,chosenVars,treatedTrainM,scoreFList,
++                          bootScore=TRUE,parallelCluster=c())
++     cbind(data.frame(model=modelTitle,
++                      stringsAsFactors=FALSE),
++           data.frame(as.list(unlist(bootScores))))
++   } 
++ }
+> w1 <- mkWorkerF1(allFitters,yName,chosenVars,
++                  treatedTrainM,scoreFList)
+> resList <- parallel::parLapply(parallelCluster,names(allFitters),w1)
+> if(length(resList)!=length(allFitters)) {
++   stop("not all results came back from parLapply")
++ }
+> 
+> 
+> 
+> # get permuted training prerformance
+> n <- nrow(treatedTrainM)
+> yPerms <- lapply(1:10,function(i) {
++   list(repNum=i,
++        yP=treatedTrainM[[yName]][sample.int(n,n,replace=FALSE)])})
+> tasks <- list()
+> for(yP in yPerms) {
++   for(modelTitle in names(allFitters)) {
++     tasks[[1+length(tasks)]] <- list(repNum=yP$repNum,yP=yP$yP,modelTitle=modelTitle)
++   }
++ }
+> mkWorkerF2 <- function(allFitters,yName,chosenVars,treatedTrainM) {
++   force(allFitters)
++   force(yName)
++   force(chosenVars)
++   force(treatedTrainM)
++   function(task) {
++     source('Lfns.R')
++     source('Afns.R')
++     modelTitle <- task$modelTitle
++     yP <- task$yP
++     repNum <- task$repNum
++     fitter <- allFitters[[modelTitle]]
++     treatedTrainP <- treatedTrainM
++     treatedTrainP[[yName]] <- yP
++     pScores <- fitter(yName,chosenVars,treatedTrainP,
++                       list(xptrain=treatedTrainP))
++     di <- cbind(data.frame(model=modelTitle,
++                            repNum=repNum,
++                            stringsAsFactors=FALSE),
++                 data.frame(as.list(unlist(pScores))))
++   }
++ }
+> w2 <- mkWorkerF2(allFitters,yName,chosenVars,treatedTrainM)
+> resListP <- parallel::parLapply(parallelCluster,tasks,w2)
+> if(length(resListP)!=length(tasks)) {
++   stop("not all results came back from parLapply")
++ }
+> 
+> 
+> 
+> # shutdown, clean up
+> if(!is.null(parallelCluster)) {
++   parallel::stopCluster(parallelCluster)
++   parallelCluster = NULL
++ }
+> 
+> save(list=ls(),file="bsteps.RData")
+> 
+> proc.time()
+    user   system  elapsed 
+  46.032    2.893 1163.241 

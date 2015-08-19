@@ -1,0 +1,109 @@
+---
+title: "BootPreds"
+author: "John Mount"
+date: "August 10, 2015"
+output: html_document
+---
+
+
+
+
+```{r plot, tidy=FALSE, cache=FALSE}
+load('bsteps.Rdata')
+source('Lfns.R')
+source('Afns.R')
+
+# column selection doesn't work the same for data.table
+# in particular d[1,'columnTitle'] returns the column title, not value
+results <-  data.frame(data.table::rbindlist(resList))
+
+
+# build a very crude clustering model on a very small subset of the data
+gVars <- names(treatmentsC$varScores)[treatmentsC$varScores<0.999]
+scI <- doFitApplyDupModelX(yName,gVars,
+                          treatedTrainM,
+                          list(train=treatedTrainM),
+                          outSample=FALSE)
+print("Bayes limit estimate (unreliable)")
+print(scI)
+
+
+# problems with ddply when input and output column names match
+# work around
+killMean <- '\\.mean$'
+
+changeColNames <- function(d,regexpToZap) {
+  toFix <- grep(regexpToZap,colnames(d))
+  if(length(toFix)>0) {
+    cols <- colnames(d)[toFix]
+    for(ci in cols) {
+      newName <- gsub(regexpToZap,'',ci)
+      d[[newName]] <- d[[ci]]
+      d[[ci]] <- c()
+    }
+  }
+  d
+}
+
+
+
+#  95% confidence interval from fit normal distribution
+resultsPn <-  data.frame(data.table::rbindlist(resListP))
+resultsPn <- ddply(resultsPn,.(model),summarize,
+      xptrain.ndeviance.var=var(xptrain.ndeviance),
+      xptrain.ndeviance.mean=mean(xptrain.ndeviance),
+      xptrain.auc.var.mean=var(xptrain.auc),
+      xptrain.auc.mean=mean(xptrain.auc))
+resultsPn <- changeColNames(resultsPn,killMean)
+resultsPn$xptrain.ndeviance.lW <- 
+  qnorm(0.025,
+        mean=resultsPn$xptrain.ndeviance,
+        sd=sqrt(resultsPn$xptrain.ndeviance.var))
+resultsPn$xptrain.ndeviance.uW <- 
+  qnorm(1-0.025,
+        mean=resultsPn$xptrain.ndeviance,
+        sd=sqrt(resultsPn$xptrain.ndeviance.var))
+resultsPn$xptrain.ndeviance.var <- c()
+resultsPn$xptrain.auc.lW <- qnorm(0.025,
+                                 mean=resultsPn$xptrain.auc,
+                                 sd=sqrt(resultsPn$xptrain.auc.var))
+resultsPn$xptrain.auc.uW <- qnorm(1-0.025,
+                                 mean=resultsPn$xptrain.auc,
+                                 sd=sqrt(resultsPn$xptrain.auc.var))
+resultsPn$xptrain.auc.var <- c()
+
+
+#  merge frames
+print(results)
+print(resultsPn)
+resultsB <- merge(results,resultsPn,by='model')
+print(resultsB)
+
+# naive scoring, only on train
+plts1 <- plotResultRanges(results,plotRanges=FALSE,
+                       plotRestriction='^train\\.')[c('AUC','normalized.deviance')]
+print(plts1)
+# add in the (unreliable Bayes estimate)
+print(plts1$AUC + geom_vline(xintercept=scI$train$auc,linetype=2))
+print(plts1$normalized.deviance + geom_vline(xintercept=scI$train$ndeviance,linetype=2))
+
+
+# one solution- in train permutation test
+resultsBs <- resultsB
+resultsBs[,grep('^train\\..*\\.(l|u)W$',colnames(resultsBs))] <- NA
+print(plotResultRanges(resultsBs,
+                       plotRestriction='^((train\\.)|(xptrain\\.))'))
+
+# or, could test/train split
+print(plotResultRanges(results,plotRanges=FALSE))
+# and bootstrap all scores
+print(plotResultRanges(results))
+# and can try to reduce variance by y-stratifying the bootstrap
+
+# or could do whole shmear
+print(plotResultRanges(resultsB))
+
+```
+
+
+

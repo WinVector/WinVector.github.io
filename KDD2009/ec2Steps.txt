@@ -1,0 +1,63 @@
+
+# 8-8-2015
+# start a nice big CPU intance: Ubuntu 64 bit c3.8xlarge
+
+# update and general tools
+# ssh -i KEY.PEM  ubuntu@IPADDRESS  # in my case *.pem.txt
+sudo apt-get -y update
+# if next step wants to change GRUB pick "keep current"
+sudo apt-get -y upgrade
+# reboot
+sudo reboot
+# ssh back in
+# ssh -i KEY.PEM  ubuntu@IPADDRESS  # in my case *.pem.txt
+
+# install some common tools
+sudo apt-get -y install git emacs default-jre default-jdk gcc gfortran
+
+# from https://cran.r-project.org
+printf 'deb http://cran.rstudio.com/bin/linux/ubuntu trusty/\n'| sudo tee -a /etc/apt/sources.list
+sudo apt-get update
+sudo apt-get -y --force-yes install r-base r-base-dev
+# may need to turn on backports
+# From: http://stackoverflow.com/questions/20923209/problems-installing-the-devtools-package
+sudo apt-get -y build-dep libcurl4-gnutls-dev
+sudo apt-get -y install libcurl4-gnutls-dev
+# from: http://stackoverflow.com/questions/30794035/install-packagesdevtools-on-r-3-0-2-fails-in-ubuntu-14-04
+sudo apt-get -y install libssl-dev
+sudo apt-get -y install xml2
+# from: http://stackoverflow.com/questions/30837741/failed-to-install-devtools-in-r-3-1-2
+sudo apt-get -y install libxml2-dev
+
+# install the packages we need
+R
+install.packages('curl')
+install.packages('devtools')
+install.packages(c('ggplot2','reshape2','gbm','ROCR','data.table',
+   'dplyr','randomForest','mgcv','glmnet','caret'))
+devtools::install_github("WinVector/vtreat")
+devtools::install_github("WinVector/WVPlots")
+quit(save='no') # don't save workspace
+
+
+# try running our jobs
+# from local machine:
+#  scp -i KEY.PEM *.R ubuntu@IPADDRESS:
+# from zmPDSwR/KDD2009
+#  scp -i KEY.PEM orange_* buntu@IPADDRESS:
+
+# ssh back in
+# ssh -i KEY.PEM  ubuntu@IPADDRESS  # in my case *.pem.txt
+
+nohup R CMD BATCH BSteps.R bres.txt > runLog.txt 2>&1 &
+
+# copy results back
+# on local machine:
+# scp -i KEY.PEM uubuntu@IPADDRESS:bres.txt .
+# scp -i KEY.PEM uubuntu@IPADDRESS:bsteps.RData .
+
+nohup R CMD BATCH LStep.R lres.txt  > runLog.txt 2>&1 &
+
+# on local machine, copy results back
+# scp -i KEY.PEM ubuntu@IPADDRESS:lres.txt .
+# scp -i KEY.PEM ubuntu@IPADDRESS:fitres.tsv .
