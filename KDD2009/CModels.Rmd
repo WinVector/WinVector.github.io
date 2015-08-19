@@ -1,0 +1,61 @@
+---
+title: "CModels"
+author: "John Mount"
+date: "August 19, 2015"
+output: html_document
+---
+
+Cross validated models.  Five repetitions of typical test/train split.
+
+
+```{r}
+load('csteps.Rdata')
+source('Lfns.R')
+source('Afns.R')
+
+
+# problems with ddply when input and output column names match
+# work around
+killMean <- '\\.mean$'
+
+changeColNames <- function(d,regexpToZap) {
+  toFix <- grep(regexpToZap,colnames(d))
+  if(length(toFix)>0) {
+    cols <- colnames(d)[toFix]
+    for(ci in cols) {
+      newName <- gsub(regexpToZap,'',ci)
+      d[[newName]] <- d[[ci]]
+      d[[ci]] <- c()
+    }
+  }
+  d
+}
+
+
+
+#  95% confidence interval from fit normal distribution
+crossValFS <- ddply(crossValF,.(model),summarize,
+      cvtrain.ndeviance.var=var(train.ndeviance),
+      cvtrain.ndeviance.mean=mean(train.ndeviance),
+      cvtrain.auc.var.mean=var(train.auc),
+      cvtrain.auc.mean=mean(train.auc),
+      cvtest.ndeviance.var=var(test.ndeviance),
+      cvtest.ndeviance.mean=mean(test.ndeviance),
+      cvtest.auc.var.mean=var(test.auc),
+      cvtest.auc.mean=mean(test.auc))
+crossValFS <- changeColNames(crossValFS,killMean)
+for(col in c('cvtrain.ndeviance', 'cvtrain.auc',
+             'cvtest.ndeviance', 'cvtest.auc')) {
+  crossValFS[[paste(col,'lW',sep='.')]] <- qnorm(0.025,
+        mean=crossValFS[[col]],
+        sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
+  crossValFS[[paste(col,'uW',sep='.')]] <-  qnorm(1-0.025,
+        mean=crossValFS[[col]],
+        sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
+  crossValFS[[paste(col,'var',sep='.')]] <- c()
+}
+print(crossValFS)
+
+print(plotResultRanges(crossValFS,plotRanges=TRUE))
+```
+
