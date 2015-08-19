@@ -52,7 +52,7 @@ resultsPn <-  data.frame(data.table::rbindlist(resListP))
 resultsPn <- ddply(resultsPn,.(model),summarize,
       xptrain.ndeviance.var=var(xptrain.ndeviance),
       xptrain.ndeviance.mean=mean(xptrain.ndeviance),
-      xptrain.auc.var.mean=var(xptrain.auc),
+      xptrain.auc.var=var(xptrain.auc),
       xptrain.auc.mean=mean(xptrain.auc))
 resultsPn <- changeColNames(resultsPn,killMean)
 resultsPn$xptrain.ndeviance.lW <- 

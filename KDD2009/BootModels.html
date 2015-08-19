@@ -120,7 +120,14 @@ source('Afns.R')</code></pre>
 ## 
 ## The following objects are masked from 'package:base':
 ## 
-##     intersect, setdiff, setequal, union</code></pre>
+##     intersect, setdiff, setequal, union
+## 
+## 
+## Attaching package: 'caret'
+## 
+## The following object is masked from 'package:survival':
+## 
+##     cluster</code></pre>
 <pre class="r"><code># column selection doesn't work the same for data.table
 # in particular d[1,'columnTitle'] returns the column title, not value
 results &lt;-  data.frame(data.table::rbindlist(resList))
@@ -165,7 +172,7 @@ resultsPn &lt;-  data.frame(data.table::rbindlist(resListP))
 resultsPn &lt;- ddply(resultsPn,.(model),summarize,
       xptrain.ndeviance.var=var(xptrain.ndeviance),
       xptrain.ndeviance.mean=mean(xptrain.ndeviance),
-      xptrain.auc.var.mean=var(xptrain.auc),
+      xptrain.auc.var=var(xptrain.auc),
       xptrain.auc.mean=mean(xptrain.auc))
 resultsPn &lt;- changeColNames(resultsPn,killMean)
 resultsPn$xptrain.ndeviance.lW &lt;- 

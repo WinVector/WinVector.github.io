@@ -33,27 +33,45 @@ changeColNames <- function(d,regexpToZap) {
 
 
 
-#  95% confidence interval from fit normal distribution
+# #  95% confidence interval from fit normal distribution
+# crossValFS <- ddply(crossValF,.(model),summarize,
+#       cvtrain.ndeviance.var=var(train.ndeviance),
+#       cvtrain.ndeviance.mean=mean(train.ndeviance),
+#       cvtrain.auc.var=var(train.auc),
+#       cvtrain.auc.mean=mean(train.auc),
+#       cvtest.ndeviance.var=var(test.ndeviance),
+#       cvtest.ndeviance.mean=mean(test.ndeviance),
+#       cvtest.auc.var=var(test.auc),
+#       cvtest.auc.mean=mean(test.auc))
+# crossValFS <- changeColNames(crossValFS,killMean)
+# for(col in c('cvtrain.ndeviance', 'cvtrain.auc',
+#              'cvtest.ndeviance', 'cvtest.auc')) {
+#   crossValFS[[paste(col,'lW',sep='.')]] <- qnorm(0.025,
+#         mean=crossValFS[[col]],
+#         sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
+#   crossValFS[[paste(col,'uW',sep='.')]] <-  qnorm(1-0.025,
+#         mean=crossValFS[[col]],
+#         sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
+#   crossValFS[[paste(col,'var',sep='.')]] <- c()
+# }
+
+# empirical min/max
 crossValFS <- ddply(crossValF,.(model),summarize,
-      cvtrain.ndeviance.var=var(train.ndeviance),
+      cvtrain.ndeviance.lW=min(train.ndeviance),
       cvtrain.ndeviance.mean=mean(train.ndeviance),
-      cvtrain.auc.var.mean=var(train.auc),
+      cvtrain.ndeviance.uW=max(train.ndeviance),
+      cvtrain.auc.lW=min(train.auc),
       cvtrain.auc.mean=mean(train.auc),
-      cvtest.ndeviance.var=var(test.ndeviance),
+      cvtrain.auc.uW=max(train.auc),
+      cvtest.ndeviance.lW=min(test.ndeviance),
       cvtest.ndeviance.mean=mean(test.ndeviance),
-      cvtest.auc.var.mean=var(test.auc),
-      cvtest.auc.mean=mean(test.auc))
+      cvtest.ndeviance.uW=max(test.ndeviance),
+      cvtest.auc.lW=min(test.auc),
+      cvtest.auc.mean=mean(test.auc),
+      cvtest.auc.uW=max(test.auc))
 crossValFS <- changeColNames(crossValFS,killMean)
-for(col in c('cvtrain.ndeviance', 'cvtrain.auc',
-             'cvtest.ndeviance', 'cvtest.auc')) {
-  crossValFS[[paste(col,'lW',sep='.')]] <- qnorm(0.025,
-        mean=crossValFS[[col]],
-        sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
-  crossValFS[[paste(col,'uW',sep='.')]] <-  qnorm(1-0.025,
-        mean=crossValFS[[col]],
-        sd=sqrt(crossValFS[[paste(col,'var',sep='.')]]))
-  crossValFS[[paste(col,'var',sep='.')]] <- c()
-}
+
+
 print(crossValFS)
 
 print(plotResultRanges(crossValFS,plotRanges=TRUE))
