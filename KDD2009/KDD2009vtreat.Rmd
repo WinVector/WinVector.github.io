@@ -57,8 +57,7 @@ cl = parallel::makeCluster(4)
 treatmentsC = designTreatmentsC(dTrainC,
     vars,yName,yTarget,
     smFactor=2.0, 
-    parallelCluster=cl,
-    scoreVars=TRUE)
+    parallelCluster=cl)
 
 if(!is.null(cl)) {
     parallel::stopCluster(cl)
@@ -68,19 +67,19 @@ if(!is.null(cl)) {
 
 
 ```{r kddknnnew, tidy=FALSE}
-kddPrune=0.999
+kddPrune=0.05
 nK = 200
 knnTrain = prepare(treatmentsC,
                    dTrainM,
                    scale=TRUE,
-                   pruneLevel=kddPrune)
+                   pruneSig=kddPrune)
 selvars = setdiff(colnames(knnTrain),yName)
 knnCl = knnTrain[[yName]]==yTarget
 
 knnTest = prepare(treatmentsC,
                   dTest,
                   scale=TRUE,
-                  pruneLevel=kddPrune)
+                  pruneSig=kddPrune)
 
 knnPred = function(df) {
     knnDecision = knn(knnTrain[,selvars],df[,selvars],knnCl,k=nK,prob=T)
@@ -110,13 +109,13 @@ kddPrune = 0.999
 
 treatedTrainM = prepare(treatmentsC,
                    dTrainM,
-                   pruneLevel=kddPrune)
+                   pruneSig=kddPrune)
 selvars = setdiff(colnames(knnTrain),yName)
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 
 treatedTest = prepare(treatmentsC,
                   dTest,
-                  pruneLevel=kddPrune)
+                  pruneSig=kddPrune)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 
 # prepare plotting frames

@@ -5,7 +5,7 @@ date: "August 18, 2015"
 output: html_document
 ---
 
-```{r kddrf, tidy=FALSE}
+```{r kdddat, tidy=FALSE}
 #load some libraries
 # http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
 # devtools::install_github("WinVector/vtreat")
@@ -43,8 +43,9 @@ vars = setdiff(colnames(dTrainM),
                 c(outcomes,'rgroup'))
 yName = 'churn'
 yTarget = 1
+```
 
-
+```{r kddprep, tidy=FALSE}
 # build data treatments
 
 set.seed(239525)
@@ -53,30 +54,39 @@ cl = parallel::makeCluster(4)
 
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
-    vars,yName,yTarget,
-    smFactor=2.0, 
-    parallelCluster=cl,
-    scoreVars=TRUE)
+                                vars,yName,yTarget,
+                                smFactor=2.0, 
+                                parallelCluster=cl)
+
+
+library('ggplot2')
+ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
+  geom_density(adjust=0.2)
+ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
+  geom_density(adjust=0.2) + scale_x_log10()
+sum(treatmentsC$scoreFrame$csig<0.05)
+
+kddPrune=0.05
+trainP = prepare(treatmentsC,
+                 dTrainM,
+                 scale=TRUE,
+                 pruneSig=kddPrune,
+                 parallelCluster=cl)
+selvars = setdiff(colnames(trainP),yName)
+
+testP = prepare(treatmentsC,
+                dTest,
+                scale=TRUE,
+                pruneSig=kddPrune,
+                parallelCluster=cl)
 
 if(!is.null(cl)) {
     parallel::stopCluster(cl)
     cl = NULL
 }
+```
 
-
-kddPrune=0.999
-nK = 200
-trainP = prepare(treatmentsC,
-                   dTrainM,
-                   scale=TRUE,
-                   pruneLevel=kddPrune)
-selvars = setdiff(colnames(trainP),yName)
-
-testP = prepare(treatmentsC,
-                  dTest,
-                  scale=TRUE,
-                  pruneLevel=kddPrune)
-
+```{r kddrf, tidy=FALSE}
 model <- randomForest(x=trainP[,selvars,drop=FALSE],
                       y=as.factor(as.character(trainP[[yName]])))
 print(model)
