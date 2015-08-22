@@ -86,9 +86,8 @@ cl = parallel::makeCluster(4)
 # build the data treatments on calibration data
 treatments = designTreatmentsC(dTrainC,
     vars,yName,yTarget,
-    smFactor=2.0, forceCatNum = FALSE,
-    parallelCluster=cl,
-    scoreVars=FALSE)
+    smFactor=2.0,
+    parallelCluster=cl)
 
 
 if(!is.null(cl)) {
@@ -101,9 +100,9 @@ if(!is.null(cl)) {
 # we only used to to fit data treatment parameters
 # and impact coded models
 treatedTrainM = prepare(treatments,dTrainM,
-                        pruneLevel=c())
+                        pruneSig=c())
 treatedTest = prepare(treatments,dTest,
-                       pruneLevel=c())
+                       pruneSig=c())
 varnames = treatments$vars
 
 # remove the catN impact coded variables; we'll use only the catB impact coded variable
