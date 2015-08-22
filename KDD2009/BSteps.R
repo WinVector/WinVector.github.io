@@ -40,26 +40,25 @@ parallelCluster = parallel::makeCluster(nCoreEstimate)
 treatmentsC = designTreatmentsC(dTrainC,
                                 vars,yName,yTarget,
                                 smFactor=2.0, 
-                                parallelCluster=parallelCluster,
-                                scoreVars=TRUE)
+                                parallelCluster=parallelCluster)
 
 
 # prepare data
 treatedTrainM = prepare(treatmentsC,
                         dTrainM,
-                        pruneLevel=c())
+                        pruneSig=0.05)
 varSet = setdiff(colnames(treatedTrainM),yName)
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 print(summary(treatedTrainM[[yName]]))
 
 treatedTest = prepare(treatmentsC,
                       dTest,
-                      pruneLevel=c())
+                      pruneSig=0.05)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 print(summary(treatedTest[[yName]]))
 
 
-chosenVars <- names(treatmentsC$varScores)[treatmentsC$varScores<1]
+chosenVars <- names(treatmentsC$sig)[treatmentsC$sig<0.05]
 
 
 # debug
