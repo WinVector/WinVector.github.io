@@ -64,6 +64,10 @@ ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) +
   geom_density(adjust=0.2)
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
   geom_density(adjust=0.2) + scale_x_log10()
+
+ggplot(data=treatmentsC$scoreFrame,aes(x=csig+1.0e-6)) + 
+  geom_density(adjust=0.6) + scale_x_log10()
+
 sum(treatmentsC$scoreFrame$csig<0.05)
 
 kddPrune=0.05
