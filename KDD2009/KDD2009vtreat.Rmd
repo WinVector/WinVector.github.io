@@ -12,6 +12,7 @@ library('WVPlots')
 library('parallel')
 library('gbm')
 library('class')
+library('ggplot2')
 
 
 # load the data as in the book
@@ -52,12 +53,96 @@ set.seed(239525)
 
 cl = parallel::makeCluster(4)
 
-
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
     vars,yName,yTarget,
     smFactor=2.0, 
     parallelCluster=cl)
+
+kddSig = 0.05
+
+treatedTrainM = prepare(treatmentsC,
+                        dTrainM,
+                        pruneSig=kddSig, 
+                        parallelCluster=cl)
+selvars = setdiff(colnames(treatedTrainM),yName)
+treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
+
+treatedTest = prepare(treatmentsC,
+                      dTest,
+                      pruneSig=kddSig, 
+                      parallelCluster=cl)
+treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+
+addResidualVars = TRUE
+
+if(addResidualVars) {
+  # see if we can learn new encodings from residuals of a mdoel
+  if('devCorrection' %in% colnames(dTrainC)) {
+    stop("devCorrection already used")
+  }
+  # get the calibration frame ready
+  treatedTrainC = prepare(treatmentsC,
+                          dTrainC,
+                          pruneSig=kddSig, 
+                          parallelCluster=cl)
+  treatedTrainC[[yName]] = treatedTrainC[[yName]]==yTarget
+  # build an initial model
+  formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
+  modelGBMs = gbm(as.formula(formulaS),
+                  data=treatedTrainC,
+                  distribution='bernoulli',
+                  n.trees=500,
+                  interaction.depth=3,
+                  keep.data=FALSE,
+                  cv.folds=5)
+  nTrees = gbm.perf(modelGBMs,plot.it = FALSE)
+  mpred = predict(modelGBMs,newdata=treatedTrainC,type='response',
+                  n.trees=nTrees)
+  # build new variables 
+  epsilon = 1.0e-5
+  # collar prediction to make log well behaved
+  mpred = pmin(pmax(mpred,epsilon),1-epsilon)
+  # deviance correcton, want more positive on true examples and more negative on false
+  # -gradient of the deviance per-row, shifted towards zero
+  # devCorrection = ifelse(treatedTrainC[[yName]],2/mpred-2,-2/(1-mpred)+2)
+  # or, assuming p = sigmoid(link) we can take the derivative wrt link and get (1-p)-(1-y) = y-p
+  devCorrection = ifelse(treatedTrainC[[yName]],1.0,0.0) - mpred
+  pf <- data.frame(pred=mpred,y=treatedTrainC[[yName]],devCorrection=devCorrection)
+  pf$match <- pf$y==(pf$pred>0.5)
+  ggplot(data=pf,aes(x=devCorrection,color=match)) + geom_density()
+  dTrainC$devCorrection <- devCorrection
+  catVars <- selvars[grep('_cat',selvars,fixed=TRUE)]
+  catPosns <- treatmentsC$scoreFrame$varName %in% catVars
+  catOrig <- unique(treatmentsC$scoreFrame[catPosns,'origName',drop=TRUE])
+  treatmentsN = designTreatmentsN(dTrainC,
+                                  catOrig,'devCorrection',
+                                  minFraction=1.0,
+                                  smFactor=2.0, 
+                                  parallelCluster=cl)
+  newVars <- treatmentsN$scoreFrame[treatmentsN$scoreFrame$sig<=kddSig,
+                                    'varName',drop=TRUE]
+  if(length(intersect(newVars,selvars))>0) {
+    stop("variable name re-used")
+  }
+  if(length(intersect(c(newVars,selvars),c(yName,'devCorrection')))>0) {
+    stop("variable name clash")
+  }
+  # disjoint outcome name, so not in the original frames to be compied over
+  treatedTrainN = prepare(treatmentsN,
+                          dTrainM,
+                          pruneSig=c(), 
+                          varRestriction=newVars,
+                          parallelCluster=cl)
+  treatedTrainM = cbind(treatedTrainM,treatedTrainN)
+  treatedTestN = prepare(treatmentsN,
+                         dTest,
+                         pruneSig=c(), 
+                         varRestriction=newVars,
+                         parallelCluster=cl)
+  treatedTest = cbind(treatedTest,treatedTestN)
+  selvars <- c(selvars,newVars)
+}
 
 if(!is.null(cl)) {
     parallel::stopCluster(cl)
@@ -65,37 +150,6 @@ if(!is.null(cl)) {
 }
 ```
 
-
-```{r kddknnnew, tidy=FALSE}
-kddPrune=0.05
-nK = 200
-knnTrain = prepare(treatmentsC,
-                   dTrainM,
-                   scale=TRUE,
-                   pruneSig=kddPrune)
-selvars = setdiff(colnames(knnTrain),yName)
-knnCl = knnTrain[[yName]]==yTarget
-
-knnTest = prepare(treatmentsC,
-                  dTest,
-                  scale=TRUE,
-                  pruneSig=kddPrune)
-
-knnPred = function(df) {
-    knnDecision = knn(knnTrain[,selvars],df[,selvars],knnCl,k=nK,prob=T)
-    ifelse(knnDecision==TRUE,
-       attributes(knnDecision)$prob,
-       1-(attributes(knnDecision)$prob))
-}
-knnTest$predKNN = knnPred(knnTest)
-knnTest[[yName]] = knnTest[[yName]]==yTarget
-ti = 'KNN code on C nn on M'
-print(DoubleDensityPlot(knnTest, 'predKNN', yName, 
-                               title=ti))
-print(ROCPlot(knnTest, 'predKNN', yName, 
-                     title=ti))
-
-```
 
 
 
@@ -105,18 +159,7 @@ print(ROCPlot(knnTest, 'predKNN', yName,
 #
 # This gets us back to AUC 0.72
 
-kddPrune = 0.999
-
-treatedTrainM = prepare(treatmentsC,
-                   dTrainM,
-                   pruneSig=kddPrune)
-selvars = setdiff(colnames(knnTrain),yName)
-treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
-
-treatedTest = prepare(treatmentsC,
-                  dTest,
-                  pruneSig=kddPrune)
-treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+print(selvars)
 
 # prepare plotting frames
 treatedTrainP = treatedTrainM[, yName, drop=FALSE]
@@ -136,8 +179,8 @@ for(mname in c('gbmPred','glmPred')) {
                     interaction.depth=3,
                     keep.data=FALSE,
                     cv.folds=5)
-    print(modelGBMs)
-    print(summary(modelGBMs))
+    #print(modelGBMs)
+    #print(summary(modelGBMs))
     nTrees = gbm.perf(modelGBMs)
     treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrainM,type='response',
                                      n.trees=nTrees) 
@@ -148,7 +191,7 @@ for(mname in c('gbmPred','glmPred')) {
                     data=treatedTrainM,
                     family=binomial(link='logit')
     )
-    print(summary(modelglms))
+    #print(summary(modelglms))
     treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrainM,type='response')
     treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
   }
