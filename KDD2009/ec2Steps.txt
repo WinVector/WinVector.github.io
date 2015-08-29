@@ -30,11 +30,12 @@ sudo apt-get -y install xml2
 sudo apt-get -y install libxml2-dev
 
 # install the packages we need
+# not sure https mirrors are quite ready for prime time
 R
 install.packages('curl')
 install.packages('devtools')
 install.packages(c('ggplot2','reshape2','gbm','ROCR','data.table',
-   'dplyr','randomForest','mgcv','glmnet','caret'))
+   'dplyr','randomForest','mgcv','glmnet','caret','kernlab'))
 devtools::install_github("WinVector/vtreat")
 devtools::install_github("WinVector/WVPlots")
 quit(save='no') # don't save workspace

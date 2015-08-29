@@ -13,6 +13,7 @@ library('data.table')
 library('randomForest')
 library('dplyr')
 library('caret')
+library('kernlab')
 #library('deepnet')
 
 
@@ -127,6 +128,22 @@ doFitApplyRF <- function(yName,selvars,trainData,appDataList,bootScore=FALSE,par
     # randomForest doesn't seem to export its predict function in a nice way
     pred <- predict(model,newdata=d[,selvars,drop=FALSE],
                     type='prob')[,'TRUE',drop=TRUE]
+    if(bootScore) {
+      perfScoresB(d[[yName]],pred)
+    } else {
+      perfScores(d[[yName]],pred)
+    }
+  })
+}
+
+doFitApplySVM <- function(yName,selvars,trainData,appDataList,bootScore=FALSE,parallelCluster=c()) {
+  model <- kernlab::ksvm(x=as.matrix(trainData[,selvars,drop=FALSE]),
+                y=as.factor(as.character(trainData[[yName]])),
+                prob.model=TRUE)
+  lapply(appDataList,function(d) {
+    # randomForest doesn't seem to export its predict function in a nice way
+    pred <- predict(model,newdata=as.matrix(d[,selvars,drop=FALSE]),
+                    type='probabilities')[,'TRUE',drop=TRUE]
     if(bootScore) {
       perfScoresB(d[[yName]],pred)
     } else {
@@ -338,7 +355,8 @@ plotResult <- function(eresult,plotRanges=TRUE) {
   plots
 }
 
-allFitters <- list('logistic regression'=doFitApplyLR,
+allFitters <- list('SVMrbf'=doFitApplySVM,
+                   'logistic regression'=doFitApplyLR,
                    'gbm'=doFitApplyGBM,
                    'elastic net logistic regression'=doFitApplyGLMNet,
                    'GAM logistic regression'=doFitApplyGAMLR,

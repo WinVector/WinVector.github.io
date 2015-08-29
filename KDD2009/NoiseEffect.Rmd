@@ -1,0 +1,21 @@
+---
+title: "NoiseEffect"
+author: "John Mount"
+date: "August 29, 2015"
+output: html_document
+---
+
+
+```{r}
+library('ggplot2')
+
+nFrame <- readRDS('nResFrame.RData')
+
+ggplot(data=nFrame,aes(x=noiseLevel,y=test.auc,color=model)) +
+  geom_point() + geom_smooth()
+
+ggplot(data=nFrame,aes(x=noiseLevel,y=test.ndeviance,color=model)) +
+  geom_point() + geom_smooth()
+
+```
+
