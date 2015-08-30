@@ -1,0 +1,32 @@
+---
+title: "IsotonicExample"
+author: "John Mount"
+date: "August 30, 2015"
+output: html_document
+---
+
+
+```{r}
+library('ggplot2')
+
+source('Lfns.R')
+
+set.seed(23525)
+d <- data.frame(x=rnorm(20))
+d$y <- d$x+rnorm(nrow(d))>0
+m <- glm(y~x,data=d,family=binomial)
+d$pred <- predict(m,type='response')
+d$iso <- solveIsotonicProblem(d$y,d$pred)
+
+# show iso is a non-decreasing function of pred
+ggplot(data=d,aes(x=pred,y=iso)) + geom_point()
+
+# show iso is no further from y
+ggplot(data=d,aes(x=pred,color=y)) + 
+  geom_density() + 
+  ggtitle(paste("outcome by pred, deviance",devianceNYP(d$y,d$pred)))
+ggplot(data=d,aes(x=iso,color=y)) +
+  geom_density() + 
+  ggtitle(paste("outcome by iso adjusted pred, deviance,",devianceNYP(d$y,d$iso)))
+```
+

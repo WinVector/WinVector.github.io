@@ -33,7 +33,11 @@ aucYP <- function(yVals,preds) {
 # compute normalized deviance of a canonical transform of pred
 # y logical
 # x numeric same length as y
-isoDeviance <- function(y,pred) {
+# return isotonicly adjusted x
+# this is a vector of length x that is a function of x
+# with at least as many order constraints as x and as close
+# to y in probablity (by deviance) as possible.
+solveIsotonicProblem <- function(y,pred) {
   if(!is.logical(y)) {
     stop("expect y logical")
   }
@@ -43,11 +47,57 @@ isoDeviance <- function(y,pred) {
   if(length(pred)!=length(y)) {
     stop("expect length(pred)==length(y)")
   }
-  adjPred <- isotone::gpava(pred,as.numeric(y))$x
+  d <- data.frame(y=y,pred=pred)
+  n <- nrow(d)
+  dord <- order(d$pred,d$y)
+  invPerm <- 1:n
+  invPerm[dord] <- 1:n
+  d <- d[dord,]
+  epsilon <- 1.0e-6
+  # build order relations to insist on a monotone function transform
+  # first all order constraints
+  Atot <- cbind(1:(n-1),2:n)
+  # then any additional equality constraints to force result to be a
+  # function of pred
+  noIncrease <- which(d$pred[1:(n-1)]>=d$pred[2:n]-1.0e-6)
+  if(length(noIncrease)>0) {
+    Atot <- rbind(Atot,cbind(noIncrease+1,noIncrease))
+  }
+  # # sum of squares objective
+  # adjPred <- isotone::activeSet(Atot,isotone::fSolver,
+  #                               fobj=function(x) sum((x-d$y)^2),
+  #                               gobj=function(x) drop(2*(x-d$y)),
+  #                               y=d$y,weights=rep(1,n))$x
+  # adjPred <- pmin(1-epsilon,pmax(epsilon,adjPred))
+  # deviance objective
+  sigmoid <- function(x) { 1/(1+exp(-x))}
+  adjPred <- isotone::activeSet(Atot,isotone::fSolver,
+                                fobj=function(x) {
+                                  sx <- sigmoid(x)
+                                  fx <- -2*(sum(log(sx[d$y]))+sum(log(1-sx[!d$y])))
+                                  fx
+                                },
+                                gobj=function(x) {
+                                  sx <- sigmoid(x)
+                                  dx <- sx*(1-sx) # derivative of sx
+                                  # gradient of fob by chain rule
+                                  gx <- -2*ifelse(d$y,1/sx,-1/(1-sx))*dx
+                                  gx
+                                },
+                                y=d$y,weights=rep(1,n))$x
+  adjPred <- sigmoid(adjPred)
+  # undo permutation
+  adjPred <- adjPred[invPerm]
+  adjPred
+}
+
+# compute normalized deviance of a canonical transform of pred
+# y logical
+# x numeric same length as y
+isoDeviance <- function(y,pred) {
+  adjPred <- solveIsotonicProblem(y,pred)
   # adjPred(pred) == adjPred(f(pred)) for any monotone 1-1 f()
   # so we are now invariant over such f
-  epsilon <- 1.0e-6
-  adjPred <- pmin(1-epsilon,pmax(epsilon,adjPred))
   -2*(sum(log(adjPred[y]))+sum(log(1.0-adjPred[!y])))/length(y)
 }
 
