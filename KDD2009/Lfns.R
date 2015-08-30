@@ -53,7 +53,7 @@ solveIsotonicProblem <- function(y,pred) {
   invPerm <- 1:n
   invPerm[dord] <- 1:n
   d <- d[dord,]
-  epsilon <- 1.0e-12
+  epsilon <- 1/(n+2)
   # build order relations to insist on a monotone function transform
   # first all order constraints
   Atot <- cbind(1:(n-1),2:n)
@@ -63,42 +63,10 @@ solveIsotonicProblem <- function(y,pred) {
   if(length(noIncrease)>0) {
     Atot <- rbind(Atot,cbind(noIncrease+1,noIncrease))
   }
-  # sum of squares objective (as a good start for logistic attempt)
+  # sum of squares objective 
   sqIso <- isotone::activeSet(Atot,y=d$y,weights=rep(1,n))
-  # deviance objective
-  logit <- function(p) { log(p/(1-p))}
-  sigmoid <- function(x) { 1/(1+exp(-x))}
-  x0 <- logit(pmin(1-epsilon,pmax(epsilon,sqIso$x)))
-  # robustify against optimizer failures
-  bestSx <- d$pred   # init to identity function
-  bestFx <- Inf
-  # setting x0 in activeSet loses enforcement of constraints (bug in library) 
-  fobj=function(x) {
-    sx <- sigmoid(x+x0)
-    sx <- pmin(1-epsilon,pmax(epsilon,sx))
-    fx <- -2*(sum(log(sx[d$y]))+sum(log(1-sx[!d$y])))
-    feasible <- all(sx[Atot[,1,drop=TRUE]]<=sx[Atot[,2,drop=TRUE]])
-    if(feasible && (is.null(bestSx)||(fx<bestFx))) {
-      bestSx <<- sx
-      bestFx <<- fx
-    }
-    fx
-  }
-  # force an eval at zero
-  fobj(numeric(length(x0)))
-  isoSoln <- isotone::activeSet(Atot,isotone::fSolver,
-                                fobj=fobj,
-                                gobj=function(x) {
-                                  sx <- sigmoid(x+x0)
-                                  dx <- sx*(1-sx) # derivative of sx
-                                  # gradient of fob by chain rule
-                                  gx <- -2*ifelse(d$y,1/sx,-1/(1-sx))*dx
-                                  gx[dx<=0] <- 0
-                                  gx
-                                },
-                                y=d$y,weights=rep(1,n))
   # undo permutation
-  adjPred <- bestSx
+  adjPred <- pmin(1-epsilon,pmax(epsilon,sqIso$x))
   adjPred <- adjPred[invPerm]
   adjPred
 }
