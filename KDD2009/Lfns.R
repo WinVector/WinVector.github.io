@@ -70,7 +70,7 @@ solveIsotonicProblem <- function(y,pred) {
   sigmoid <- function(x) { 1/(1+exp(-x))}
   x0 <- logit(pmin(1-epsilon,pmax(epsilon,sqIso$x)))
   # robustify against optimizer failures
-  bestSx <- c()
+  bestSx <- d$pred   # init to identity function
   bestFx <- Inf
   # setting x0 in activeSet loses enforcement of constraints (bug in library) 
   fobj=function(x) {

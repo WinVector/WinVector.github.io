@@ -17,18 +17,56 @@ d$y <- (d$x+rnorm(nrow(d)))>0
 d$isTrain <- rbinom(nrow(d),1,prob=0.5)>0.5
 m <- glm(y~x,data=d[d$isTrain,],family=binomial)
 d$pred <- predict(m,newdata=d,type='response')
-d$iso <- solveIsotonicProblem(d$y,d$pred)
+
+dTrain <- d[d$isTrain,]
+dTest <- d[!d$isTrain,]
+
+dTrain$iso <- solveIsotonicProblem(dTrain$y,dTrain$pred)
+
+# repeat adjustment mapping on new data
+# TODO: interpolate the in-between cases
+mapIso <- function(trainOrig,trainAdjusted,newOrig) {
+  maxIndex <- which.max(trainOrig)[[1]]
+  minIndex <- which.min(trainOrig)[[1]]
+  breaks <- sort(unique(trainOrig))
+  cf <- data.frame(trainOrig=trainOrig,
+                   trainAdjusted=trainAdjusted,
+                   ct=cut(trainOrig,breaks=breaks,include.lowest=TRUE))
+  ag <- aggregate(cbind(trainOrig,trainAdjusted)~ct,data=cf,mean)
+  vmap <- ag$trainAdjusted
+  names(vmap) <- as.character(ag$ct)
+  nct <- as.character(cut(newOrig,breaks=breaks,include.lowest=TRUE))
+  newAdjusted <- as.numeric(vmap[nct])
+  newAdjusted[newOrig>=trainOrig[[maxIndex]]] <- trainAdjusted[[maxIndex]]
+  newAdjusted[newOrig<=trainOrig[[minIndex]]] <- trainAdjusted[[minIndex]]
+  newAdjusted           
+}
+
+d$iso <- mapIso(dTrain$pred,dTrain$iso,d$pred)
+dTest$iso <- mapIso(dTrain$pred,dTrain$iso,dTest$pred)
+
 
 # show iso is a non-decreasing function of pred
 ggplot(data=d,aes(x=pred,y=iso,color=y)) +
   geom_point()
 
 # show iso is no further from y
-ggplot(data=d,aes(x=pred,color=y)) + 
+ggplot(data=dTrain,aes(x=pred,color=y)) + 
   geom_density() + 
-  ggtitle(paste("outcome by pred, deviance",devianceNYP(d$y,d$pred)))
-ggplot(data=d,aes(x=iso,color=y)) +
+  ggtitle(paste("train outcome by pred, deviance",
+                devianceNYP(dTrain$y,dTrain$pred)))
+ggplot(data=dTrain,aes(x=iso,color=y)) +
   geom_density() + 
-  ggtitle(paste("outcome by iso adjusted pred, deviance,",devianceNYP(d$y,d$iso)))
+  ggtitle(paste("train outcome by iso adjusted pred, deviance,",
+                devianceNYP(dTrain$y,dTrain$iso)))
+
+ggplot(data=dTest,aes(x=pred,color=y)) + 
+  geom_density() + 
+  ggtitle(paste("test outcome by pred, deviance",
+                devianceNYP(dTest$y,dTest$pred)))
+ggplot(data=dTest,aes(x=iso,color=y)) +
+  geom_density() + 
+  ggtitle(paste("test outcome by iso adjusted pred, deviance,",
+                devianceNYP(dTest$y,dTest$iso)))
 ```
 
