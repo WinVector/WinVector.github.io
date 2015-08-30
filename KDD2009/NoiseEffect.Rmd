@@ -17,5 +17,8 @@ ggplot(data=nFrame,aes(x=noiseLevel,y=test.auc,color=model)) +
 ggplot(data=nFrame,aes(x=noiseLevel,y=test.ndeviance,color=model)) +
   geom_point() + geom_smooth()
 
+ggplot(data=nFrame,aes(x=noiseLevel,y=test.isodev,color=model)) +
+  geom_point() + geom_smooth()
+
 ```
 

@@ -35,7 +35,8 @@ R
 install.packages('curl')
 install.packages('devtools')
 install.packages(c('ggplot2','reshape2','gbm','ROCR','data.table',
-   'dplyr','randomForest','mgcv','glmnet','caret','kernlab'))
+   'dplyr','randomForest','mgcv','glmnet','caret','kernlab',
+   'isotone'))
 devtools::install_github("WinVector/vtreat")
 devtools::install_github("WinVector/WVPlots")
 quit(save='no') # don't save workspace

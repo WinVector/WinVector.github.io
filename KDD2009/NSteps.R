@@ -108,13 +108,13 @@ mkWorkerN1 <- function(allFitters,yName,chosenVars,treatedTrainX,scoreFList) {
       treatedTrainX[[yName]][noiseIndices] <- noiseValues
     }
     scoreFList$ntrain <- treatedTrainX
-    bootScores <- fitter(yName,chosenVars,treatedTrainX,scoreFList,
-                         bootScore=TRUE,parallelCluster=c())
+    perfScores <- fitter(yName,chosenVars,treatedTrainX,scoreFList,
+                         bootScore=FALSE,parallelCluster=c())
     cbind(data.frame(model=modelTitle,
                      noiseLevel=noiseLevel,
                      rep=rep,
                      stringsAsFactors=FALSE),
-          data.frame(as.list(unlist(bootScores))))
+          data.frame(as.list(unlist(perfScores))))
   } 
 }
 w1 <- mkWorkerN1(allFitters,yName,chosenVars,

@@ -30,6 +30,27 @@ aucYP <- function(yVals,preds) {
   as.numeric(ROCR::performance(pred,'auc')@y.values) # strip stuff
 }
 
+# compute normalized deviance of a canonical transform of pred
+# y logical
+# x numeric same length as y
+isoDeviance <- function(y,pred) {
+  if(!is.logical(y)) {
+    stop("expect y logical")
+  }
+  if(!is.numeric(pred)) {
+    stop("expect pred numeric")
+  }
+  if(length(pred)!=length(y)) {
+    stop("expect length(pred)==length(y)")
+  }
+  adjPred <- isotone::gpava(pred,as.numeric(y))$x
+  # adjPred(pred) == adjPred(f(pred)) for any monotone 1-1 f()
+  # so we are now invariant over such f
+  epsilon <- 1.0e-6
+  adjPred <- pmin(1-epsilon,pmax(epsilon,adjPred))
+  -2*(sum(log(adjPred[y]))+sum(log(1.0-adjPred[!y])))/length(y)
+}
+
 # convert truth and predictions to performance scores
 #' @param yVals logical
 #' @param preds , length(preds)==length(yVals) 0<=preds<=1
@@ -37,7 +58,8 @@ aucYP <- function(yVals,preds) {
 perfScores <- function(yVals,preds) {
   dev <- devianceNYP(yVals,preds)
   auc <- aucYP(yVals,preds)
-  list(ndeviance=dev,auc=auc)
+  isodev <- isoDeviance(yVals,preds)
+  list(ndeviance=dev,isodev=isodev,auc=auc)
 }
 
 

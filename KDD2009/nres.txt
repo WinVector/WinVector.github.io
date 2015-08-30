@@ -17,8 +17,6 @@ Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
 
-[Previously saved workspace restored]
-
 > 
 > # Plot effect of training y-noise on fit quality
 > 
@@ -117,10 +115,10 @@ The following object is masked from ‘package:survival’:
 +                                 vars,yName,yTarget,
 +                                 smFactor=2.0, 
 +                                 parallelCluster=parallelCluster)
-[1] "desigining treatments Sat Aug 29 17:53:57 2015"
-[1] "scoring treatments Sat Aug 29 17:53:57 2015"
+[1] "desigining treatments Sat Aug 29 23:23:36 2015"
+[1] "scoring treatments Sat Aug 29 23:23:37 2015"
 [1] "WARNING skipped vars: Var8, Var15, Var20, Var31, Var32, Var39, Var42, Var48, Var52, Var55, Var79, Var141, Var167, Var169, Var175, Var185, Var209, Var230"
-[1] "have treatment plan Sat Aug 29 17:54:04 2015"
+[1] "have treatment plan Sat Aug 29 23:23:44 2015"
 > 
 > 
 > # prepare data
@@ -190,13 +188,13 @@ logical    4619     353       0
 +       treatedTrainX[[yName]][noiseIndices] <- noiseValues
 +     }
 +     scoreFList$ntrain <- treatedTrainX
-+     bootScores <- fitter(yName,chosenVars,treatedTrainX,scoreFList,
-+                          bootScore=TRUE,parallelCluster=c())
++     perfScores <- fitter(yName,chosenVars,treatedTrainX,scoreFList,
++                          bootScore=FALSE,parallelCluster=c())
 +     cbind(data.frame(model=modelTitle,
 +                      noiseLevel=noiseLevel,
 +                      rep=rep,
 +                      stringsAsFactors=FALSE),
-+           data.frame(as.list(unlist(bootScores))))
++           data.frame(as.list(unlist(perfScores))))
 +   } 
 + }
 > w1 <- mkWorkerN1(allFitters,yName,chosenVars,
@@ -221,5 +219,5 @@ logical    4619     353       0
 > 
 > 
 > proc.time()
-    user   system  elapsed 
-  14.311    1.868 6253.060 
+     user    system   elapsed 
+   15.173     1.402 11729.791 
