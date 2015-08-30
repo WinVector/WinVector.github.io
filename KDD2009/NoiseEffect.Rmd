@@ -17,8 +17,10 @@ ggplot(data=nFrame,aes(x=noiseLevel,y=test.auc,color=model)) +
 ggplot(data=nFrame,aes(x=noiseLevel,y=test.ndeviance,color=model)) +
   geom_point() + geom_smooth()
 
-ggplot(data=nFrame,aes(x=noiseLevel,y=test.isodev,color=model)) +
-  geom_point() + geom_smooth()
+# don't have the transform right yet (probably taking the same value
+# to multiple mappings)
+#ggplot(data=nFrame,aes(x=noiseLevel,y=test.isodev,color=model)) +
+#  geom_point() + geom_smooth()
 
 ```
 
