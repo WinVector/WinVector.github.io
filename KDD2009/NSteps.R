@@ -4,10 +4,14 @@
 source('Lfns.R')
 source('Afns.R')
 
+debug = FALSE
+
 # load the data as in the book
 # change this path to match your directory structure
-#dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/'
 dir = './'
+if(debug) {
+   dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/'
+}
 
 d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
                header=T,sep='\t',na.strings=c('NA',''), 
@@ -61,6 +65,12 @@ print(summary(treatedTest[[yName]]))
 
 
 chosenVars <- names(treatmentsC$sig)[treatmentsC$sig<0.05]
+
+if(debug) {
+  chosenVars <- chosenVars[1:5]
+  treatedTrainM <- treatedTrainM[sample.int(nrow(treatedTrainM),200),]
+  treatedTest <- treatedTest[sample.int(nrow(treatedTest),200),]
+}
 
 
 
@@ -119,7 +129,18 @@ mkWorkerN1 <- function(allFitters,yName,chosenVars,treatedTrainX,scoreFList) {
 }
 w1 <- mkWorkerN1(allFitters,yName,chosenVars,
                  treatedTrainM,scoreFList)
-resList <- parallel::parLapply(parallelCluster,workList,w1)
+if(!debug) {
+  resList <- parallel::parLapply(parallelCluster,workList,w1)
+} else {
+  # run directly (without parLapply or lapply) to make tracing in easier
+  resList <- vector(mode='list',length=length(workList))
+  for(i in seq_len(length(workList))) {
+    print(paste('start',i,date()))
+    wi <- workList[[i]]
+    resList[[i]] <- w1(wi)
+    print(paste('done',i,date()))
+  }
+}
 if(length(resList)!=length(workList)) {
   stop("not all results came back from parLapply")
 }

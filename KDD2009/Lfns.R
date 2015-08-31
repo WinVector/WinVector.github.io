@@ -83,6 +83,13 @@ solveIsotonicProblemW <- function(y,pred,w) {
   if(n<=1) {
     return(as.numeric(y))
   }
+  if(n<=2) {
+    if((pred[[2]]>pred[[1]])&&(y[[2]]>=y[[1]])) {
+      return(as.numeric(y))
+    }
+    v <- sum(w*y)/sum(w)
+    return(c(v,v))
+  }
   dord <- order(d$pred,d$y)
   invPerm <- 1:n
   invPerm[dord] <- 1:n

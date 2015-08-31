@@ -1,0 +1,15 @@
+---
+title: "IsoToneBug"
+author: "John Mount"
+date: "August 31, 2015"
+output: html_document
+---
+
+
+```{r}
+Atot <- cbind(1,2)
+y = c(0,1)
+w <- c(1,1)
+sqIso <- isotone::activeSet(Atot,y=y,weights=w)
+```
+
