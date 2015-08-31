@@ -75,10 +75,14 @@ The following object is masked from ‘package:survival’:
     cluster
 
 > 
+> debug = FALSE
+> 
 > # load the data as in the book
 > # change this path to match your directory structure
-> #dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/'
 > dir = './'
+> if(debug) {
++    dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/'
++ }
 > 
 > d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
 +                header=T,sep='\t',na.strings=c('NA',''), 
@@ -115,10 +119,10 @@ The following object is masked from ‘package:survival’:
 +                                 vars,yName,yTarget,
 +                                 smFactor=2.0, 
 +                                 parallelCluster=parallelCluster)
-[1] "desigining treatments Sat Aug 29 23:23:36 2015"
-[1] "scoring treatments Sat Aug 29 23:23:37 2015"
+[1] "desigining treatments Mon Aug 31 18:16:00 2015"
+[1] "scoring treatments Mon Aug 31 18:16:01 2015"
 [1] "WARNING skipped vars: Var8, Var15, Var20, Var31, Var32, Var39, Var42, Var48, Var52, Var55, Var79, Var141, Var167, Var169, Var175, Var185, Var209, Var230"
-[1] "have treatment plan Sat Aug 29 23:23:44 2015"
+[1] "have treatment plan Mon Aug 31 18:16:08 2015"
 > 
 > 
 > # prepare data
@@ -141,6 +145,12 @@ logical    4619     353       0
 > 
 > 
 > chosenVars <- names(treatmentsC$sig)[treatmentsC$sig<0.05]
+> 
+> if(debug) {
++   chosenVars <- chosenVars[1:5]
++   treatedTrainM <- treatedTrainM[sample.int(nrow(treatedTrainM),200),]
++   treatedTest <- treatedTest[sample.int(nrow(treatedTest),200),]
++ }
 > 
 > 
 > 
@@ -199,7 +209,18 @@ logical    4619     353       0
 + }
 > w1 <- mkWorkerN1(allFitters,yName,chosenVars,
 +                  treatedTrainM,scoreFList)
-> resList <- parallel::parLapply(parallelCluster,workList,w1)
+> if(!debug) {
++   resList <- parallel::parLapply(parallelCluster,workList,w1)
++ } else {
++   # run directly (without parLapply or lapply) to make tracing in easier
++   resList <- vector(mode='list',length=length(workList))
++   for(i in seq_len(length(workList))) {
++     print(paste('start',i,date()))
++     wi <- workList[[i]]
++     resList[[i]] <- w1(wi)
++     print(paste('done',i,date()))
++   }
++ }
 > if(length(resList)!=length(workList)) {
 +   stop("not all results came back from parLapply")
 + }
@@ -219,5 +240,5 @@ logical    4619     353       0
 > 
 > 
 > proc.time()
-     user    system   elapsed 
-   15.173     1.402 11729.791 
+    user   system  elapsed 
+  15.442    1.650 6198.787 

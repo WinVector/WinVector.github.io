@@ -12,15 +12,16 @@ library('ggplot2')
 nFrame <- readRDS('nResFrame.RData')
 
 ggplot(data=nFrame,aes(x=noiseLevel,y=test.auc,color=model)) +
-  geom_point() + geom_smooth()
+  geom_point() + stat_smooth(se=FALSE)
 
 ggplot(data=nFrame,aes(x=noiseLevel,y=test.ndeviance,color=model)) +
-  geom_point() + geom_smooth()
+  geom_point() + stat_smooth(se=FALSE)
 
-# don't have the transform right yet (probably taking the same value
-# to multiple mappings)
-#ggplot(data=nFrame,aes(x=noiseLevel,y=test.isodev,color=model)) +
-#  geom_point() + geom_smooth()
+nFrame$test.isodev[is.infinite(nFrame$test.isodev)] <- 1
+nFrame$test.isodev <- pmin(1,nFrame$test.isodev)
+
+ggplot(data=nFrame,aes(x=noiseLevel,y=test.isodev,color=model)) +
+  geom_point() + stat_smooth(se=FALSE)
 
 ```
 
