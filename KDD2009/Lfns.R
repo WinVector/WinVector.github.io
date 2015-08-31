@@ -30,8 +30,85 @@ aucYP <- function(yVals,preds) {
   as.numeric(ROCR::performance(pred,'auc')@y.values) # strip stuff
 }
 
+
+
+
+# repeat adjustment mapping on new data
+mapIso <- function(trainOrig,trainAdjusted,newOrig) {
+  # limit down to unique values
+  breaks <- sort(unique(trainOrig))
+  uposns <- match(breaks,trainOrig)
+  trainOrig <- trainOrig[uposns]
+  trainAdjusted <- trainAdjusted[uposns]
+  newidx <- findInterval(newOrig,trainOrig)
+  newidx <- pmax(1,newidx)
+  trainOrig[[1+length(trainOrig)]] <- 1+trainOrig[[length(trainOrig)]] 
+  trainAdjusted[[1+length(trainAdjusted)]] <- trainAdjusted[[length(trainAdjusted)]]
+  lambda <- (newOrig-trainOrig[newidx])/(trainOrig[newidx+1]-trainOrig[newidx])
+  newAdjusted <- (1-lambda)*trainAdjusted[newidx] + lambda*trainAdjusted[newidx+1]
+  newAdjusted[newOrig<=trainOrig[[1]]] <- trainAdjusted[[1]]
+  n <- length(trainOrig)
+  newAdjusted[newOrig>=trainOrig[[n]]] <- trainAdjusted[[n]]
+  newAdjusted           
+}
+
+
+
 # compute normalized deviance of a canonical transform of pred
-# y logical
+# y numeric in range 0 to 1
+# x numeric same length as y
+# w numeric positive, same length as y (weights)
+# return isotonicly adjusted x
+# this is a vector of length x that is a function of x
+# with at least as many order constraints as x and as close
+# to y in probablity (by deviance) as possible.
+solveIsotonicProblemW <- function(y,pred,w) {
+  if(!is.numeric(y)) {
+    stop("expect y logical")
+  }
+  if(!is.numeric(pred)) {
+    stop("expect pred numeric")
+  }
+  if(!is.numeric(w)) {
+    stop("expect y logical")
+  }
+  if(length(pred)!=length(y)) {
+    stop("expect length(pred)==length(y)")
+  }
+  if(length(w)!=length(y)) {
+    stop("expect length(w)==length(y)")
+  }
+  d <- data.frame(y=y,pred=pred,w=w)
+  n <- nrow(d)
+  if(n<=1) {
+    return(as.numeric(y))
+  }
+  dord <- order(d$pred,d$y)
+  invPerm <- 1:n
+  invPerm[dord] <- 1:n
+  d <- d[dord,]
+  epsilon <- 1.0e-3
+  Atot <- matrix(ncol=2,nrow=0,data=0)
+  # build order relations to insist on a monotone function transform
+  # first all order constraints
+  Atot <- cbind(1:(n-1),2:n)
+  # then any additional equality constraints to force result to be a
+  # function of pred
+  noIncrease <- which(d$pred[1:(n-1)]>=d$pred[2:n]-1.0e-6)
+  if(length(noIncrease)>0) {
+    Atot <- rbind(Atot,cbind(noIncrease+1,noIncrease))
+  }
+  # sum of squares objective 
+  sqIso <- isotone::activeSet(Atot,y=d$y,weights=d$w)
+  adjPred <- pmin(1-epsilon,pmax(epsilon,sqIso$x))
+  # undo permutation
+  adjPred <- adjPred[invPerm]
+  adjPred
+}
+
+
+# compute normalized deviance of a canonical transform of pred
+# y logical in range 0 to 1
 # x numeric same length as y
 # return isotonicly adjusted x
 # this is a vector of length x that is a function of x
@@ -47,41 +124,41 @@ solveIsotonicProblem <- function(y,pred) {
   if(length(pred)!=length(y)) {
     stop("expect length(pred)==length(y)")
   }
-  d <- data.frame(y=y,pred=pred)
-  n <- nrow(d)
-  dord <- order(d$pred,d$y)
-  invPerm <- 1:n
-  invPerm[dord] <- 1:n
-  d <- d[dord,]
-  epsilon <- 1/(n+2)
-  # build order relations to insist on a monotone function transform
-  # first all order constraints
-  Atot <- cbind(1:(n-1),2:n)
-  # then any additional equality constraints to force result to be a
-  # function of pred
-  noIncrease <- which(d$pred[1:(n-1)]>=d$pred[2:n]-1.0e-6)
-  if(length(noIncrease)>0) {
-    Atot <- rbind(Atot,cbind(noIncrease+1,noIncrease))
-  }
-  # sum of squares objective 
-  sqIso <- isotone::activeSet(Atot,y=d$y,weights=rep(1,n))
-  adjPred <- pmin(1-epsilon,pmax(epsilon,sqIso$x))
-  # undo permutation
-  adjPred <- adjPred[invPerm]
-  adjPred
+  d <- data.frame(y=y,pred=pred,w=1.0)
+  dA <- aggregate(cbind(y,w)~pred,data=d,sum)
+  dA$y <- dA$y/dA$w
+  dA$iso <- solveIsotonicProblemW(dA$y,dA$pred,dA$w)
+  mapIso(dA$pred,dA$iso,pred)
 }
+
+
+
+
 
 
 
 # compute normalized deviance of a canonical transform of pred
 # y logical
 # x numeric same length as y
-isoDeviance <- function(y,pred) {
-  adjPred <- solveIsotonicProblem(y,pred)
+isoDeviance <- function(y,pred,maxSize=100) {
+  nrow <- length(y)
+  if(nrow>maxSize) {
+    sample <- sample.int(nrow,maxSize)
+    yS <- y[sample]
+    predS <- pred[sample]
+    adjPredS <- solveIsotonicProblem(yS,predS)
+    adjPred <- mapIso(predS,adjPredS,pred)
+  } else {
+    adjPred <- solveIsotonicProblem(y,pred)
+  }
   # adjPred(pred) == adjPred(f(pred)) for any monotone 1-1 f()
   # so we are now invariant over such f
   -2*(sum(log(adjPred[y]))+sum(log(1.0-adjPred[!y])))/length(y)
 }
+
+
+
+
 
 # convert truth and predictions to performance scores
 #' @param yVals logical
