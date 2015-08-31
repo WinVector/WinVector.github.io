@@ -39,6 +39,7 @@ install.packages(c('ggplot2','reshape2','gbm','ROCR','data.table',
    'isotone'))
 devtools::install_github("WinVector/vtreat")
 devtools::install_github("WinVector/WVPlots")
+devtools::install_github("WinVector/daccum")
 quit(save='no') # don't save workspace
 
 
