@@ -65,11 +65,13 @@ solveIsotonicProblem <- function(y,pred) {
   }
   # sum of squares objective 
   sqIso <- isotone::activeSet(Atot,y=d$y,weights=rep(1,n))
-  # undo permutation
   adjPred <- pmin(1-epsilon,pmax(epsilon,sqIso$x))
+  # undo permutation
   adjPred <- adjPred[invPerm]
   adjPred
 }
+
+
 
 # compute normalized deviance of a canonical transform of pred
 # y logical
