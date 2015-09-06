@@ -7,10 +7,9 @@ output: html_document
 
 ```{r kdddat, tidy=FALSE}
 #load some libraries
-# http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
-# devtools::install_github("WinVector/vtreat")
+# https://github.com/WinVector/vtreat
 library('vtreat')
-# devtools::install_github("WinVector/vtreat")
+# devtools::install_github("WinVector/WVPlots")
 library('WVPlots')
 library('parallel')
 library('randomForest')

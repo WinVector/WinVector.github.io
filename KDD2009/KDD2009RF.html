@@ -75,10 +75,9 @@ img {
 
 
 <pre class="r"><code>#load some libraries
-# http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
-# devtools::install_github(&quot;WinVector/vtreat&quot;)
+# https://github.com/WinVector/vtreat
 library('vtreat')
-# devtools::install_github(&quot;WinVector/vtreat&quot;)
+# devtools::install_github(&quot;WinVector/WVPlots&quot;)
 library('WVPlots')</code></pre>
 <pre><code>## Loading required package: ggplot2
 ## Loading required package: grid
@@ -137,10 +136,10 @@ treatmentsC = designTreatmentsC(dTrainC,
                                 vars,yName,yTarget,
                                 smFactor=2.0, 
                                 parallelCluster=cl)</code></pre>
-<pre><code>## [1] &quot;desigining treatments Wed Sep  2 10:12:17 2015&quot;
-## [1] &quot;scoring treatments Wed Sep  2 10:12:21 2015&quot;
+<pre><code>## [1] &quot;desigining treatments Sun Sep  6 15:31:12 2015&quot;
+## [1] &quot;scoring treatments Sun Sep  6 15:31:17 2015&quot;
 ## [1] &quot;WARNING skipped vars: Var8, Var15, Var20, Var31, Var32, Var39, Var42, Var48, Var52, Var55, Var79, Var141, Var167, Var169, Var175, Var185, Var209, Var230&quot;
-## [1] &quot;have treatment plan Wed Sep  2 10:13:21 2015&quot;</code></pre>
+## [1] &quot;have treatment plan Sun Sep  6 15:32:17 2015&quot;</code></pre>
 <pre class="r"><code>library('ggplot2')
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
   geom_density(adjust=0.2)</code></pre>
