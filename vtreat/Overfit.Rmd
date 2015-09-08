@@ -1,0 +1,78 @@
+---
+title: "OverfitExample"
+author: "John Mount"
+date: "September 8, 2015"
+output: html_document
+---
+
+
+Build an example data frame with no relation between x and y.  We are using a synthetic data set so we know what the "right answer is" (no signal).  False fitting on no-signal variables is bad for at least two reasons:
+ *  It creates the false impression you have a good result (which you may fail to falsify)
+ *  Complex bad variables can starve out simple weak good variables.
+ 
+This example shows things we don't want to happen, and then the additional precautions that help prevent them.
+
+```{r}
+set.seed(22626)
+d <- data.frame(x=sample(paste('level',1:1000,sep=''),2000,replace=TRUE)) # indpendent variables.
+d$y <- runif(nrow(d))>0.5  # the quantity to be predicted, notice: indpendent of variables.
+d$rgroup <- round(100*runif(nrow(d)))  # the random group used for splitting the data set, not a variable.
+```
+
+Bad practice: use same set of data to prepare variable encoding and train a model.  Leads to false belief (derived from training set) that model had a good fit.  Largely due to the treated variable appearing to consume only one degree of freedom, when it consumes many more.  In many cases a reasonable setting of pruneSig (say 0.01) will help against a variable being considered desirable, but selected variables may still be mis-used by downstream modeling.
+
+```{r}
+dTrain <- d[d$rgroup<=80,,drop=FALSE]
+dTest <- d[d$rgroup>80,,drop=FALSE]
+library('vtreat')
+treatments <- vtreat::designTreatmentsC(dTrain,'x','y',TRUE)
+dTrainTreated <- vtreat::prepare(treatments,dTrain,pruneSig=c())
+m1 <- glm(y~x_catB,data=dTrainTreated,family=binomial(link='logit'))
+print(summary(m1))  # notice low residual deviance
+# devtools::install_github("WinVector/WVPlots")
+library('WVPlots')
+dTrain$predM1 <- predict(m1,newdata=dTrainTreated,type='response')
+WVPlots::ROCPlot(dTrain,'predM1','y','model1 on train')
+dTestTreated <- vtreat::prepare(treatments,dTest,pruneSig=c())
+dTest$predM1 <- predict(m1,newdata=dTestTreated,type='response')
+WVPlots::ROCPlot(dTest,'predM1','y','model1 on test')
+```
+
+The above is bad: we saw a "significant" model fit on training data (even though there is no relation to be found).  This means the treated training data can be confusing to machine learning techniques and to the analyst.  The issue is the training data is no longer exchangeable with the test data because the training data was used to build the variable encodings.  One way to avoid this is to not use the training data for variable encoding construction, but instead use a third set for this task.
+
+Correct example: use different sets to prepare variable encoding and train a model.  Leads to false belief (derived from training set) that model had a good fit.  Largely due to the treated variable appearing to consume only one degree of freedom, when it consumes many more.
+
+Remember, the goal isn't good performance on training- it is good performance on future data (simulated by test).  So doing well on training and bad on test is worse than doing bad on both test and training.
+
+Below is our suggested work pattern: coding/train/test split.
+
+```{r}
+dCode <- d[d$rgroup<=20,,drop=FALSE]
+dTrain <- d[(d$rgroup>20) & (d$rgroup<=80),,drop=FALSE]
+treatments <- vtreat::designTreatmentsC(dCode,'x','y',TRUE)
+dTrainTreated <- vtreat::prepare(treatments,dTrain,pruneSig=c())
+m2 <- glm(y~x_catB,data=dTrainTreated,family=binomial(link='logit'))
+print(summary(m2)) # notice high residual deviance
+dTrain$predM2 <- predict(m2,newdata=dTrainTreated,type='response')
+WVPlots::ROCPlot(dTrain,'predM2','y','model2 on train')
+dCodeTreated <- vtreat::prepare(treatments,dCode,pruneSig=c())
+dCode$predM2 <- predict(m2,newdata=dCodeTreated,type='response')
+WVPlots::ROCPlot(dCode,'predM2','y','model2 on coding set')
+dTestTreated <- vtreat::prepare(treatments,dTest,pruneSig=c())
+dTest$predM2 <- predict(m2,newdata=dTestTreated,type='response')
+WVPlots::ROCPlot(dTest,'predM2','y','model2 on test set')
+```
+
+In the above example we saw training and test performance are similar (and where they should be as there is no signal).  Notice the coding set (falsely) shows high performance.  This is the bad behavior we wanted to isolate out of the training set.
+
+Also be wary, on small data sets vtreat::designTreatments can not currently get accurate out-of sample estimates of variable performance (in these cases it falls back to untrustworthy in-sample estimates).   This is something we will improve over time, but vtreat is intended mostly for production applications on large data sets.
+
+Bad small example:
+
+```{r}
+treatmentsBad <- vtreat::designTreatmentsC(d[d$rgroup<=0,,drop=FALSE],'x','y',TRUE)
+print(treatmentsBad$scoreFrame[treatmentsBad$scoreFrame$sig<=0.05,,drop=FALSE])
+```
+
+We would have prefered no variables to have recieved a "good score."
+
