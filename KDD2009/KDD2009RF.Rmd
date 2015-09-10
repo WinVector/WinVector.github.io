@@ -54,33 +54,33 @@ cl = parallel::makeCluster(4)
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
                                 vars,yName,yTarget,
-                                smFactor=2.0, 
+                                smFactor=0.5,rareCount=2,
                                 parallelCluster=cl)
 
 
 library('ggplot2')
+kddSig=0.01
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
-  geom_density(adjust=0.2)
+  geom_density(adjust=0.2) + geom_vline(xintercept=kddSig)
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
-  geom_density(adjust=0.2) + scale_x_log10()
+  geom_density(adjust=0.2) + geom_vline(xintercept=kddSig) +
+  scale_x_log10()
 
-ggplot(data=treatmentsC$scoreFrame,aes(x=csig+1.0e-6)) + 
-  geom_density(adjust=0.6) + scale_x_log10()
 
-sum(treatmentsC$scoreFrame$csig<0.05)
+length(treatmentsC$scoreFrame$csig)
+sum(treatmentsC$scoreFrame$csig<kddSig)
 
-kddPrune=0.05
 trainP = prepare(treatmentsC,
                  dTrainM,
                  scale=TRUE,
-                 pruneSig=kddPrune,
+                 pruneSig=kddSig,
                  parallelCluster=cl)
 selvars = setdiff(colnames(trainP),yName)
 
 testP = prepare(treatmentsC,
                 dTest,
                 scale=TRUE,
-                pruneSig=kddPrune,
+                pruneSig=kddSig,
                 parallelCluster=cl)
 
 if(!is.null(cl)) {
