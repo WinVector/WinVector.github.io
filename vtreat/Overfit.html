@@ -10,7 +10,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2015-09-10" />
+<meta name="date" content="2015-09-11" />
 
 <title>vtreat overfit</title>
 
@@ -72,7 +72,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="header">
 <h1 class="title">vtreat overfit</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2015-09-10</em></h4>
+<h4 class="date"><em>2015-09-11</em></h4>
 </div>
 
 
@@ -91,12 +91,16 @@ d$rgroup &lt;-<span class="st"> </span><span class="kw">round</span>(<span class
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain &lt;-<span class="st"> </span>d[d$rgroup&lt;=<span class="dv">80</span>,,drop=<span class="ot">FALSE</span>]
 dTest &lt;-<span class="st"> </span>d[d$rgroup&gt;<span class="dv">80</span>,,drop=<span class="ot">FALSE</span>]
 <span class="kw">library</span>(<span class="st">'vtreat'</span>)
-treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dTrain,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,<span class="dt">rareCount=</span><span class="dv">0</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu Sep 10 15:35:07 2015&quot;
-## [1] &quot;design var x Thu Sep 10 15:35:07 2015&quot;
-## [1] &quot;scoring treatments Thu Sep 10 15:35:07 2015&quot;
-## [1] &quot;have treatment plan Thu Sep 10 15:35:07 2015&quot;</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,<span class="dt">pruneSig=</span><span class="kw">c</span>())
+treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dTrain,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
+  <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
+)</code></pre></div>
+<pre><code>## [1] &quot;desigining treatments Fri Sep 11 09:54:12 2015&quot;
+## [1] &quot;design var x Fri Sep 11 09:54:12 2015&quot;
+## [1] &quot;scoring treatments Fri Sep 11 09:54:12 2015&quot;
+## [1] &quot;have treatment plan Fri Sep 11 09:54:12 2015&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
+  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
+)
 m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~x_catB,<span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))
 <span class="kw">print</span>(<span class="kw">summary</span>(m1))  <span class="co"># notice low residual deviance</span></code></pre></div>
 <pre><code>## 
@@ -125,30 +129,17 @@ m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~x_catB,<span clas
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTrainTreated,<span class="dt">type=</span><span class="st">'response'</span>)
 
 <span class="co"># devtools::install_github(&quot;WinVector/WVPlots&quot;)</span>
-<span class="kw">library</span>(<span class="st">'WVPlots'</span>)</code></pre></div>
-<pre><code>## Loading required package: ggplot2
-## Loading required package: grid
-## Loading required package: gridExtra
-## Loading required package: reshape2
-## Loading required package: ROCR
-## Loading required package: gplots
-## 
-## Attaching package: 'gplots'
-## 
-## The following object is masked from 'package:stats':
-## 
-##     lowess
-## 
-## Loading required package: plyr
-## Loading required package: stringr</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plotRes &lt;-<span class="st"> </span>function(d,predName,yName,title) {
+<span class="co"># library('WVPlots')</span>
+plotRes &lt;-<span class="st"> </span>function(d,predName,yName,title) {
   <span class="kw">print</span>(title)
   tab &lt;-<span class="st"> </span><span class="kw">table</span>(<span class="dt">truth=</span>d[[yName]],<span class="dt">pred=</span>d[[predName]]&gt;<span class="fl">0.5</span>)
   <span class="kw">print</span>(tab)
   diag &lt;-<span class="st"> </span><span class="kw">sum</span>(<span class="kw">vapply</span>(<span class="kw">seq_len</span>(<span class="kw">min</span>(<span class="kw">dim</span>(tab))),
                      function(i) tab[i,i],<span class="kw">numeric</span>(<span class="dv">1</span>)))
   acc &lt;-<span class="st"> </span>diag/<span class="kw">sum</span>(tab)
-  <span class="kw">print</span>(WVPlots::<span class="kw">ROCPlot</span>(d,predName,yName,title))
+  if(<span class="kw">requireNamespace</span>(<span class="st">&quot;WVPlots&quot;</span>,<span class="dt">quietly=</span><span class="ot">TRUE</span>)) {
+     <span class="kw">print</span>(WVPlots::<span class="kw">ROCPlot</span>(d,predName,yName,title))
+  }
   <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">'accuracy'</span>,acc))
 }
 
@@ -178,6 +169,8 @@ dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<s
 ##        csig
 ## 1 0.7797778</code></pre>
 <p>vteat thinks a signal as strong as the one seen on the derived variable x_catB happens at least 70% of the time for a variable with that sort of distribution: even when there is no signal. But also notice the down-stream machine learning (in this case a standard logistic regression) used the variable wrong. It gave it a non-negligible coefficient (around 3) and thought it had a reliable estimate of the coefficient and significant model that almost halved deviance (when in fact it was given nothing). So any variables that do get through may have distributional issues (and misleadingly low apparent degrees of freedom).</p>
+<p>The biggest contributors to this distributional issue tend to be rare levels of categorical variables. Since the individual levels are rare we have unreliable estimates for there effects, but if there are very many of them we may see quite a large effect. To help combat this we have a control called rareLevels (defaults to 4). Any level that is observed no more than rareLevels times during training is re-mapped to a new special level called “rare” and not allowed to directly contribute (i.e. can not generated unique indicator columns, and doesn’t have a direct effect on catB or catN encodings). If all the rare levels have a distinct behavior after grouping the “rare” level can capture that.</p>
+<p>Another undesirable effect is over-estimating significance of derived variable fit for catB and catN impact coded variables. To fight this vtreat attempts to estimate out of sample or cross-validated effect significances (when it has enough data). So with enough data setting the pruneSig parameter during prepare will help remove noise variables. One can set pruneSig to something like 1/number-of-columns to ensure that with high probability only an constant number of truly useless variables make it to later modeling. However, the significance of a given effect size for variables that actually have some signal (i.e. non-noise variables) can still be sensitive to in/out sample scoring and the hiding of degrees of freedom that occurs when a large categorical variable (that represents a large number of degrees of freedom) is re-coded as an impact or effect (which appears to have only a single degree of freedom).</p>
 <p>We next show how to avoid these undesirable illusory effects: better practice in partitioning and using training data. We are doing more with our data (essentially chaining models), so we have to take a bit more care with our data.</p>
 <p>Correct example: use different sets to prepare variable encoding and train a model. Leads to false belief (derived from training set) that model had a good fit. Largely due to the treated variable appearing to consume only one degree of freedom, when it consumes many more.</p>
 <p>Remember, the goal isn’t good performance on training- it is good performance on future data (simulated by test). So doing well on training and bad on test is worse than doing bad on both test and training.</p>
@@ -187,10 +180,10 @@ dTrain &lt;-<span class="st"> </span>d[(d$rgroup&gt;<span class="dv">20</span>) 
 treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dCode,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
                                         <span class="dt">rareCount=</span><span class="dv">0</span>  <span class="co"># Note set this to something larger, like 5</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu Sep 10 15:35:08 2015&quot;
-## [1] &quot;design var x Thu Sep 10 15:35:08 2015&quot;
-## [1] &quot;scoring treatments Thu Sep 10 15:35:08 2015&quot;
-## [1] &quot;have treatment plan Thu Sep 10 15:35:08 2015&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;design var x Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;scoring treatments Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;have treatment plan Fri Sep 11 09:54:13 2015&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
                                  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: set this to filter, like 0.05 or 1/nvars</span>
 )
@@ -256,16 +249,16 @@ dTest$predM2 &lt;-<span class="st"> </span><span class="kw">predict</span>(m2,<s
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsBad &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(d[d$rgroup&lt;=<span class="dv">0</span>,,<span class="dt">drop=</span><span class="ot">FALSE</span>],<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
                       <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note set this to something larger, like 5</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu Sep 10 15:35:09 2015&quot;
-## [1] &quot;design var x Thu Sep 10 15:35:09 2015&quot;
-## [1] &quot;scoring treatments Thu Sep 10 15:35:09 2015&quot;
-## [1] &quot;have treatment plan Thu Sep 10 15:35:09 2015&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;design var x Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;scoring treatments Fri Sep 11 09:54:13 2015&quot;
+## [1] &quot;have treatment plan Fri Sep 11 09:54:14 2015&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsBad$scoreFrame[treatmentsBad$scoreFrame$sig&lt;=<span class="fl">0.05</span>,,<span class="dt">drop=</span><span class="ot">FALSE</span>])</code></pre></div>
 <pre><code>##    varName origName varMoves PRESSRsquared         psig         sig
 ## 16  x_catB        x     TRUE             1 1.516681e-49 7.01057e-06
 ##    catPRSquared        csig
 ## 16            1 7.01057e-06</code></pre>
-<p>We would have prefered no variables to have recieved a “good score.”</p>
+<p>We would have preferred no variables to have received a “good score.”</p>
 <p>So even better is to perform the 3-way data split, set pruneSig to something reasonable, and do not set rareCount to zero (leave it at the default or a reasonable count like 5 or 10).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dCode &lt;-<span class="st"> </span>d[d$rgroup&lt;=<span class="dv">20</span>,,drop=<span class="ot">FALSE</span>]
 dTrain &lt;-<span class="st"> </span>d[(d$rgroup&gt;<span class="dv">20</span>) &amp;<span class="st"> </span>(d$rgroup&lt;=<span class="dv">80</span>),,drop=<span class="ot">FALSE</span>]
@@ -274,8 +267,8 @@ dTrain &lt;-<span class="st"> </span>d[(d$rgroup&gt;<span class="dv">20</span>) 
   dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,<span class="dt">pruneSig=</span><span class="fl">0.01</span>)},
   <span class="dt">error=</span>function(x) <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">'caught'</span>,x))
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu Sep 10 15:35:09 2015&quot;
-## [1] &quot;design var x Thu Sep 10 15:35:09 2015&quot;
+<pre><code>## [1] &quot;desigining treatments Fri Sep 11 09:54:14 2015&quot;
+## [1] &quot;design var x Fri Sep 11 09:54:14 2015&quot;
 ## [1] &quot;caught Error in .designTreatmentsX(dframe, varlist, outcomename, zoY, dframe[[outcomename]], : no usable vars\n&quot;</code></pre>
 <p>And in this case we are (properly) told are no variables to work with (and prevented from accidentally continuing a bad analysis).</p>
 <p>There are, of course, other possible methods to avoid the bias introduced in using the same data to generate the variable encodings and then train a model using those variables. But we feel when you have a lot of data the simplicity (and statistical well-foundedness) of the three way split are attractive.</p>
