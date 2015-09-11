@@ -54,12 +54,12 @@ cl = parallel::makeCluster(4)
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
                                 vars,yName,yTarget,
-                                smFactor=0.5,rareCount=2,
+                                smFactor=0.5,rareCount=2,rareSig=0.2,
                                 parallelCluster=cl)
 
 
 library('ggplot2')
-kddSig=0.01
+kddSig=0.05
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
   geom_density(adjust=0.2) + geom_vline(xintercept=kddSig)
 ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
