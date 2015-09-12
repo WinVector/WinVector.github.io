@@ -1,0 +1,190 @@
+---
+title: "VTreatExample"
+author: "John Mount"
+date: "September 12, 2015"
+output: html_document
+---
+
+**Functions**
+```{r functions}
+library(ggplot2)
+library(vtreat)
+
+
+# ----
+# for making data sets with both noise and weakly correlated variables
+# ----
+mkCoefs = function(ngood) {
+  nGoodN = ceiling(ngood/2)
+  nGoodC = ngood-nGoodN
+  coefs = list()
+  if(nGoodN>0) {
+    cN = lapply(seq_len(nGoodN),function(i) {
+      v = list()
+      v[[paste('gn', i, sep='_')]] = rnorm(1)
+      v
+    })
+    coefs = unlist(cN,recursive=FALSE)
+  }
+  if(nGoodN>0) {
+    cC = lapply(seq_len(nGoodC),function(i) {
+      v = list()
+      v[[paste('gc', i, sep='_')]] = list('a'=rnorm(1),
+                                          'b'=rnorm(1),
+                                          'c'=rnorm(1))
+      v
+    })
+    coefs = append(coefs,unlist(cC,recursive=FALSE))
+  }
+  coefs
+}
+
+# generate columns
+genColumns = function(nrow,prefix,nNum,nCat) {
+  cols = list()
+  if(nNum>0) {
+    numCols = lapply(seq_len(nNum),function(i) rnorm(nrow))
+    names(numCols) = paste(prefix,'n_',seq_len(nNum),sep='')
+    cols = append(cols,numCols)
+  }
+  if(nCat>0) {
+    cCols = lapply(seq_len(nCat),function(i) {
+      sample(c('a','b','c'),nrow,replace=TRUE)
+      })
+    names(cCols) = paste(prefix,'c_',seq_len(nCat),sep='')
+    cols = append(cols,cCols)
+  }
+  data.frame(cols,stringsAsFactors=FALSE)
+}
+
+# evaluate coefs on a data frame
+applyCoefs = function(coefs,d) {
+  v = numeric(nrow(d))
+  for(n in names(coefs)) {
+    cf = coefs[[n]]
+    if(is.list(cf)) {
+      # categorical
+      v = v + as.numeric(cf[d[,n,drop=TRUE]])
+    } else {
+      # numeric
+      v = v + cf[[1]]*d[,n,drop=TRUE]
+    }
+  }
+  v
+}
+
+# build a data frame with pure noise columns
+# and columns weakly correlated with y
+mkData = function(nrows, coefs, nnoise) {
+  noiseMagnitude = 1
+  d = data.frame(y = noiseMagnitude*rnorm(nrows),
+                 stringsAsFactors = FALSE)
+  ngood = length(coefs)
+  if(ngood>0) {
+    ngC = sum(vapply(coefs,is.list,numeric(1)))
+    ngN = ngood - ngC
+    gd = genColumns(nrows,'g',ngN,ngC)
+    d = cbind(d,gd)
+    d$y = d$y + applyCoefs(coefs,d)
+  }
+  if(nnoise > 0) {
+    nnN = ceiling(nnoise/2)
+    nnC = nnoise-nnN
+    nd = genColumns(nrows,'n',nnN,nnC)
+    d = cbind(d,nd)
+  }
+  d$y = d$y > 0
+  d
+}
+# ------
+
+
+# run vtreat variable scoring experiment and print/plot results
+showVTreat <- function(dframe,yName,yTarget,parallelCluster) {
+  varnames <- setdiff(colnames(dframe),yName)
+  treatments = designTreatmentsC(dframe,
+                                 varnames,yName,yTarget,
+                                 verbose=FALSE,
+                                 parallelCluster=parallelCluster)
+  ord <- order(treatments$scoreFrame$csig)
+  sf <- treatments$scoreFrame[ord,]
+  print(sf[seq_len(min(20,nrow(sf))),])
+  goodIndices <- grep("^g",sf$origName)
+  print(goodIndices)
+  print(sf[goodIndices,])
+  
+  sf$goodVar <- FALSE
+  sf$goodVar[goodIndices] <- TRUE
+  list(pd=ggplot(data=sf,aes(x=sig,color=goodVar,fill=goodVar)) +
+    geom_density(adjust=0.2,alpha=0.5) + scale_x_log10(),
+    ph=ggplot(data=sf,aes(x=sig,color=goodVar,fill=goodVar)) +
+    geom_histogram() + facet_wrap(~goodVar,ncol=1,scale="free_y") +
+    scale_x_log10())
+}
+
+```
+
+```{r startclus}
+nCoreEstimate <-  parallel::detectCores()
+print(paste('core estimate',nCoreEstimate))
+parallelCluster = parallel::makeCluster(nCoreEstimate)
+```
+
+
+
+**Example 1**
+Small example of evaluating a variable with signal, and without
+
+```{r smallexample}
+set.seed(3266)
+N = 1000
+g1 = rnorm(N)
+n1 = rnorm(N)
+y = 2*g1 + rnorm(N)
+dframe = data.frame(y=y>0, g1=g1, n1=n1)
+
+showVTreat(dframe,'y',TRUE,parallelCluster)[[2]]
+
+```
+
+**Example 2**
+
+Small example of using chi-sq significance for variable filtering
+
+```{r smallchiexample}
+ngood = 5; nnoise = 5; N = 1000
+coefs = mkCoefs(ngood)
+dframe = mkData(N, coefs, nnoise)
+summary(dframe)
+
+print("True coefficients of signal variables")
+print(coefs)
+
+showVTreat(dframe,'y',TRUE,parallelCluster)
+```
+
+**Example 3**
+
+Larger example; lots of noise
+
+```{r bigchiexample}
+
+ngood = 5; nnoise = 2000; N = 2500
+coefs = mkCoefs(ngood)
+dframe = mkData(N, coefs, nnoise)
+varnames = setdiff(colnames(dframe), "y")
+
+print("True coefficients of signal variables")
+print(coefs)
+
+showVTreat(dframe,'y',TRUE,parallelCluster)
+```
+
+```{r stopclus}
+if(!is.null(parallelCluster)) {
+  parallel::stopCluster(parallelCluster)
+  parallelCluster <- NULL
+}
+```
+
+
