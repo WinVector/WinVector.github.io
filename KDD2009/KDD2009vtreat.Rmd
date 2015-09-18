@@ -74,7 +74,7 @@ treatedTest = prepare(treatmentsC,
                       parallelCluster=cl)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 
-addResidualVars = TRUE
+addResidualVars = FALSE
 
 if(addResidualVars) {
   # see if we can learn new encodings from residuals of a mdoel
