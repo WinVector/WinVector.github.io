@@ -1,12 +1,11 @@
 
-
+[KDD2009 example](http://www.sigkdd.org/kdd-cup-2009-customer-relationship-prediction).  Winners had hold-out AUC of 0.7611 on churn.   See [here](https://github.com/WinVector/zmPDSwR/tree/master/KDD2009) for more details.
 
 ```{r kddexlibs, tidy=FALSE}
 #load some libraries
 # http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
-# devtools::install_github("WinVector/vtreat")
 library('vtreat')
-# devtools::install_github("WinVector/vtreat")
+# devtools::install_github("WinVector/WVPlots")
 library('WVPlots')
 
 library('parallel')
@@ -61,6 +60,9 @@ treatmentsC = designTreatmentsC(dTrainC,
 
 kddSig = 0.05
 
+addResidualVars = FALSE
+addOtherTargets = TRUE
+
 treatedTrainM = prepare(treatmentsC,
                         dTrainM,
                         pruneSig=kddSig, 
@@ -74,7 +76,33 @@ treatedTest = prepare(treatmentsC,
                       parallelCluster=cl)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 
-addResidualVars = FALSE
+if(addOtherTargets) {
+  addResidualVars = FALSE
+  for(yV in c('appetency','upselling')) {
+    treatmentsCO = designTreatmentsC(dTrainC,
+                                     vars,yV,yTarget,
+                                     smFactor=2.0, 
+                                     parallelCluster=cl)
+    
+    treatedTrainMO = prepare(treatmentsCO,
+                             dTrainM,
+                             pruneSig=kddSig, 
+                             parallelCluster=cl)
+    selvarsO = setdiff(colnames(treatedTrainMO),yV)
+    selvarsO <- selvarsO[grep("_catB",selvarsO)]
+    treatedTrainMO <- treatedTrainMO[,selvarsO,drop=FALSE]
+    colnames(treatedTrainMO) <- paste(yV,colnames(treatedTrainMO),sep='_')
+    treatedTrainM <- cbind(treatedTrainM,treatedTrainMO)
+    treatedTestO = prepare(treatmentsCO,
+                           dTest,
+                           pruneSig=kddSig, 
+                           parallelCluster=cl)
+    treatedTestO <- treatedTestO[,selvarsO,drop=FALSE]
+    colnames(treatedTestO) <- paste(yV,colnames(treatedTestO),sep='_')
+    treatedTest <- cbind(treatedTest,treatedTestO)
+  }
+  selvars = setdiff(colnames(treatedTrainM),c(outcomes,'rgroup'))
+}
 
 if(addResidualVars) {
   # see if we can learn new encodings from residuals of a mdoel
@@ -175,7 +203,7 @@ for(mname in c('gbmPred','glmPred')) {
     modelGBMs = gbm(as.formula(formulaS),
                     data=treatedTrainM,
                     distribution='bernoulli',
-                    n.trees=500,
+                    n.trees=1000,
                     interaction.depth=3,
                     keep.data=FALSE,
                     cv.folds=5)
