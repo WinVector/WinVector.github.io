@@ -35,10 +35,17 @@ d$rgroup = runif(dim(d)[[1]])
 dTrainM = subset(d,rgroup<=0.5)  # set for building models
 dTrainC = subset(d,(rgroup>0.5) & (rgroup<=0.9)) # set for impact coding
 dTest = subset(d,rgroup>0.9) # set for evaluation
+debug = FALSE
+if(debug) {
+  dTrainM <- dTrainM[sample.int(nrow(dTrainM),100),]
+  dTrainC <- dTrainC[sample.int(nrow(dTrainC),100),]
+  dTest <- dTest[sample.int(nrow(dTest),100),]
+}
 rm(list=c('d','churn','appetency','upselling','dir'))
 outcomes = c('churn','appetency','upselling')
+nonvars <- c(outcomes,'rgroup')
 vars = setdiff(colnames(dTrainM),
-                c(outcomes,'rgroup'))
+                nonvars)
 yName = 'churn'
 yTarget = 1
 ```
@@ -67,7 +74,7 @@ treatedTrainM = prepare(treatmentsC,
                         dTrainM,
                         pruneSig=kddSig, 
                         parallelCluster=cl)
-selvars = setdiff(colnames(treatedTrainM),yName)
+selvars = setdiff(colnames(treatedTrainM),nonvars)
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 
 treatedTest = prepare(treatmentsC,
@@ -83,25 +90,35 @@ if(addOtherTargets) {
                                      vars,yV,yTarget,
                                      smFactor=2.0, 
                                      parallelCluster=cl)
-    
     treatedTrainMO = prepare(treatmentsCO,
                              dTrainM,
                              pruneSig=kddSig, 
                              parallelCluster=cl)
-    selvarsO = setdiff(colnames(treatedTrainMO),yV)
-    selvarsO <- selvarsO[grep("_catB",selvarsO)]
-    treatedTrainMO <- treatedTrainMO[,selvarsO,drop=FALSE]
-    colnames(treatedTrainMO) <- paste(yV,colnames(treatedTrainMO),sep='_')
-    treatedTrainM <- cbind(treatedTrainM,treatedTrainMO)
+    treatedTrainMO[[yV]] = treatedTrainMO[[yV]]==yTarget
     treatedTestO = prepare(treatmentsCO,
-                           dTest,
-                           pruneSig=kddSig, 
-                           parallelCluster=cl)
-    treatedTestO <- treatedTestO[,selvarsO,drop=FALSE]
-    colnames(treatedTestO) <- paste(yV,colnames(treatedTestO),sep='_')
-    treatedTest <- cbind(treatedTest,treatedTestO)
+                             dTest,
+                             pruneSig=kddSig, 
+                             parallelCluster=cl)
+    treatedTestO[[yV]] = treatedTestO[[yV]]==yTarget
+    selvarsO = setdiff(colnames(treatedTrainMO),nonvars)
+    formulaSO = paste(yV,paste(selvarsO,collapse=' + '),sep=' ~ ')
+    modelGBMsO = gbm(as.formula(formulaSO),
+                     data=treatedTrainMO,
+                     distribution='bernoulli',
+                     n.trees=1000,
+                     interaction.depth=3,
+                     keep.data=FALSE,
+                     cv.folds=5)
+    nTrees = gbm.perf(modelGBMsO,plot.it=FALSE)
+    vname <- paste('pred',yV,sep='_')
+    treatedTrainM[[vname]] = predict(modelGBMsO,newdata=treatedTrainMO,
+                                     type='response',
+                                     n.trees=nTrees) 
+    treatedTest[[vname]] = predict(modelGBMsO,newdata=treatedTestO,
+                                    type='response',
+                                    n.trees=nTrees)
   }
-  selvars = setdiff(colnames(treatedTrainM),c(outcomes,'rgroup'))
+  selvars = setdiff(colnames(treatedTrainM),nonvars)
 }
 
 if(addResidualVars) {
