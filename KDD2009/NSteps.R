@@ -45,8 +45,7 @@ parallelCluster = parallel::makeCluster(nCoreEstimate)
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
                                 vars,yName,yTarget,
-                                smFactor=2.0, 
-                                parallelCluster=parallelCluster)
+                                smFactor=2.0)
 
 
 # prepare data
