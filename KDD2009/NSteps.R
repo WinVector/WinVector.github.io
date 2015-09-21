@@ -48,6 +48,8 @@ treatmentsC = designTreatmentsC(dTrainC,
                                 smFactor=2.0)
 
 
+# TODO: need data prep to be post-noising as this problem is so sensitive to large categorical performance.
+
 # prepare data
 treatedTrainM = prepare(treatmentsC,
                         dTrainM,
