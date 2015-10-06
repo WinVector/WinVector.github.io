@@ -57,18 +57,23 @@ yTarget = 1
 
 set.seed(239525)
 
-cl = parallel::makeCluster(4)
+cl <- c()
+if(!debug) {
+  ncore <- parallel::detectCores()
+  cl <- parallel::makeCluster(ncore)
+}
 
 # build treatments on just the coding data
 treatmentsC = designTreatmentsC(dTrainC,
     vars,yName,yTarget,
     smFactor=2.0, 
-    parallelCluster=cl)
+    parallelCluster=cl,
+    verbose=TRUE)
 
 kddSig = 0.05
 
 addResidualVars = FALSE
-addOtherTargets = TRUE
+addOtherTargets = FALSE
 
 treatedTrainM = prepare(treatmentsC,
                         dTrainM,
