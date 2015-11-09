@@ -10,7 +10,7 @@ library('WVPlots')
 
 library('parallel')
 library('gbm')
-library('class')
+#library('class')
 library('ggplot2')
 
 
