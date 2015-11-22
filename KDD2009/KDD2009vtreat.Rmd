@@ -72,8 +72,6 @@ treatmentsC = designTreatmentsC(dTrainC,
 
 kddSig = 0.05
 
-addResidualVars = FALSE
-addOtherTargets = FALSE
 
 treatedTrainM = prepare(treatmentsC,
                         dTrainM,
@@ -88,111 +86,6 @@ treatedTest = prepare(treatmentsC,
                       parallelCluster=cl)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 
-if(addOtherTargets) {
-  addResidualVars = FALSE
-  for(yV in c('appetency','upselling')) {
-    treatmentsCO = designTreatmentsC(dTrainC,
-                                     vars,yV,yTarget,
-                                     smFactor=2.0, 
-                                     parallelCluster=cl)
-    treatedTrainMO = prepare(treatmentsCO,
-                             dTrainM,
-                             pruneSig=kddSig, 
-                             parallelCluster=cl)
-    treatedTrainMO[[yV]] = treatedTrainMO[[yV]]==yTarget
-    treatedTestO = prepare(treatmentsCO,
-                             dTest,
-                             pruneSig=kddSig, 
-                             parallelCluster=cl)
-    treatedTestO[[yV]] = treatedTestO[[yV]]==yTarget
-    selvarsO = setdiff(colnames(treatedTrainMO),nonvars)
-    formulaSO = paste(yV,paste(selvarsO,collapse=' + '),sep=' ~ ')
-    modelGBMsO = gbm(as.formula(formulaSO),
-                     data=treatedTrainMO,
-                     distribution='bernoulli',
-                     n.trees=1000,
-                     interaction.depth=3,
-                     keep.data=FALSE,
-                     cv.folds=5)
-    nTrees = gbm.perf(modelGBMsO,plot.it=FALSE)
-    vname <- paste('pred',yV,sep='_')
-    treatedTrainM[[vname]] = predict(modelGBMsO,newdata=treatedTrainMO,
-                                     type='response',
-                                     n.trees=nTrees) 
-    treatedTest[[vname]] = predict(modelGBMsO,newdata=treatedTestO,
-                                    type='response',
-                                    n.trees=nTrees)
-  }
-  selvars = setdiff(colnames(treatedTrainM),nonvars)
-}
-
-if(addResidualVars) {
-  # see if we can learn new encodings from residuals of a mdoel
-  if('devCorrection' %in% colnames(dTrainC)) {
-    stop("devCorrection already used")
-  }
-  # get the calibration frame ready
-  treatedTrainC = prepare(treatmentsC,
-                          dTrainC,
-                          pruneSig=kddSig, 
-                          parallelCluster=cl)
-  treatedTrainC[[yName]] = treatedTrainC[[yName]]==yTarget
-  # build an initial model
-  formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
-  modelGBMs = gbm(as.formula(formulaS),
-                  data=treatedTrainC,
-                  distribution='bernoulli',
-                  n.trees=500,
-                  interaction.depth=3,
-                  keep.data=FALSE,
-                  cv.folds=5)
-  nTrees = gbm.perf(modelGBMs,plot.it = FALSE)
-  mpred = predict(modelGBMs,newdata=treatedTrainC,type='response',
-                  n.trees=nTrees)
-  # build new variables 
-  epsilon = 1.0e-5
-  # collar prediction to make log well behaved
-  mpred = pmin(pmax(mpred,epsilon),1-epsilon)
-  # deviance correcton, want more positive on true examples and more negative on false
-  # -gradient of the deviance per-row, shifted towards zero
-  # devCorrection = ifelse(treatedTrainC[[yName]],2/mpred-2,-2/(1-mpred)+2)
-  # or, assuming p = sigmoid(link) we can take the derivative wrt link and get (1-p)-(1-y) = y-p
-  devCorrection = ifelse(treatedTrainC[[yName]],1.0,0.0) - mpred
-  pf <- data.frame(pred=mpred,y=treatedTrainC[[yName]],devCorrection=devCorrection)
-  pf$match <- pf$y==(pf$pred>0.5)
-  ggplot(data=pf,aes(x=devCorrection,color=match)) + geom_density()
-  dTrainC$devCorrection <- devCorrection
-  catVars <- selvars[grep('_cat',selvars,fixed=TRUE)]
-  catPosns <- treatmentsC$scoreFrame$varName %in% catVars
-  catOrig <- unique(treatmentsC$scoreFrame[catPosns,'origName',drop=TRUE])
-  treatmentsN = designTreatmentsN(dTrainC,
-                                  catOrig,'devCorrection',
-                                  minFraction=1.0,
-                                  smFactor=2.0, 
-                                  parallelCluster=cl)
-  newVars <- treatmentsN$scoreFrame[treatmentsN$scoreFrame$sig<=kddSig,
-                                    'varName',drop=TRUE]
-  if(length(intersect(newVars,selvars))>0) {
-    stop("variable name re-used")
-  }
-  if(length(intersect(c(newVars,selvars),c(yName,'devCorrection')))>0) {
-    stop("variable name clash")
-  }
-  # disjoint outcome name, so not in the original frames to be compied over
-  treatedTrainN = prepare(treatmentsN,
-                          dTrainM,
-                          pruneSig=c(), 
-                          varRestriction=newVars,
-                          parallelCluster=cl)
-  treatedTrainM = cbind(treatedTrainM,treatedTrainN)
-  treatedTestN = prepare(treatmentsN,
-                         dTest,
-                         pruneSig=c(), 
-                         varRestriction=newVars,
-                         parallelCluster=cl)
-  treatedTest = cbind(treatedTest,treatedTestN)
-  selvars <- c(selvars,newVars)
-}
 
 if(!is.null(cl)) {
     parallel::stopCluster(cl)
