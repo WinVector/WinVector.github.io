@@ -1,0 +1,163 @@
+---
+title: "KDD2009Cross"
+author: "Win-Vector LLC"
+date: "November 22, 2015"
+output: html_document
+---
+
+[KDD2009 example](http://www.sigkdd.org/kdd-cup-2009-customer-relationship-prediction).  Winners had hold-out AUC of 0.7611 on churn.   See [here](https://github.com/WinVector/zmPDSwR/tree/master/KDD2009) for more details.
+
+
+```{r kddexlibs, tidy=FALSE}
+#load some libraries
+# http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/
+# Using dev version of vtreat
+# devtools::install_github("WinVector/vtreat")  # to get 0.5.22 version with vtreat::mkCrossFrameCExperiment()
+library('vtreat')
+# devtools::install_github("WinVector/WVPlots")
+library('WVPlots')
+
+library('parallel')
+library('gbm')
+#library('class')
+library('ggplot2')
+
+
+# load the data as in the book
+# change this path to match your directory structure
+dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
+
+d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
+                header=T,sep='\t',na.strings=c('NA',''), 
+               stringsAsFactors=FALSE)
+churn = read.table(paste(dir,'orange_small_train_churn.labels.txt',sep=''),
+                    header=F,sep='\t')
+d$churn = churn$V1
+appetency = read.table(paste(dir,'orange_small_train_appetency.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$appetency = appetency$V1
+upselling = read.table(paste(dir,'orange_small_train_upselling.labels.txt',sep=''),
+                        header=F,sep='\t')
+d$upselling = upselling$V1
+set.seed(729375)
+d$rgroup = runif(dim(d)[[1]])
+dTrain = subset(d,rgroup<=0.9)  # shared set for impact models and training
+dTest = subset(d,rgroup>0.9) # set for evaluation
+debug = FALSE
+if(debug) {
+  dTrain <- dTrain[sample.int(nrow(dTrain),100),]
+  dTest <- dTest[sample.int(nrow(dTest),100),]
+}
+rm(list=c('d','churn','appetency','upselling','dir'))
+outcomes = c('churn','appetency','upselling')
+nonvars <- c(outcomes,'rgroup')
+vars = setdiff(colnames(dTrain),
+                nonvars)
+yName = 'churn'
+yTarget = 1
+```
+
+
+This is a fun little experiment.  We use all of the training data both for variable design and then for modeling.  This sets up the potential of a bad nested model bias.   We work around this by using a "cross frame" which is a special data frame that has been treated, but not by the returned treatment plan.  Each row is the cross frame was built by a treatment plan built from a disjoint set of rows (a lot like cross validation).  This (hopefully) makes the rows in the cross frame exchangable with future rows, as neither is directly involved in the treatment design.  The hope is this improves generalization error while allowing us to use all of our available data for training.
+
+
+```{r kdddesign, tidy=FALSE}
+# build data treatments
+
+set.seed(239525)
+
+cl <- c()
+if(!debug) {
+  ncore <- parallel::detectCores()
+  cl <- parallel::makeCluster(ncore)
+}
+
+# build treatments on just the coding data
+crossExpmt = mkCrossFrameCExperiment(dTrain,
+    vars,yName,yTarget,
+    smFactor=2.0, 
+    parallelCluster=cl)
+treatmentsC <- crossExpmt$treatments
+treatedTrain <- crossExpmt$crossFrame
+
+kddSig = 0.05
+
+selvars <- treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<=kddSig]
+treatedTrain[[yName]] = treatedTrain[[yName]]==yTarget
+
+treatedTest = prepare(treatmentsC,
+                      dTest,
+                      pruneSig=c(),
+                      varRestriction=selvars,
+                      parallelCluster=cl)
+treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+
+
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+```
+
+
+
+
+
+```{r kddmodels, tidy=FALSE}
+# Run other models (with proper coding/training separation).
+#
+# This gets us back to AUC 0.72
+
+print(selvars)
+
+# prepare plotting frames
+treatedTrainP = treatedTrain[, yName, drop=FALSE]
+treatedTestP = treatedTest[, yName, drop=FALSE]
+
+
+formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
+for(mname in c('gbmPred','glmPred')) {
+  print("*****************************")
+  print(date())
+  print(paste(mname,length(selvars)))
+  if(mname=='gbmPred') {
+    modelGBMs = gbm(as.formula(formulaS),
+                    data=treatedTrain,
+                    distribution='bernoulli',
+                    n.trees=1000,
+                    interaction.depth=3,
+                    keep.data=FALSE,
+                    cv.folds=5)
+    #print(modelGBMs)
+    #print(summary(modelGBMs))
+    nTrees = gbm.perf(modelGBMs)
+    treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrain,type='response',
+                                     n.trees=nTrees) 
+    treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
+                                    n.trees=nTrees)
+  } else {
+    modelglms = glm(as.formula(formulaS),
+                    data=treatedTrain,
+                    family=binomial(link='logit')
+    )
+    #print(summary(modelglms))
+    treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrain,type='response')
+    treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
+  }
+  
+  t1 = paste(mname,'trainingM data')
+  print(DoubleDensityPlot(treatedTrainP, mname, yName, 
+                          title=t1))
+  print(ROCPlot(treatedTrainP, mname, yName, 
+                title=t1))
+  
+  t2 = paste(mname,'test data')
+  print(DoubleDensityPlot(treatedTestP, mname, yName, 
+                          title=t2))
+  print(ROCPlot(treatedTestP, mname, yName, 
+                title=t2))
+  print(date())
+  print("*****************************")
+}
+
+```
