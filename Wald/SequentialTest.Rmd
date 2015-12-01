@@ -120,7 +120,8 @@ ggplot(data=sim$d,mapping=aes(x=t,y=y)) +
 
 This becomes more legible if we replace y with y-s*t,
 rotating the frame so our decision boundaries are horizontal lines
-and we are always stepping up or down as we move to the right.
+and we are always stepping up or down as we move to the right (actually it is 
+affine transform as it includes a rescaling).
 This makes Wald's brilliant formulation of the problem as 
 a "drunkard's walk" more obvious.
 
@@ -177,6 +178,10 @@ ggplot(data=d,mapping=aes(x=t,y=y-s*t)) +
 ggplot(data=sum,mapping=aes(x=runLength)) + 
   geom_density(adjust=0.2) + ggtitle('experiment run times')
 ```
+
+The experiment run time is the subject of random walks.  You would expect to take
+time around |h0-h1|^2 to escape if p1=p2, and to escape much quicker if they
+are in fact different.
 
 For more articles on A/B testing (including dynamic programing formulations and Bayesian formulations)
 please see following:
