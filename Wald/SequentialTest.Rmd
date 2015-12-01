@@ -6,6 +6,7 @@ output: html_document
 ---
 
 Implementation of section 6.4.2 of Abraham Wald, Sequential Analysis, Dover 2004.
+See [Win-Vector blog: Sequential Analysis](http://www.win-vector.com/blog/2015/12/sequential-analysis/) for more details.
 
 We will phrase this as purchasing web-traffic from two source in parallel.  Each
 source either converts (a success) or does not (a failure).  Source 1 converts with
@@ -42,9 +43,9 @@ To run the process we traditionally need 4 user supplied parameters.  We will de
  * u>1: roughly one plus how much of relative improvement we consider important.
  * a>0: the chance we are willing to accept of making a wrong determination.
  
-The inspection procedure is such that if |log((p1/(1-p1))/(p2/(1-p2)))| > log(u) and we exit the inspection region (decide on one of the streams) then with probability at least 1-a we will have chosen the larger rate process.
+The inspection procedure is such that if |log( (p1/(1-p1)) / (p2/(1-p2)) )| > log(u) and we exit the inspection region (decide on one of the streams) then with probability at least 1-a we will have chosen the larger rate process.
 
-The idea is: if p1/(1-p1)) is near p2/(1-p2) then the difference is both very hard to measure, and not at all important to the business.  So we design our inspection plan to not attempt to make such a determination, and instead ask the user for a value u that tells us where we stop caring.
+The idea is: if p1/(1-p1) is near p2/(1-p2) then the difference is both very hard to measure, and not at all important to the business.  So we design our inspection plan to not attempt to make such a determination, and instead ask the user for a value u that tells us where we stop caring.
 
 Here is a typical inspection plan:
 
@@ -53,17 +54,25 @@ Here is a typical inspection plan:
 u <- 1.1  # measure to relative rate of 10%
 a <- 0.05 # accept 5% chance of making wrong decision
 
+# plug into Wald parameters
+u1 <- u
+u0 <- 1/u
+b <- a
+
+# Equations 6:7 and 6:8 of Section 6.4.2, page 111, Abraham Wald, Sequential Analysis, Dover 2004
 # Sequential inspection plan
-s <- 0.5
-h0 <- log(a/(1-a))/(2*log(u))
-h1 <- -h0
+s <- log((1+u1)/(1+u0))/(log(u1)-log(u0))
+h0 <- log(b/(1-a))/(log(u1)-log(u0))
+h1 <- log((1-b)/a)/(log(u1)-log(u0))
 
 library('ggplot2')
 ggplot(data=data.frame(t=c(0,300),y=c(0,150)),
        mapping=aes(x=t,y=y)) +
   geom_point(size=0) +
-  geom_abline(slope=s,intercept=h0,color='blue',size=3) +
-  geom_abline(slope=s,intercept=h1,color='green',size=3) +
+  geom_abline(slope=s,intercept=h0,
+              color='blue',size=3,alpha=0.5) +
+  geom_abline(slope=s,intercept=h1,
+              color='green',size=3,alpha=0.5) +
   coord_fixed() +
   ggtitle("inspection plan")
 ```
@@ -111,8 +120,10 @@ simulate <- function(s,h0,h1,p1,p2) {
 sim <- simulate(s,h0,h1,p1,p2)
 ggplot(data=sim$d,mapping=aes(x=t,y=y)) +
   geom_point() + geom_line() +
-  geom_abline(slope=s,intercept=h0,color='blue',size=3) +
-  geom_abline(slope=s,intercept=h1,color='green',size=3) +
+  geom_abline(slope=s,intercept=h0,
+              color='blue',size=3,alpha=0.5) +
+  geom_abline(slope=s,intercept=h1,
+              color='green',size=3,alpha=0.5) +
   coord_fixed() +
   ggtitle(paste("inspection, steps=",sim$summary$runLength,
                 ', decision=',sim$summary$decision))
@@ -130,8 +141,10 @@ ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
   geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
              mapping=aes(x=x,y=y),size=0) +
   geom_point() + geom_line() +
-  geom_abline(slope=0,intercept=h0,color='blue',size=3) +
-  geom_abline(slope=0,intercept=h1,color='green',size=3) +
+  geom_abline(slope=0,intercept=h0,
+              color='blue',size=3,alpha=0.5) +
+  geom_abline(slope=0,intercept=h1,
+              color='green',size=3,alpha=0.5) +
   ggtitle(paste("(rotated) inspection, steps=",sim$summary$runLength,
                 ', decision=',sim$summary$decision))
 ```
@@ -168,11 +181,13 @@ print(summary(sum))
 ggplot(data=d,mapping=aes(x=t,y=y-s*t)) +
   geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
              mapping=aes(x=x,y=y),size=0) +
-  geom_point(alpha=0.3) +
+  geom_line(alpha=0.5,mapping=aes(group=as.factor(rep))) +
   geom_smooth(color='orange') +
   geom_density2d(color='gold') +
-  geom_abline(slope=0,intercept=h0,color='blue',size=3) +
-  geom_abline(slope=0,intercept=h1,color='green',size=3) +
+  geom_abline(slope=0,intercept=h0,
+              color='blue',size=3,alpha=0.5) +
+  geom_abline(slope=0,intercept=h1,
+              color='green',size=3,alph=0.5) +
   ggtitle("(rotated) many repetitions of the experiment")
 
 ggplot(data=sum,mapping=aes(x=runLength)) + 
@@ -180,8 +195,14 @@ ggplot(data=sum,mapping=aes(x=runLength)) +
 ```
 
 The experiment run time is the subject of random walks.  You would expect to take
-time around |h0-h1|^2 to escape if p1=p2, and to escape much quicker if they
+time on the order of (1/(p1+p2-p1 p2))*(h1-h0)^2 to escape if p1=p2, and to escape much quicker if they
 are in fact different.
+
+```{r timeEst, cache=TRUE}
+(1/(p1+p2-p1*p2))*(h1-h0)^2
+mean(sum$runLength)
+summary(as.factor(sum$decision))
+```
 
 For more articles on A/B testing (including dynamic programing formulations and Bayesian formulations)
 please see following:
