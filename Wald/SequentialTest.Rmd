@@ -187,7 +187,7 @@ ggplot(data=d,mapping=aes(x=t,y=y-s*t)) +
   geom_abline(slope=0,intercept=h0,
               color='blue',size=3,alpha=0.5) +
   geom_abline(slope=0,intercept=h1,
-              color='green',size=3,alph=0.5) +
+              color='green',size=3,alpha=0.5) +
   ggtitle("(rotated) many repetitions of the experiment")
 
 ggplot(data=sum,mapping=aes(x=runLength)) + 
