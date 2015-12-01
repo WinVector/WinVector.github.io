@@ -1,0 +1,188 @@
+---
+title: "Sequential Inspection"
+author: "Win-Vector LLC"
+date: "December 1, 2015"
+output: html_document
+---
+
+Implementation of section 6.4.2 of Abraham Wald, Sequential Analysis, Dover 2004.
+
+We will phrase this as purchasing web-traffic from two source in parallel.  Each
+source either converts (a success) or does not (a failure).  Source 1 converts with
+(unknown) probability p1 and source 2 converts with (unknown) probability p2.  We
+want to buy traffic from both sources for a while and then with high probability pick
+the source with the higher conversion rate.
+
+In the sequential analysis all traffic is paired.  So we observe tuples of the form (c1,c2) where
+ci=0 if the traffic did not convert and 1 if it did (i being the traffic source).  All tuples of
+the form (0,0) and (1,1) are discarded as being uninformative about the relative values of p1 versus p2.
+So the experimental summary is how many (0,1) and (1,0) pairs we have observed.
+Note this is not a [sufficient statistic](https://en.wikipedia.org/wiki/Sufficient_statistic) (such
+as recording the number of items taken from each source and the number of successes from each source),
+but instead roughly a [pivotal quantity](https://en.wikipedia.org/wiki/Pivotal_quantity) that depends only
+on the relative sizes of p1 and p2 (and not their absolute rates).
+
+The recording procedure is then: 
+
+ * track t = number of (0,1) and (1,0) pairs seen
+ * track y = number of (0,1) pairs seen
+
+Our decision surface is a pair of parallel lines:
+
+ * y0 = s * t + h0
+ * y1 = s * t + h1
+ 
+ ![picture of parallel lines](http://www.win-vector.com/blog/wp-content/uploads/2015/06/IMG_1692.png "Figure 14, Section 6.4.2, page 111, Abraham Wald, Sequential Analysis, Dover 2004")
+ 
+When our tracking point (t,y) crosses out of the region between the lines our experiment is complete.  Crossing over the top line means we have evidence the second process likely has a higher conversion rate (and should go with it),
+crossing under the bottom line means the second process likely has a lower conversion rate (and we should reject it).
+
+To run the process we traditionally need 4 user supplied parameters.  We will demonstrate a simplified procedure that uses two parameters.
+
+ * u>1: roughly one plus how much of relative improvement we consider important.
+ * a>0: the chance we are willing to accept of making a wrong determination.
+ 
+The inspection procedure is such that if |log((p1/(1-p1))/(p2/(1-p2)))| > log(u) and we exit the inspection region (decide on one of the streams) then with probability at least 1-a we will have chosen the larger rate process.
+
+The idea is: if p1/(1-p1)) is near p2/(1-p2) then the difference is both very hard to measure, and not at all important to the business.  So we design our inspection plan to not attempt to make such a determination, and instead ask the user for a value u that tells us where we stop caring.
+
+Here is a typical inspection plan:
+
+```{r plotplan, cache=TRUE}
+# User chosen parameters
+u <- 1.1  # measure to relative rate of 10%
+a <- 0.05 # accept 5% chance of making wrong decision
+
+# Sequential inspection plan
+s <- 0.5
+h0 <- log(a/(1-a))/(2*log(u))
+h1 <- -h0
+
+library('ggplot2')
+ggplot(data=data.frame(t=c(0,300),y=c(0,150)),
+       mapping=aes(x=t,y=y)) +
+  geom_point(size=0) +
+  geom_abline(slope=s,intercept=h0,color='blue',size=3) +
+  geom_abline(slope=s,intercept=h1,color='green',size=3) +
+  coord_fixed() +
+  ggtitle("inspection plan")
+```
+
+Here is a simulation of executing such a plan:
+
+```{r simulate, cache=TRUE}
+set.seed(3525)
+
+# Unknown rates
+p1 <- 0.05
+p2 <- 0.055
+
+simulate <- function(s,h0,h1,p1,p2) {
+  # statistics we are tracking
+  runLength <- 0
+  t <- 0
+  y <- 0
+  
+  d <- data.frame(t=rep(NA,1000),y=NA)
+  inBounds <- TRUE
+  while(inBounds) {
+    c1 <- runif(1)<=p1
+    c2 <- runif(1)<=p2
+    if(c1!=c2) {
+      t <- t+1
+      y <- y+c2
+      if(t<=nrow(d)) {
+        d$t[[t]] <- t
+        d$y[[t]] <- y
+      }
+      inBounds <- (y<=h1+s*t)&&(y>=h0+s*t)
+    }
+    runLength <- runLength+1
+  }
+  d <- d[!is.na(d$t),]
+  decision <- ifelse(y/t>s,2,1)
+  list(d=d,
+       summary=data.frame(t=t,
+                          y=y,
+                          runLength=runLength,
+                          decision=decision))
+}
+
+sim <- simulate(s,h0,h1,p1,p2)
+ggplot(data=sim$d,mapping=aes(x=t,y=y)) +
+  geom_point() + geom_line() +
+  geom_abline(slope=s,intercept=h0,color='blue',size=3) +
+  geom_abline(slope=s,intercept=h1,color='green',size=3) +
+  coord_fixed() +
+  ggtitle(paste("inspection, steps=",sim$summary$runLength,
+                ', decision=',sim$summary$decision))
+```
+
+This becomes more legible if we replace y with y-s*t,
+rotating the frame so our decision boundaries are horizontal lines
+and we are always stepping up or down as we move to the right.
+This makes Wald's brilliant formulation of the problem as 
+a "drunkard's walk" more obvious.
+
+```{r rotate, cache=TRUE}
+ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
+  geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
+             mapping=aes(x=x,y=y),size=0) +
+  geom_point() + geom_line() +
+  geom_abline(slope=0,intercept=h0,color='blue',size=3) +
+  geom_abline(slope=0,intercept=h1,color='green',size=3) +
+  ggtitle(paste("(rotated) inspection, steps=",sim$summary$runLength,
+                ', decision=',sim$summary$decision))
+```
+
+Here are many repeats of such an experiment:
+
+```{r repeat, cache=TRUE}
+parallelCluster <- parallel::makeCluster(parallel::detectCores())
+mkWorker <- function(s,h0,h1,p1,p2,simulate) {
+  force(s)
+  force(h0)
+  force(h1)
+  force(p1)
+  force(p2)
+  force(simulate)
+  function(i) {
+    si <- simulate(s,h0,h1,p1,p2)
+    si$d$rep <- i
+    si$summary$rep <- i
+    si
+  }
+}
+worker <- mkWorker(s,h0,h1,p1,p2,simulate)
+reps <- parallel::parLapply(parallelCluster,
+                            1:100,
+                            worker)
+parallel::stopCluster(parallelCluster)
+parallelCluster <- NULL
+
+d <- do.call(rbind,lapply(reps,function(r) {r$d}))
+sum <- do.call(rbind,lapply(reps,function(r) {r$summary}))
+print(summary(sum))
+
+ggplot(data=d,mapping=aes(x=t,y=y-s*t)) +
+  geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
+             mapping=aes(x=x,y=y),size=0) +
+  geom_point(alpha=0.3) +
+  geom_smooth(color='orange') +
+  geom_density2d(color='gold') +
+  geom_abline(slope=0,intercept=h0,color='blue',size=3) +
+  geom_abline(slope=0,intercept=h1,color='green',size=3) +
+  ggtitle("(rotated) many repetitions of the experiment")
+
+ggplot(data=sum,mapping=aes(x=runLength)) + 
+  geom_density(adjust=0.2) + ggtitle('experiment run times')
+```
+
+For more articles on A/B testing (including dynamic programing formulations and Bayesian formulations)
+please see following:
+
+ * [A dynamic programming solution to A/B test design](http://www.win-vector.com/blog/2015/07/dynamic-prog-ab-test-design/)
+ * [Why does designing a simple A/B test seem so complicated?](http://www.win-vector.com/blog/2015/06/designing-ab-tests/)
+ * [A clear picture of power and significance in A/B tests](http://www.win-vector.com/blog/2014/05/a-clear-picture-of-power-and-significance-in-ab-tests/)
+ * [Bandit Formulations for A/B Tests: Some Intuition](http://www.win-vector.com/blog/2014/04/bandit-formulations-for-ab-tests-some-intuition/)
+ * Bayesian/loss-oriented: [New video course: Campaign Response Testing](http://www.win-vector.com/blog/2015/04/new-video-course-campaign-response-testing/)
