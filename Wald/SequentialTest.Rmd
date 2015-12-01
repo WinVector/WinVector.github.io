@@ -134,7 +134,13 @@ rotating the frame so our decision boundaries are horizontal lines
 and we are always stepping up or down as we move to the right (actually it is 
 affine transform as it includes a rescaling).
 This makes Wald's brilliant formulation of the problem as 
-a "drunkard's walk" more obvious.
+a "drunkard's walk" more obvious.  We now always move 1 to the right and always move
+up 1/2 or down 1/2 (depending on which source/process wins).
+
+In this form (with u0=1/u1, which means s=1/2)
+the acceptance rule is: "run until one of the options is more than 30 wins ahead of
+the other and then quit" (the 15 coming from 2*h1=30.9).  So any acceptance rule of this form
+can be justified as a special case of Wald's sequential analysis.
 
 ```{r rotate, cache=TRUE}
 ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
