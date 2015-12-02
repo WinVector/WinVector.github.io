@@ -9,7 +9,7 @@ Implementation of section 6.4.2 of Abraham Wald, Sequential Analysis, Dover 2004
 See [Win-Vector blog: Sequential Analysis](http://www.win-vector.com/blog/2015/12/sequential-analysis/) for more details.
 
 We will phrase this as purchasing web-traffic from two source in parallel.  Each
-source either converts (a success) or does not (a failure).  Source 1 converts with
+source (or process) either converts (a success) or does not (a failure).  Source 1 converts with
 (unknown) probability p1 and source 2 converts with (unknown) probability p2.  We
 want to buy traffic from both sources for a while and then with high probability pick
 the source with the higher conversion rate.
@@ -50,7 +50,9 @@ The idea is: if p1/(1-p1) is near p2/(1-p2) then the difference is both very har
 Here is a typical inspection plan:
 
 ```{r plotplan, cache=TRUE}
-# User chosen parameters
+# User chosen parameters. 
+# We are sticking to a special simple symmetric case of Wald's system.
+# All we are saying is we value relative error and probability of mistake symmetrically.
 u <- 1.1  # measure to relative rate of 10%
 a <- 0.05 # accept 5% chance of making wrong decision
 
@@ -137,10 +139,28 @@ This makes Wald's brilliant formulation of the problem as
 a "drunkard's walk" more obvious.  We now always move 1 to the right and always move
 up 1/2 or down 1/2 (depending on which source/process wins).
 
-In this form (with u0=1/u1, which means s=1/2)
-the acceptance rule is: "run until one of the options is more than 30 wins ahead of
-the other and then quit" (the 15 coming from 2*h1=30.9).  So any acceptance rule of this form
-can be justified as a special case of Wald's sequential analysis.
+Consider the special form of Wald's analysis we are using.  
+We picked u,a and then wrote our control parameters (encoding desires) as:
+
+ * u1 = u
+ * u0 = 1/u
+ * b = a
+
+This implies:
+
+ * s = 1/2
+ * h1 = log((1-a)/a)/(2 log(u))
+ * h0 = -h1
+
+On the rotated graph we always move one to the right on (0,1) and (1,0) observations (which is now
+irrelevant as the rotated acceptance lines are horizontal) and either down 1/2 or up 1/2 depending
+which process was better.  So Wald's acceptance rule becomes: whichever process is first more than 2*h1
+ahead is accepted (the 2 is because we are moving up and down in halves).  Also notice this rule does
+not require throwing out the (0,0) and (1,1) observations- as adding them in would not affect 
+vertical position.  So this special case of Wald's rule is in fact a function of the standard sufficient statistics, and doesn't need the exact details of the pairings.
+
+For our example the acceptance rule (in rotated form) is: "run until one of the options is more than 30 wins ahead of the other and then quit" (the 15 coming from 2*h1=30.9).  The record keeping doesn't even
+require a chart or throwing out pairs- just one running "net ahead" sum.
 
 ```{r rotate, cache=TRUE}
 ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
