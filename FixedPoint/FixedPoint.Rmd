@@ -5,6 +5,8 @@ date: "January 1, 2016"
 output: html_document
 ---
 
+Worksheet for the Win-Vector blog article [Some programming language theory in R](http://www.win-vector.com/blog/2016/01/some-programming-language-theory-in-r/).  R project (with all code) [here](http://winvector.github.io/FixedPoint/).
+
 Let's take a break from statistics and data science to think a bit about programming language theory, and how the theory relates to the programming language used in the [R analysis platform](https://cran.r-project.org) (the language is technically called "S", but we are going to just call the whole analysis system "R").
 
 Our reasoning is: if you want to work as a modern data scientist you have to program (this is not optional for reasons of documentation, sharing and scientific repeatability).  If you do program you are going to have to eventually think a bit about programming theory (hopefully not too early in your studies, but it will happen).  Let's use R's powerful programming language (and implementation) to dive into some deep issues in programming language theory:
