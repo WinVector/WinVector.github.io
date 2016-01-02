@@ -29,7 +29,7 @@ But let's play with this in R a bit as it actually does help our "functional thi
 The usual first example of a recursive function is the factorial function.  Factorial is defined over the non-negative integers as:
 
  * factorial(0) = 1
- * factorial(x) = x*factorial(x-1)
+ * factorial(x) = x*factorial(x-1) (for integer x>0)
 
 It is usually written as x! (so x! is shorthand for factorial(x)).  Now we are not really interested in the factorial() function as:
 
