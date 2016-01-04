@@ -1,0 +1,201 @@
+---
+title: "PExample"
+output: html_document
+---
+
+
+```{r start}
+# Start up a parallel cluster
+parallelCluster <- parallel::makeCluster(parallel::detectCores())
+print(parallelCluster)
+```
+
+
+```{r example}
+d <- iris # let "d" refer to one of R's built in data sets
+vars <- c('Sepal.Length','Sepal.Width','Petal.Length')
+yName <- 'Species'
+yLevels <- sort(unique(d[[yName]]))
+
+fitOneVariableModel <- function(yName,yLevel,vars,data) {
+  formula <- paste('(',yName,'=="',yLevel,'") ~ ',paste(vars,collapse=' + '),sep='')
+  print(formula)
+  glm(as.formula(formula),family=binomial,data=data)
+}
+```
+
+```{r forloop}
+for(yLevel in yLevels) {
+  print("*****")
+  print(yLevel)
+  print(fitOneVariableModel(yName,yLevel,vars,d))
+}
+```
+
+```{r lapply}
+worker <- function(yLevel) {
+  fitOneVariableModel(yName,yLevel,vars,d)
+}
+models <- lapply(yLevels,worker)
+names(models) <- yLevels
+print(models)
+```
+
+```{r parallelTry1}
+tryCatch(
+  models <- parallel::parLapply(parallelCluster,yLevels,worker),
+  error = function(e) print(e)
+)
+```
+
+The above fails because the worker function can not find the function "fitOneVariableModel."  In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d).  This is because in the common default implementation of the parallel interface ("snow"): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over.  So the running processes do not see the variable bindings we have in the Global environment.
+
+So we need to make sure all of our variable references are neatly packed together so parallel/snow can transport them to where we need them.  The cleanest way to do this is through the use of constructing our own (lexical closure)[http://adv-r.had.co.nz/Functional-programming.html#closures].  If we define our worker inside another function then anything also in that function activation environment will be available to our worker.  We do this using a pattern we will call a worker factory.
+
+```{r workerFactory}
+# build the single argument function we are going to pass to parallel
+mkWorker <- function(yName,vars,d) {
+  # make sure each of the three values we need passed are available in this environment
+  force(yName)
+  force(vars)
+  force(d)
+  # define any and every function our worker function needs in this environment
+  fitOneVariableModel <- function(yName,yLevel,vars,data) {
+    formula <- paste('(',yName,'=="',yLevel,'") ~ ',paste(vars,collapse=' + '),sep='')
+    print(formula)
+    glm(as.formula(formula),family=binomial,data=data)
+  }
+  # finally: define and return our worker function
+  # the point is worker's "lexical closure" (where it looks for unbound variables)
+  # is mkWorker's activation/execution environment and not the usual Global environment.
+  # the parallel library is willing to transport this environment (which it does not
+  # do for the Global environment).
+  worker <- function(yLevel) {
+    fitOneVariableModel(yName,yLevel,vars,d)
+  }
+  worker
+}
+
+models <- parallel::parLapply(parallelCluster,yLevels,
+                              mkWorker(yName,vars,d))
+names(models) <- yLevels
+print(models)
+```
+
+
+The above works, but it is incredibly tedious and wasteful to have to re-define every 
+function we need every time we need it.  Any easier to use way is to use a helper
+function we supply called "bindToEnv" to do some of the work.  With bindToEnv the
+code looks like the following.
+
+```{r bindExample1}
+source('bindValues.R')
+# build the single argument function we are going to pass to parallel
+mkWorker <- function() {
+  bindToEnv(objNames=c('yName','vars','d','fitOneVariableModel'))
+  worker <- function(yLevel) {
+    fitOneVariableModel(yName,yLevel,vars,d)
+  }
+  worker
+}
+
+models <- parallel::parLapply(parallelCluster,yLevels,
+                              mkWorker())
+names(models) <- yLevels
+print(models)
+```
+
+
+What bindToEnv does is for each value name listed is copy a reference to it into the current environment.  
+
+In addition (and this is the tricky step) bindToEnv also re-binds the lexical environment of any function it is asked to work with to the current target environment.  This way two functions can each find each other (as they see each being named in the now common lexical environment).  This is somewhat bad (we shouldn't be doing directly manipulation of environment linkages), but the cat is already out of that bag as the parallel library is clearly also re-wiring environments.  It also isn't as bad as it may seem as (due to R's immutability rules) only our copy of each function has its environment re-wired, nobody outside of our use sees this change.
+
+What can go wrong is we may break any functions that depend on an functional idea called ("Currying")[https://en.wikipedia.org/wiki/Currying] (or any other clever use of closures for that matter).  By us getting too clever with closures we defeat other smart uses of closures.
+
+An example of what goes wrong is shown below.
+
+```{r curryFail1}
+# Function taking many arguments
+mkPrefixXI <- function(x,i) {
+  paste(x,i,sep='.')
+}
+
+# Wrapper function that curries the value x into a prefix pasting
+# This is the problem: our library breaks the results of helpers like CurryFn()
+CurryFn <- function(fn,xarg) {
+  function(yarg) {
+    fn(xarg,yarg)
+  }
+}
+
+f <- CurryFn(mkPrefixXI,'x')
+f(2)
+
+mkWorker <- function() {
+  bindToEnv(objNames=c('mkPrefixXI','f'))
+  function(i) {
+    f(i)
+  }
+}
+
+tryCatch(parallel::parLapply(parallelCluster,1:3,mkWorker()),
+         error = function(e) print(e))
+
+# Our own wrapper also does not work
+# Wrapper function that curries the value x into a prefix pasting
+# This is the problem: our library breaks the results of helpers like mkPrefixX
+mkPrefixX <- function(xarg) {
+  function(yarg) {
+    mkPrefixXI(xarg,yarg)
+  }
+}
+
+f <- mkPrefixX('x')
+f(2)
+
+mkWorker <- function() {
+  bindToEnv(objNames=c('mkPrefixXI','mkPrefixXI','f'))
+  function(i) {
+    f(i)
+  }
+}
+
+tryCatch(parallel::parLapply(parallelCluster,1:3,mkWorker()),
+         error = function(e) print(e))
+```
+
+This is a problem as Currying is a very common and useful pattern (and fairly similar to what we are doing to prepare functions for use with the parallel library).
+
+The work around is to not combine Currying and function wrapping.  Always Curry directly by plugging in known arguments to a function.  Do not try to use any sort of syntax shortening wrapper like CurryFn or mkPrefixX.
+
+
+```{r curryGood}
+
+# Curry by plugging in value directly, not by a function wrapper as in last example
+# Notice we type in our value x='x' directly, so it isn't coming through an environment 
+# (which could later stripped).
+f <- function(i) { mkPrefixXI('x',i) }
+
+mkWorker <- function() {
+  bindToEnv(objNames=c('mkPrefixXI','f'))
+  function(i) {
+    f(i)
+  }
+}
+
+tryCatch(parallel::parLapply(parallelCluster,1:3,mkWorker()),
+         error = function(e) print(e))
+```
+
+
+Note: this overall methodology does not work with useful structures such as lists of functions, as bindToEnv doesn't see these functions (and hence does not rebind them).
+
+
+
+```{r cleanup}
+# Shutdown cluster neatly
+if(!is.null(parallelCluster)) {
+  parallel::stopCluster(parallelCluster)
+  parallelCluster <- c()
+}
+```
