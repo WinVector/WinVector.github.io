@@ -36,6 +36,7 @@ It is usually written as x! (so x! is shorthand for factorial(x)).  Now we are n
  * It is already implement in R as factorial() (see help('factorial')).
  * Any recursive implementation of is going to very slow compared to a more standard "(special function)[https://en.wikipedia.org/wiki/Special_functions]" implementation.
  * You can't even compute factorial(200) over double precision floating point- so a small look-up table could do all the work.
+ * The right way to implement it in properly idiomatic R would be to commit some memory space and write: prod(seq_len(x)) .
  
 But it is a somewhat familiar function that is a one of the simplest examples of recursion.  Here is a recursive implementation written in R:
 

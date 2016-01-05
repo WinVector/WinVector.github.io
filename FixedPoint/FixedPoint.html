@@ -98,6 +98,7 @@ img {
 <li>It is already implement in R as factorial() (see help(‘factorial’)).</li>
 <li>Any recursive implementation of is going to very slow compared to a more standard “(special function)[<a href="https://en.wikipedia.org/wiki/Special_functions" class="uri">https://en.wikipedia.org/wiki/Special_functions</a>]” implementation.</li>
 <li>You can’t even compute factorial(200) over double precision floating point- so a small look-up table could do all the work.</li>
+<li>The right way to implement it in properly idiomatic R would be to commit some memory space and write: prod(seq_len(x)) .</li>
 </ul>
 <p>But it is a somewhat familiar function that is a one of the simplest examples of recursion. Here is a recursive implementation written in R:</p>
 <pre class="r"><code># typical example recursive function
