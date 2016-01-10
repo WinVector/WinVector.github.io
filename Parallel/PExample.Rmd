@@ -18,7 +18,8 @@ yName <- 'Species'
 yLevels <- sort(unique(d[[yName]]))
 
 fitOneVariableModel <- function(yName,yLevel,vars,data) {
-  formula <- paste('(',yName,'=="',yLevel,'") ~ ',paste(vars,collapse=' + '),sep='')
+  formula <- paste('(',yName,'=="',yLevel,'") ~ ',
+                   paste(vars,collapse=' + '),sep='')
   print(formula)
   glm(as.formula(formula),family=binomial,data=data)
 }
@@ -43,7 +44,8 @@ print(models)
 
 ```{r parallelTry1}
 tryCatch(
-  models <- parallel::parLapply(parallelCluster,yLevels,worker),
+  models <- parallel::parLapply(parallelCluster,
+                                yLevels,worker),
   error = function(e) print(e)
 )
 ```
@@ -55,13 +57,16 @@ So we need to make sure all of our variable references are neatly packed togethe
 ```{r workerFactory}
 # build the single argument function we are going to pass to parallel
 mkWorker <- function(yName,vars,d) {
-  # make sure each of the three values we need passed are available in this environment
+  # make sure each of the three values we need passed 
+  # are available in this environment
   force(yName)
   force(vars)
   force(d)
-  # define any and every function our worker function needs in this environment
+  # define any and every function our worker function 
+  # needs in this environment
   fitOneVariableModel <- function(yName,yLevel,vars,data) {
-    formula <- paste('(',yName,'=="',yLevel,'") ~ ',paste(vars,collapse=' + '),sep='')
+    formula <- paste('(',yName,'=="',yLevel,'") ~ ',
+                     paste(vars,collapse=' + '),sep='')
     print(formula)
     glm(as.formula(formula),family=binomial,data=data)
   }
@@ -89,7 +94,7 @@ function we supply called "bindToEnv" to do some of the work.  With bindToEnv th
 code looks like the following.
 
 ```{r bindExample1}
-source('bindValues.R')
+source('bindToEnv.R') # http://winvector.github.io/Parallel/bindToEnv.R
 # build the single argument function we are going to pass to parallel
 mkWorker <- function() {
   bindToEnv(objNames=c('yName','vars','d','fitOneVariableModel'))
@@ -183,8 +188,7 @@ mkWorker <- function() {
   }
 }
 
-tryCatch(parallel::parLapply(parallelCluster,1:3,mkWorker()),
-         error = function(e) print(e))
+parallel::parLapply(parallelCluster,1:3,mkWorker())
 ```
 
 
