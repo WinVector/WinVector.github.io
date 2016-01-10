@@ -15,9 +15,9 @@ print(parallelCluster)
 d <- iris # let "d" refer to one of R's built in data sets
 vars <- c('Sepal.Length','Sepal.Width','Petal.Length')
 yName <- 'Species'
-yLevels <- sort(unique(d[[yName]]))
+yLevels <- sort(unique(as.character(d[[yName]])))
 
-fitOneVariableModel <- function(yName,yLevel,vars,data) {
+fitOneTargetModel <- function(yName,yLevel,vars,data) {
   formula <- paste('(',yName,'=="',yLevel,'") ~ ',
                    paste(vars,collapse=' + '),sep='')
   print(formula)
@@ -29,13 +29,13 @@ fitOneVariableModel <- function(yName,yLevel,vars,data) {
 for(yLevel in yLevels) {
   print("*****")
   print(yLevel)
-  print(fitOneVariableModel(yName,yLevel,vars,d))
+  print(fitOneTargetModel(yName,yLevel,vars,d))
 }
 ```
 
 ```{r lapply}
 worker <- function(yLevel) {
-  fitOneVariableModel(yName,yLevel,vars,d)
+  fitOneTargetModel(yName,yLevel,vars,d)
 }
 models <- lapply(yLevels,worker)
 names(models) <- yLevels
@@ -50,7 +50,7 @@ tryCatch(
 )
 ```
 
-The above fails because the worker function can not find the function "fitOneVariableModel."  In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d).  This is because in the common default implementation of the parallel interface ("snow"): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over.  So the running processes do not see the variable bindings we have in the Global environment.
+The above fails because the worker function can not find the function "fitOneTargetModel."  In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d).  This is because in the common default implementation of the parallel interface ("snow"): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over.  So the running processes do not see the variable bindings we have in the Global environment.
 
 So we need to make sure all of our variable references are neatly packed together so parallel/snow can transport them to where we need them.  The cleanest way to do this is through the use of constructing our own [lexical closure](http://adv-r.had.co.nz/Functional-programming.html#closures).  If we define our worker inside another function then anything also in that function activation environment will be available to our worker.  We do this using a pattern we will call a worker factory.
 
@@ -64,21 +64,24 @@ mkWorker <- function(yName,vars,d) {
   force(d)
   # define any and every function our worker function 
   # needs in this environment
-  fitOneVariableModel <- function(yName,yLevel,vars,data) {
+  fitOneTargetModel <- function(yName,yLevel,vars,data) {
     formula <- paste('(',yName,'=="',yLevel,'") ~ ',
                      paste(vars,collapse=' + '),sep='')
     print(formula)
     glm(as.formula(formula),family=binomial,data=data)
   }
   # finally: define and return our worker function
-  # the point is worker's "lexical closure" (where it looks for unbound variables)
-  # is mkWorker's activation/execution environment and not the usual Global environment.
-  # the parallel library is willing to transport this environment (which it does not
+  # the point is worker's "lexical closure" 
+  # (where it looks for unbound variables)
+  # is mkWorker's activation/execution environment 
+  # and not the usual Global environment.
+  # the parallel library is willing to transport 
+  # this environment (which it does not
   # do for the Global environment).
   worker <- function(yLevel) {
-    fitOneVariableModel(yName,yLevel,vars,d)
+    fitOneTargetModel(yName,yLevel,vars,d)
   }
-  worker
+  return(worker)
 }
 
 models <- parallel::parLapply(parallelCluster,yLevels,
@@ -97,9 +100,9 @@ code looks like the following.
 source('bindToEnv.R') # http://winvector.github.io/Parallel/bindToEnv.R
 # build the single argument function we are going to pass to parallel
 mkWorker <- function() {
-  bindToEnv(objNames=c('yName','vars','d','fitOneVariableModel'))
+  bindToEnv(objNames=c('yName','vars','d','fitOneTargetModel'))
   worker <- function(yLevel) {
-    fitOneVariableModel(yName,yLevel,vars,d)
+    fitOneTargetModel(yName,yLevel,vars,d)
   }
   worker
 }

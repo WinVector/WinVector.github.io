@@ -77,9 +77,9 @@ print(parallelCluster)</code></pre>
 <pre class="r"><code>d &lt;- iris # let &quot;d&quot; refer to one of R's built in data sets
 vars &lt;- c('Sepal.Length','Sepal.Width','Petal.Length')
 yName &lt;- 'Species'
-yLevels &lt;- sort(unique(d[[yName]]))
+yLevels &lt;- sort(unique(as.character(d[[yName]])))
 
-fitOneVariableModel &lt;- function(yName,yLevel,vars,data) {
+fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
   formula &lt;- paste('(',yName,'==&quot;',yLevel,'&quot;) ~ ',
                    paste(vars,collapse=' + '),sep='')
   print(formula)
@@ -88,7 +88,7 @@ fitOneVariableModel &lt;- function(yName,yLevel,vars,data) {
 <pre class="r"><code>for(yLevel in yLevels) {
   print(&quot;*****&quot;)
   print(yLevel)
-  print(fitOneVariableModel(yName,yLevel,vars,d))
+  print(fitOneTargetModel(yName,yLevel,vars,d))
 }</code></pre>
 <pre><code>## [1] &quot;*****&quot;
 ## [1] &quot;setosa&quot;
@@ -133,7 +133,7 @@ fitOneVariableModel &lt;- function(yName,yLevel,vars,data) {
 ## Null Deviance:       191 
 ## Residual Deviance: 23.77     AIC: 31.77</code></pre>
 <pre class="r"><code>worker &lt;- function(yLevel) {
-  fitOneVariableModel(yName,yLevel,vars,d)
+  fitOneTargetModel(yName,yLevel,vars,d)
 }
 models &lt;- lapply(yLevels,worker)</code></pre>
 <pre><code>## [1] &quot;(Species==\&quot;setosa\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;</code></pre>
@@ -184,8 +184,8 @@ print(models)</code></pre>
                                 yLevels,worker),
   error = function(e) print(e)
 )</code></pre>
-<pre><code>## &lt;simpleError in checkForRemoteErrors(val): 3 nodes produced errors; first error: could not find function &quot;fitOneVariableModel&quot;&gt;</code></pre>
-<p>The above fails because the worker function can not find the function “fitOneVariableModel.” In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d). This is because in the common default implementation of the parallel interface (“snow”): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over. So the running processes do not see the variable bindings we have in the Global environment.</p>
+<pre><code>## &lt;simpleError in checkForRemoteErrors(val): 3 nodes produced errors; first error: could not find function &quot;fitOneTargetModel&quot;&gt;</code></pre>
+<p>The above fails because the worker function can not find the function “fitOneTargetModel.” In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d). This is because in the common default implementation of the parallel interface (“snow”): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over. So the running processes do not see the variable bindings we have in the Global environment.</p>
 <p>So we need to make sure all of our variable references are neatly packed together so parallel/snow can transport them to where we need them. The cleanest way to do this is through the use of constructing our own <a href="http://adv-r.had.co.nz/Functional-programming.html#closures">lexical closure</a>. If we define our worker inside another function then anything also in that function activation environment will be available to our worker. We do this using a pattern we will call a worker factory.</p>
 <pre class="r"><code># build the single argument function we are going to pass to parallel
 mkWorker &lt;- function(yName,vars,d) {
@@ -196,21 +196,24 @@ mkWorker &lt;- function(yName,vars,d) {
   force(d)
   # define any and every function our worker function 
   # needs in this environment
-  fitOneVariableModel &lt;- function(yName,yLevel,vars,data) {
+  fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
     formula &lt;- paste('(',yName,'==&quot;',yLevel,'&quot;) ~ ',
                      paste(vars,collapse=' + '),sep='')
     print(formula)
     glm(as.formula(formula),family=binomial,data=data)
   }
   # finally: define and return our worker function
-  # the point is worker's &quot;lexical closure&quot; (where it looks for unbound variables)
-  # is mkWorker's activation/execution environment and not the usual Global environment.
-  # the parallel library is willing to transport this environment (which it does not
+  # the point is worker's &quot;lexical closure&quot; 
+  # (where it looks for unbound variables)
+  # is mkWorker's activation/execution environment 
+  # and not the usual Global environment.
+  # the parallel library is willing to transport 
+  # this environment (which it does not
   # do for the Global environment).
   worker &lt;- function(yLevel) {
-    fitOneVariableModel(yName,yLevel,vars,d)
+    fitOneTargetModel(yName,yLevel,vars,d)
   }
-  worker
+  return(worker)
 }
 
 models &lt;- parallel::parLapply(parallelCluster,yLevels,
@@ -256,9 +259,9 @@ print(models)</code></pre>
 <pre class="r"><code>source('bindToEnv.R') # http://winvector.github.io/Parallel/bindToEnv.R
 # build the single argument function we are going to pass to parallel
 mkWorker &lt;- function() {
-  bindToEnv(objNames=c('yName','vars','d','fitOneVariableModel'))
+  bindToEnv(objNames=c('yName','vars','d','fitOneTargetModel'))
   worker &lt;- function(yLevel) {
-    fitOneVariableModel(yName,yLevel,vars,d)
+    fitOneTargetModel(yName,yLevel,vars,d)
   }
   worker
 }
