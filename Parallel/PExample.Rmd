@@ -52,7 +52,7 @@ tryCatch(
 
 The above fails because the worker function can not find the function "fitOneVariableModel."  In fact it can not find any of the code or data we supplied (it will also fail to find yName, vars, and d).  This is because in the common default implementation of the parallel interface ("snow"): the function to be evaluated is serialized and unpacked into different processes and the Global environment is not copied over.  So the running processes do not see the variable bindings we have in the Global environment.
 
-So we need to make sure all of our variable references are neatly packed together so parallel/snow can transport them to where we need them.  The cleanest way to do this is through the use of constructing our own (lexical closure)[http://adv-r.had.co.nz/Functional-programming.html#closures].  If we define our worker inside another function then anything also in that function activation environment will be available to our worker.  We do this using a pattern we will call a worker factory.
+So we need to make sure all of our variable references are neatly packed together so parallel/snow can transport them to where we need them.  The cleanest way to do this is through the use of constructing our own [lexical closure](http://adv-r.had.co.nz/Functional-programming.html#closures).  If we define our worker inside another function then anything also in that function activation environment will be available to our worker.  We do this using a pattern we will call a worker factory.
 
 ```{r workerFactory}
 # build the single argument function we are going to pass to parallel
@@ -115,7 +115,7 @@ What bindToEnv does is for each value name listed is copy a reference to it into
 
 In addition (and this is the tricky step) bindToEnv also re-binds the lexical environment of any function it is asked to work with to the current target environment.  This way two functions can each find each other (as they see each being named in the now common lexical environment).  This is somewhat bad (we shouldn't be doing directly manipulation of environment linkages), but the cat is already out of that bag as the parallel library is clearly also re-wiring environments.  It also isn't as bad as it may seem as (due to R's immutability rules) only our copy of each function has its environment re-wired, nobody outside of our use sees this change.
 
-What can go wrong is we may break any functions that depend on an functional idea called ("Currying")[https://en.wikipedia.org/wiki/Currying] (or any other clever use of closures for that matter).  By us getting too clever with closures we defeat other smart uses of closures.
+What can go wrong is we may break any functions that depend on an functional idea called ["Currying"](https://en.wikipedia.org/wiki/Currying) (or any other clever use of closures for that matter).  By us getting too clever with closures we defeat other smart uses of closures.
 
 An example of what goes wrong is shown below.
 
