@@ -82,7 +82,6 @@ yLevels &lt;- sort(unique(as.character(d[[yName]])))
 fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
   formula &lt;- paste('(',yName,'==&quot;',yLevel,'&quot;) ~ ',
                    paste(vars,collapse=' + '),sep='')
-  print(formula)
   glm(as.formula(formula),family=binomial,data=data)
 }</code></pre>
 <pre class="r"><code>for(yLevel in yLevels) {
@@ -91,8 +90,7 @@ fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
   print(fitOneTargetModel(yName,yLevel,vars,d))
 }</code></pre>
 <pre><code>## [1] &quot;*****&quot;
-## [1] &quot;setosa&quot;
-## [1] &quot;(Species==\&quot;setosa\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;</code></pre>
+## [1] &quot;setosa&quot;</code></pre>
 <pre><code>## Warning: glm.fit: algorithm did not converge</code></pre>
 <pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
 <pre><code>## 
@@ -107,7 +105,6 @@ fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
 ## Residual Deviance: 3.523e-09     AIC: 8
 ## [1] &quot;*****&quot;
 ## [1] &quot;versicolor&quot;
-## [1] &quot;(Species==\&quot;versicolor\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;
 ## 
 ## Call:  glm(formula = as.formula(formula), family = binomial, data = data)
 ## 
@@ -119,8 +116,7 @@ fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
 ## Null Deviance:       191 
 ## Residual Deviance: 151.5     AIC: 159.5
 ## [1] &quot;*****&quot;
-## [1] &quot;virginica&quot;
-## [1] &quot;(Species==\&quot;virginica\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;</code></pre>
+## [1] &quot;virginica&quot;</code></pre>
 <pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
 <pre><code>## 
 ## Call:  glm(formula = as.formula(formula), family = binomial, data = data)
@@ -136,11 +132,8 @@ fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
   fitOneTargetModel(yName,yLevel,vars,d)
 }
 models &lt;- lapply(yLevels,worker)</code></pre>
-<pre><code>## [1] &quot;(Species==\&quot;setosa\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;</code></pre>
 <pre><code>## Warning: glm.fit: algorithm did not converge</code></pre>
 <pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
-<pre><code>## [1] &quot;(Species==\&quot;versicolor\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;
-## [1] &quot;(Species==\&quot;virginica\&quot;) ~ Sepal.Length + Sepal.Width + Petal.Length&quot;</code></pre>
 <pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
 <pre class="r"><code>names(models) &lt;- yLevels
 print(models)</code></pre>
@@ -199,7 +192,6 @@ mkWorker &lt;- function(yName,vars,d) {
   fitOneTargetModel &lt;- function(yName,yLevel,vars,data) {
     formula &lt;- paste('(',yName,'==&quot;',yLevel,'&quot;) ~ ',
                      paste(vars,collapse=' + '),sep='')
-    print(formula)
     glm(as.formula(formula),family=binomial,data=data)
   }
   # finally: define and return our worker function
