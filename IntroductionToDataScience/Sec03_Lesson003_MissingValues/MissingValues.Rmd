@@ -212,15 +212,14 @@ tryCatch(
 
 ```{r}
 # Install a library try to work around problem
-library('devtools')
-install_github('WinVector/vtreat')
+# install.packages('vtreat')
 library('vtreat') # https://github.com/WinVector/vtreat
 ```
 
 ```{r}
 # try a fix for the missing values
 treatmentsC <- designTreatmentsC(d2[!d2$isTest,],vars,yColumn,TRUE,verbose=FALSE)
-dTreated <- prepare(treatmentsC,d2,pruneLevel=c())
+dTreated <- prepare(treatmentsC,d2,pruneSig=c())
 treatedVars <- setdiff(colnames(dTreated),c(yColumn,'isTest'))
 dTreated$isTest <- d2$isTest
 print(treatedVars)
@@ -242,7 +241,7 @@ for(v in sample(vars,nMissing,replace=TRUE)) {
   }
 }
 treatmentsC <- designTreatmentsC(d2[!d2$isTest,],vars,yColumn,TRUE,verbose=FALSE)
-dTreated <- prepare(treatmentsC,d2,pruneLevel=c())
+dTreated <- prepare(treatmentsC,d2,pruneSig=c())
 treatedVars <- setdiff(colnames(dTreated),c(yColumn,'isTest'))
 dTreated$isTest <- d2$isTest
 print(treatedVars)

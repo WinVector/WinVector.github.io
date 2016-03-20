@@ -14,8 +14,7 @@ First, load all libraries needed for the examples
 # Missing Values lesson. Uncomment the next two lines
 # to install the package
 #
-# library(devtools)
-# install_github('WinVector/vtreat')
+# install.packages('WinVector/vtreat')
 library(vtreat)
 
 library(ggplot2) # for plotting
@@ -267,7 +266,7 @@ to do this.
 dtrain = d[!d$isTest, ]
 treatPlan = designTreatmentsC(dtrain, vars, yColumn, TRUE, verbose=FALSE)
 
-dtrainTreat = prepare(treatPlan, dtrain, pruneLevel=NULL, doCollar=FALSE)
+dtrainTreat = prepare(treatPlan, dtrain, pruneSig=NULL, doCollar=FALSE)
 # the treated data has all NAs replaced by the mean value of the variable,
 # and additional columns to mark which values were formerly NAs
 head(dtrainTreat)
@@ -293,7 +292,7 @@ model2$deviance
 Make predictions
 ```{r}
 # treat all the data first
-dTreat = prepare(treatPlan, d, pruneLevel=NULL, doCollar=FALSE)
+dTreat = prepare(treatPlan, d, pruneSig=NULL, doCollar=FALSE)
 
 # put the predictions back into the original frame
 d$model2 = predict(model2, newdata=dTreat, type='response')
