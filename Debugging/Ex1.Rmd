@@ -1,0 +1,139 @@
+---
+title: "Debugging Example"
+author: "Win-Vector LLC"
+date: "April 9, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r defs, echo=FALSE}
+library('ggplot2')
+library('ROCR')
+
+# pretend experiment, just an example
+pretendBigExpensiveExperiment <- function() {
+  d <- data.frame(x=rnorm(5))
+  d$y <- (rnorm(nrow(d)) + d$x)>=0
+  d
+}
+
+# ROCR plot taken from https://github.com/WinVector/WVPlots
+# #' Plot reciever operating characteristic plot.
+#'
+#' @param frame data frame to get values from
+#' @param xvar name of the indepement (input or model) column in frame
+#' @param truthVar name of the dependent (output or result to be modeled) column in frame
+#' @param title title to place on plot
+#' @param ...  no unamed argument, added to force named binding of later arguments.
+#' @examples
+#'
+#' set.seed(34903490)
+#' x = rnorm(50)
+#' y = 0.5*x^2 + 2*x + rnorm(length(x))
+#' frm = data.frame(x=x,y=y,yC=y>=as.numeric(quantile(y,probs=0.8)))
+#' frm$absY <- abs(frm$y)
+#' frm$posY = frm$y > 0
+#' frm$costX = 1
+#' WVPlots::ROCPlot(frm, "x", "yC", title="Example ROC plot")
+#'
+#' @export
+ROCPlot <- function(frame, xvar, truthVar,title,...) {
+  # checkArgs(frame=frame,xvar=xvar,yvar=truthVar,title=title,...)
+  outcol <- frame[[truthVar]]
+  predcol <- frame[[xvar]]
+  pred <- ROCR::prediction(predcol,outcol)
+  perf <-  ROCR::performance(pred,'tpr','fpr')
+  auc <- as.numeric(ROCR::performance(pred,'auc')@y.values)
+  pf <- data.frame(
+    FalsePositiveRate=perf@x.values[[1]],
+    TruePositiveRate=perf@y.values[[1]])
+  palletName = "Dark2"
+  plot= ggplot2::ggplot() +
+    ggplot2::geom_ribbon(data=pf,
+                         ggplot2::aes(x=FalsePositiveRate,ymax=TruePositiveRate,ymin=0),
+                alpha=0.3) +
+    ggplot2::geom_point(data=pf,
+                        ggplot2::aes(x=FalsePositiveRate,y=TruePositiveRate)) +
+    ggplot2::geom_line(data=pf,
+                       ggplot2::aes(x=FalsePositiveRate,y=TruePositiveRate)) +
+    ggplot2::geom_line(ggplot2::aes(x=c(0,1),y=c(0,1))) +
+    ggplot2::coord_fixed() +
+    ggplot2::scale_fill_brewer(palette=palletName) +
+    ggplot2::scale_color_brewer(palette=palletName) +
+    ggplot2::ggtitle(paste(title,'\n',
+                  truthVar, '~', xvar, '\n',
+                  'AUC:',format(auc,digits=2)))
+  plot
+}
+
+# debug runner from https://github.com/WinVector/WVPlots/blob/master/R/DebugFn.R
+#' Capture arguments of exception throwing plot for later debugging.
+#'
+#' Run fn and print result, save arguments on failure.  Use on systems like ggplot()
+#' where some caclulation is delayed until print().
+#'
+#' @param saveFile path to save RDS to.
+#' @param fn function to call
+#' @param ... arguments for fn
+#' @return fn(...) normally, but if f(...) throws an save to saveFile RDS of list r such that do.call(r$fn,r$args) repeats the call to fn with args.
+#'
+#' @examples
+#'
+#' d <- data.frame(x=1:5)
+#' DebugPrintFn('problem.RDS','PlotDistCountNormal',d,xvar='x','example')
+#' tryCatch(
+#'    DebugPrintFn('problem.RDS','PlotDistCountNormal',
+#'       d,xvar='xmisspelled','example'),
+#'    error = function(e) { print(e) })
+#'
+#' @export
+DebugPrintFn <- function(saveFile,fn,...) {
+  args <- list(...)
+  tryCatch({
+    res = do.call(fn,args)
+    print(res)
+    res
+  },
+  error = function(e) {
+    saveRDS(object=list(fn=fn,args=args),file=saveFile)
+    stop(paste0("Wrote '",saveFile,"' on catching '",as.character(e),"'"))
+  })
+}
+```
+
+
+```{r example1}
+# Run once, seems okay
+set.seed(25352)
+d <- pretendBigExpensiveExperiment()
+print(ROCPlot(d,'x','y','example'))
+```
+
+```{r largerrun,error=TRUE}
+# Run a lot of important experiment
+for(runNum in seq_len(100)) {
+  d <- pretendBigExpensiveExperiment()
+  print(ROCPlot(d,'x','y',paste('example',runNum)))
+}
+```
+
+```{r rerunsaveexample,error=TRUE}
+# Run a lot of important experiment
+# not the exact same set of experiments as we didn't reset pseudorandom seed!
+for(runNum in seq_len(100)) {
+  d <- pretendBigExpensiveExperiment()
+  DebugPrintFn('problem.RDS','ROCPlot',d,'x','y',paste('example',runNum))
+}
+```
+
+```{r examinetherpblem,error=TRUE}
+problem <- readRDS('problem.RDS')
+print(problem)
+do.call(problem$fn,problem$args)
+```
+
+
