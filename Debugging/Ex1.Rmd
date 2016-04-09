@@ -5,6 +5,10 @@ date: "April 9, 2016"
 output: html_document
 ---
 
+  * Video lecture: https://youtu.be/-P9UzQuJSH8 
+  * This document and all example code: http://winvector.github.io/Debugging/
+  * Blog announcement (good place for questions and comments): http://www.win-vector.com/blog/2016/04/free-data-science-video-lecture-debugging-in-r/
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -22,13 +26,13 @@ pretendBigExpensiveExperiment <- function() {
 }
 
 # ROCR plot taken from https://github.com/WinVector/WVPlots
-# #' Plot reciever operating characteristic plot.
+# #' Plot receiver operating characteristic plot.
 #'
 #' @param frame data frame to get values from
-#' @param xvar name of the indepement (input or model) column in frame
+#' @param xvar name of the independent (input or model) column in frame
 #' @param truthVar name of the dependent (output or result to be modeled) column in frame
 #' @param title title to place on plot
-#' @param ...  no unamed argument, added to force named binding of later arguments.
+#' @param ...  no unnamed argument, added to force named binding of later arguments.
 #' @examples
 #'
 #' set.seed(34903490)
@@ -74,7 +78,7 @@ ROCPlot <- function(frame, xvar, truthVar,title,...) {
 #' Capture arguments of exception throwing plot for later debugging.
 #'
 #' Run fn and print result, save arguments on failure.  Use on systems like ggplot()
-#' where some caclulation is delayed until print().
+#' where some calculation is delayed until print().
 #'
 #' @param saveFile path to save RDS to.
 #' @param fn function to call
@@ -123,7 +127,7 @@ for(runNum in seq_len(100)) {
 
 ```{r rerunsaveexample,error=TRUE}
 # Run a lot of important experiment
-# not the exact same set of experiments as we didn't reset pseudorandom seed!
+# not the exact same set of experiments as we didn't reset pseudo-random seed!
 for(runNum in seq_len(100)) {
   d <- pretendBigExpensiveExperiment()
   DebugPrintFn('problem.RDS','ROCPlot',d,'x','y',paste('example',runNum))
