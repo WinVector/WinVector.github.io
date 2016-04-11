@@ -73,7 +73,9 @@ ROCPlot <- function(frame, xvar, truthVar,title,...) {
                   'AUC:',format(auc,digits=2)))
   plot
 }
+```
 
+```{r wrapperfn}
 # debug runner from https://github.com/WinVector/WVPlots/blob/master/R/DebugFn.R
 #' Capture arguments of exception throwing plot for later debugging.
 #'
