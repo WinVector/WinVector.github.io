@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="John Mount, Nina Zumel" />
+
+<meta name="date" content="2016-04-14" />
+
+<title>vtreat cross frames</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div class="fluid-row" id="header">
+
+
+<h1 class="title">vtreat cross frames</h1>
+<h4 class="author"><em>John Mount, Nina Zumel</em></h4>
+<h4 class="date"><em>2016-04-14</em></h4>
+
+</div>
+
+
+<p>Example demonstrating “cross validated training frames” (or “cross frames”) in vtreat.</p>
+<p>Consider the following data frame. The outcome only depends on the “good” variables, not on the (high degree of freedom) “bad” variables. Modeling such a data set runs a high risk of overfit.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">22626</span>)
+d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">xBad1=</span><span class="kw">sample</span>(<span class="kw">paste</span>(<span class="st">'level'</span>,<span class="dv">1</span>:<span class="dv">1000</span>,<span class="dt">sep=</span><span class="st">''</span>),<span class="dv">2000</span>,<span class="dt">replace=</span><span class="ot">TRUE</span>),
+                <span class="dt">xBad2=</span><span class="kw">sample</span>(<span class="kw">paste</span>(<span class="st">'level'</span>,<span class="dv">1</span>:<span class="dv">1000</span>,<span class="dt">sep=</span><span class="st">''</span>),<span class="dv">2000</span>,<span class="dt">replace=</span><span class="ot">TRUE</span>),
+                <span class="dt">xBad3=</span><span class="kw">sample</span>(<span class="kw">paste</span>(<span class="st">'level'</span>,<span class="dv">1</span>:<span class="dv">1000</span>,<span class="dt">sep=</span><span class="st">''</span>),<span class="dv">2000</span>,<span class="dt">replace=</span><span class="ot">TRUE</span>),
+                <span class="dt">xGood1=</span><span class="kw">rnorm</span>(<span class="dv">2000</span>),
+                <span class="dt">xGood2=</span><span class="kw">rnorm</span>(<span class="dv">2000</span>))
+
+<span class="co"># outcome only depends on &quot;good&quot; variables</span>
+d$y &lt;-<span class="st"> </span><span class="kw">rnorm</span>(<span class="kw">nrow</span>(d))+<span class="fl">0.2</span>*d$xGood1 +<span class="st"> </span><span class="fl">0.3</span>*d$xGood2&gt;<span class="fl">0.5</span>
+d$rgroup &lt;-<span class="st"> </span><span class="kw">sample</span>(<span class="kw">c</span>(<span class="st">&quot;cal&quot;</span>,<span class="st">&quot;train&quot;</span>,<span class="st">&quot;test&quot;</span>),<span class="kw">nrow</span>(d),<span class="dt">replace=</span><span class="ot">TRUE</span>)  <span class="co"># the random group used for splitting the data set, not a variable.</span>
+
+<span class="co"># devtools::install_github(&quot;WinVector/WVPlots&quot;)</span>
+<span class="co"># library('WVPlots')</span>
+plotRes &lt;-<span class="st"> </span>function(d,predName,yName,title) {
+  <span class="kw">print</span>(title)
+  tab &lt;-<span class="st"> </span><span class="kw">table</span>(<span class="dt">truth=</span>d[[yName]],<span class="dt">pred=</span>d[[predName]]&gt;<span class="fl">0.5</span>)
+  <span class="kw">print</span>(tab)
+  diag &lt;-<span class="st"> </span><span class="kw">sum</span>(<span class="kw">vapply</span>(<span class="kw">seq_len</span>(<span class="kw">min</span>(<span class="kw">dim</span>(tab))),
+                     function(i) tab[i,i],<span class="kw">numeric</span>(<span class="dv">1</span>)))
+  acc &lt;-<span class="st"> </span>diag/<span class="kw">sum</span>(tab)
+<span class="co">#  if(requireNamespace(&quot;WVPlots&quot;,quietly=TRUE)) {</span>
+<span class="co">#     print(WVPlots::ROCPlot(d,predName,yName,title))</span>
+<span class="co">#  }</span>
+  <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">'accuracy'</span>,acc))
+}</code></pre></div>
+<div id="the-wrong-thing" class="section level2">
+<h2>The Wrong Thing</h2>
+<p>Bad practice: use the same set of data to prepare variable encoding and train a model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain &lt;-<span class="st"> </span>d[d$rgroup!=<span class="st">'test'</span>,,drop=<span class="ot">FALSE</span>]
+dTest &lt;-<span class="st"> </span>d[d$rgroup==<span class="st">'test'</span>,,drop=<span class="ot">FALSE</span>]
+treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dTrain,<span class="kw">c</span>(<span class="st">'xBad1'</span>,<span class="st">'xBad2'</span>,<span class="st">'xBad3'</span>,<span class="st">'xGood1'</span>,<span class="st">'xGood2'</span>),
+                                        <span class="st">'y'</span>,<span class="ot">TRUE</span>,
+  <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
+)</code></pre></div>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;design var xBad1 Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;design var xBad2 Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;design var xBad3 Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;design var xGood1 Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;design var xGood2 Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:27 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:28 2016&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
+  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
+)
+m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~xBad1_catB +<span class="st"> </span>xBad2_catB +<span class="st"> </span>xBad3_catB +<span class="st"> </span>xGood1_clean +<span class="st"> </span>xGood2_clean,
+          <span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))
+<span class="kw">print</span>(<span class="kw">summary</span>(m1))  <span class="co"># notice low residual deviance</span></code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ xBad1_catB + xBad2_catB + xBad3_catB + xGood1_clean + 
+##     xGood2_clean, family = binomial(link = &quot;logit&quot;), data = dTrainTreated)
+## 
+## Deviance Residuals: 
+##      Min        1Q    Median        3Q       Max  
+## -2.70438   0.00000   0.00000   0.03995   2.61063  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)   -0.5074     0.3350  -1.515  0.12983    
+## xBad1_catB     2.9432     0.5549   5.304 1.13e-07 ***
+## xBad2_catB     2.5338     0.5857   4.326 1.52e-05 ***
+## xBad3_catB     3.4172     0.6092   5.610 2.03e-08 ***
+## xGood1_clean   0.7288     0.2429   3.001  0.00269 ** 
+## xGood2_clean   0.7788     0.2585   3.012  0.00259 ** 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1724.55  on 1331  degrees of freedom
+## Residual deviance:  132.59  on 1326  degrees of freedom
+## AIC: 144.59
+## 
+## Number of Fisher Scoring iterations: 12</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTrainTreated,<span class="dt">type=</span><span class="st">'response'</span>)
+<span class="kw">plotRes</span>(dTrain,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on train'</span>)</code></pre></div>
+<pre><code>## [1] &quot;model1 on train&quot;
+##        pred
+## truth   FALSE TRUE
+##   FALSE   848   18
+##   TRUE      6  460
+## [1] &quot;accuracy 0.981981981981982&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTestTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTest,<span class="dt">pruneSig=</span><span class="kw">c</span>())
+dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTestTreated,<span class="dt">type=</span><span class="st">'response'</span>)
+<span class="kw">plotRes</span>(dTest,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on test'</span>)</code></pre></div>
+<pre><code>## [1] &quot;model1 on test&quot;
+##        pred
+## truth   FALSE TRUE
+##   FALSE   360  114
+##   TRUE    153   41
+## [1] &quot;accuracy 0.600299401197605&quot;</code></pre>
+<p>Notice above that we see a training accuracy of 98% and a test accuracy of 60%.</p>
+</div>
+<div id="the-right-thing-a-calibration-set" class="section level2">
+<h2>The Right Thing: A Calibration Set</h2>
+<p>Now try a proper calibration/train/test split:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dCal &lt;-<span class="st"> </span>d[d$rgroup==<span class="st">'cal'</span>,,drop=<span class="ot">FALSE</span>]
+dTrain &lt;-<span class="st"> </span>d[d$rgroup==<span class="st">'train'</span>,,drop=<span class="ot">FALSE</span>]
+dTest &lt;-<span class="st"> </span>d[d$rgroup==<span class="st">'test'</span>,,drop=<span class="ot">FALSE</span>]
+treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dCal,<span class="kw">c</span>(<span class="st">'xBad1'</span>,<span class="st">'xBad2'</span>,<span class="st">'xBad3'</span>,<span class="st">'xGood1'</span>,<span class="st">'xGood2'</span>),
+                                        <span class="st">'y'</span>,<span class="ot">TRUE</span>,
+  <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
+)</code></pre></div>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;design var xBad1 Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;design var xBad2 Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;design var xBad3 Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;design var xGood1 Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;design var xGood2 Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:28 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:29 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:29 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:29 2016&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
+  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
+)
+m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~xBad1_catB +<span class="st"> </span>xBad2_catB +<span class="st"> </span>xBad3_catB +<span class="st"> </span>xGood1_clean +<span class="st"> </span>xGood2_clean,
+          <span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))
+<span class="kw">print</span>(<span class="kw">summary</span>(m1))  </code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ xBad1_catB + xBad2_catB + xBad3_catB + xGood1_clean + 
+##     xGood2_clean, family = binomial(link = &quot;logit&quot;), data = dTrainTreated)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.5853  -0.9177  -0.6876   1.1651   2.3241  
+## 
+## Coefficients:
+##              Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)  -0.73798    0.12720  -5.802 6.56e-09 ***
+## xBad1_catB   -0.02380    0.02637  -0.903    0.367    
+## xBad2_catB   -0.02495    0.02608  -0.957    0.339    
+## xBad3_catB    0.02058    0.02508   0.821    0.412    
+## xGood1_clean  0.39234    0.08632   4.545 5.49e-06 ***
+## xGood2_clean  0.56252    0.09673   5.816 6.04e-09 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 832.55  on 642  degrees of freedom
+## Residual deviance: 769.28  on 637  degrees of freedom
+## AIC: 781.28
+## 
+## Number of Fisher Scoring iterations: 4</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTrainTreated,<span class="dt">type=</span><span class="st">'response'</span>)
+<span class="kw">plotRes</span>(dTrain,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on train'</span>)</code></pre></div>
+<pre><code>## [1] &quot;model1 on train&quot;
+##        pred
+## truth   FALSE TRUE
+##   FALSE   378   40
+##   TRUE    157   68
+## [1] &quot;accuracy 0.693623639191291&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTestTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTest,<span class="dt">pruneSig=</span><span class="kw">c</span>())
+dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTestTreated,<span class="dt">type=</span><span class="st">'response'</span>)
+<span class="kw">plotRes</span>(dTest,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on test'</span>)</code></pre></div>
+<pre><code>## [1] &quot;model1 on test&quot;
+##        pred
+## truth   FALSE TRUE
+##   FALSE   422   52
+##   TRUE    149   45
+## [1] &quot;accuracy 0.699101796407186&quot;</code></pre>
+<p>Notice above that we now see training and test accuracies of 70%. We have defeated overfit in two ways: training performance is closer to test performance, and test performance is better. Also we see that the model now properly considers the “bad” variables to be insignificant.</p>
+</div>
+<div id="another-right-thing-cross-validation" class="section level2">
+<h2>Another Right Thing: Cross-Validation</h2>
+<p>Below is a more statistically efficient practice: building a cross training frame.</p>
+<div id="the-intuition" class="section level3">
+<h3>The intuition</h3>
+<p>Consider any trained statistical model (in this case our treatment plan and variable selection plan) as a two-argument function <em>f(A,B)</em>. The first argument is the training data and the second argument is the application data. In our case <em>f(A,B)</em> is: <code>designTreatmentsC(A) %&gt;% prepare(B)</code>, and it produces a treated data frame.</p>
+<p>When we use the same data in both places to build our training frame, as in</p>
+<blockquote>
+<p><em>TrainTreated = f(TrainData,TrainData)</em>,</p>
+</blockquote>
+<p>we are not doing a good job simulating the future application of <em>f(,)</em>, which will be <em>f(TrainData,FutureData)</em>.</p>
+<p>To improve the quality of our simulation we can call</p>
+<blockquote>
+<p><em>TrainTreated = f(CalibrationData,TrainData)</em></p>
+</blockquote>
+<p>where <em>CalibrationData</em> and <em>TrainData</em> are disjoint datasets (as we did in the earlier example) and expect this to be a good imitation of future <em>f(CalibrationData,FutureData)</em>.</p>
+</div>
+<div id="cross-validation-and-vtreat-the-cross-frame." class="section level3">
+<h3>Cross-Validation and vtreat: The cross-frame.</h3>
+<p>Another approach is to build a “cross validated” version of <em>f</em>. We split <em>TrainData</em> into a list of 3 disjoint row intervals: <em>Train1</em>,<em>Train2</em>,<em>Train3</em>. Instead of computing <em>f(TrainData,TrainData)</em> compute:</p>
+<blockquote>
+<p><em>TrainTreated = f(Train2+Train3,Train1) + f(Train1+Train3,Train2) + f(Train1+Train2,Train3)</em></p>
+</blockquote>
+<p>(where + denotes <code>rbind()</code>).</p>
+<p>The idea is this looks a lot like <em>f(TrainData,TrainData)</em> except it has the important property that no row in the right-hand side is ever worked on by a model built using that row (a key characteristic that future data will have) so we have a good imitation of <em>f(TrainData,FutureData)</em>.</p>
+<p>In other words: we use cross validation to simulate future data. The main thing we are doing differently is remembering that we can apply cross validation to <em>any</em> two argument function <em>f(A,B)</em> and not only to functions of the form <em>f(A,B)</em> = <code>buildModel(A) %&gt;% scoreData(B)</code>. We can use this formulation in stacking or super-learning with <em>f(A,B)</em> of the form <code>buildSubModels(A) %&gt;% combineModels(B)</code> (to produce a stacked or ensemble model); the idea applies to improving ensemble methods in general.</p>
+<p>See:</p>
+<ul>
+<li>“General oracle inequalities for model selection” Charles Mitchell and Sara van de Geer</li>
+<li>“On Cross-Validation and Stacking: Building seemingly predictive models on random data” Claudia Perlich and Grzegorz Swirszcz</li>
+<li>“Super Learner” Mark J. van der Laan, Eric C. Polley, and Alan E. Hubbard</li>
+</ul>
+<p>In fact (though it was developed independently) you can think of vtreat as co-superlearner. In a super-learner the user supplies sub-models and the super-learning framework uses cross-validated data frames to build a quality over-model. In vtreat the package builds the initial single-variable models and then provides a cross-frame allowing the user to reliably fit an over-model.</p>
+</div>
+<div id="example" class="section level3">
+<h3>Example</h3>
+<p>Below is the example cross-run. The function <code>mkCrossFrameCExperiment</code> returns a treatment plan for use in preparing future data, and a cross-frame for use in fitting a model.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain &lt;-<span class="st"> </span>d[d$rgroup!=<span class="st">'test'</span>,,drop=<span class="ot">FALSE</span>]
+dTest &lt;-<span class="st"> </span>d[d$rgroup==<span class="st">'test'</span>,,drop=<span class="ot">FALSE</span>]
+prep &lt;-<span class="st"> </span>vtreat::<span class="kw">mkCrossFrameCExperiment</span>(dTrain,
+                                              <span class="kw">c</span>(<span class="st">'xBad1'</span>,<span class="st">'xBad2'</span>,<span class="st">'xBad3'</span>,<span class="st">'xGood1'</span>,<span class="st">'xGood2'</span>),
+                                        <span class="st">'y'</span>,<span class="ot">TRUE</span>,
+  <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
+)
+treatments &lt;-<span class="st"> </span>prep$treatments
+dTrainTreated &lt;-<span class="st"> </span>prep$crossFrame</code></pre></div>
+<p>Now fit the model to <em>the cross-frame</em> rather than to <code>prepare(treatments, dTrain)</code> (the treated training data).</p>
+<pre class="rxframemodel"><code>m1 &lt;- glm(y~xBad1_catB + xBad2_catB + xBad3_catB + xGood1_clean + xGood2_clean,
+          data=dTrainTreated,family=binomial(link='logit'))
+print(summary(m1))  
+
+dTrain$predM1 &lt;- predict(m1,newdata=dTrainTreated,type='response')
+plotRes(dTrain,'predM1','y','model1 on train')
+dTestTreated &lt;- vtreat::prepare(treatments,dTest,pruneSig=c())
+dTest$predM1 &lt;- predict(m1,newdata=dTestTreated,type='response')
+plotRes(dTest,'predM1','y','model1 on test')</code></pre>
+<p>The model fit to the cross-frame behaves similarly to the model produced via the process <em>f(CalibrationData, TrainData)</em>.</p>
+</div>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

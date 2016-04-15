@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-03-18" />
+<meta name="date" content="2016-04-14" />
 
 <title>vtreat package</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat package</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-03-18</em></h4>
+<h4 class="date"><em>2016-04-14</em></h4>
 
 </div>
 
@@ -86,27 +86,40 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li><a href="http://www.win-vector.com/blog/2014/12/a-comment-on-preparing-data-for-classifiers/">Encoding category levels as indicators</a></li>
 </ul>
 <p>For more details see: <a href="http://www.win-vector.com/blog/2014/08/vtreat-designing-a-package-for-variable-treatment/">the ‘vtreat’ article</a> and <a href="http://www.win-vector.com/blog/2015/05/what-is-new-in-the-vtreat-library/">update</a>.</p>
-<p>The main pattern is the use of ‘designTreatmentsC()’ or ‘designTreatmentsN()’ to design a treatment plan and then use the returned structure with ‘prepare()’ to apply the plan to data frames. The main feature of ‘vtreat’ is all data preparation is “y-aware” or uses the relations of effective variables to the dependent or outcome variable to encode the effective variables.</p>
-<p>The structure returned from ‘designTreatmentsN()’ or ‘designTreatmentsC()’ includes informational fields. The main fields are mostly vectors with names (all with the same names in the same order):</p>
+<p>The use pattern is:</p>
+<ol style="list-style-type: decimal">
+<li>Use <code>designTreatmentsC()</code> or <code>designTreatmentsN()</code> to design a treatment plan</li>
+<li>Use the returned structure with <code>prepare()</code> to apply the plan to data frames.</li>
+</ol>
+<p>The main feature of ‘vtreat’ is that all data preparation is “y-aware”: it uses the relations of effective variables to the dependent or outcome variable to encode the effective variables.</p>
+<p>The structure returned from <code>designTreatmentsN()</code> or <code>designTreatmentsC()</code> includes a list of “treatments”: objects that encapsulate the transformation process from the original variables to the new “clean” variables.</p>
+<p>In addition to the treatment objects <code>designTreatmentsC()</code> and <code>designTreatmentsN()</code> also return a data frame named <code>scoreFrame</code> which contains columns:</p>
 <ul>
-<li>‘vars’ : (character array without names) names of variables (in same order as names on the other diagnostic vectors)</li>
-<li>‘varMoves’ : logical TRUE if the variable varied during training, only variables that move will be in the treated frame.</li>
-<li>‘sig’ : significance of observed variable predictive value under an in-sample permutation test.</li>
+<li><code>varName</code>: name of new variable</li>
+<li><code>origName</code>: name of original variable that the variable was derived from (can repeat)</li>
+<li><code>varMove</code> : logical TRUE if the variable varied during training; only variables that move will be in the treated frame.</li>
+<li><code>PRESSRsquared</code> : a PRESS-held out R-squared of a linear fit from each variable to the y-value. Scores of zero and below are very bad, scores near one are very good.</li>
+<li><code>psig</code> : significance of observed variable ‘PRESSRsquared’ value under an in-sample permutation test.</li>
+<li><code>catPRSquared</code> : for categorical outcomes: deviance based pseudo-Rsquared.</li>
+<li><code>csig</code> : for categorical outcomes: significance of observed variable catPRSquared value under an in-sample permutation test.</li>
+<li><code>sig</code> : <code>csig</code> for categorical outcomes, <code>psig</code> otherwise.</li>
 </ul>
-<p>In addition to these vectors ‘designTreatmentsC()’ and ‘designTreatmentsN()’ return a data frame named ‘scoreFrame’ which contains columns: - ‘varName’: name of new variable - ‘origName’: name of original variable variable was derived from (can repeat) - ‘varMoves’ : logical TRUE if the variable varied during training, only variables that move will be in the treated frame. - ‘PRESSRsquared’ : a PRESS-held out R-squared of a linear fit from each variable to the y-value. Scores of zero and below are very bad, scores near one are very good. - ‘psig’ : significance of observed variable ‘PRESSRsquared’ value under an in-sample permutation test. - ‘catPRSquared’ : for categorical outcomes: deviance based pseudo-Rsquared. - ‘csig’ : for categorical outcomes: significance of observed variable catPRSquared value under an in-sample permutation test. - ‘sig’ : ‘csig’ for categorical outcomes, ‘psig’ otherwise.</p>
 <p>In all cases we have two undesirable upward biases on the scores:</p>
 <ul>
-<li>The treated variables view the training data during construction (for setting of NA values, missing values, levels, and more). So this gives an upward bias when trying to measure treated variable utility on training data. Until the data set is at least 1000 good rows we ignore this effect. After 1000 rows we design variables on a pseudo-random chosen 80% of the rows and score on the complimentary 20% of the rows.</li>
-<li>The scoring procedure itself involves a fit (linear regression for ‘PRESSRsquared’ or logistic regression for ‘catPseudoRSquared’). So in each of these cases we would like the regression itself to be only evaluated on held-out data. The PRESS statistic does just that (fast 1-way cross validation). The ‘catPseudoRSquared’ performs explicit 1-way cross validation for small data sets and hold-out scoring for larger data sets.</li>
+<li>The treated variables view the training data during construction (for setting of NA values, missing values, levels, and more). So this gives an upward bias when trying to measure treated variable utility on training data. Until the data set is at least 1000 good rows we ignore this effect. After 1000 rows we design variables on a pseudo-randomly chosen 80% of the rows and score on the complimentary 20% of the rows.</li>
+<li>The scoring procedure itself involves a fit (linear regression for <code>PRESSRsquared</code> or logistic regression for <code>catPRSquared</code>). So in each of these cases we would like the regression itself to only be evaluated on held-out data. The PRESS statistic does just that (fast 1-way cross validation). The <code>catPseudoRSquared</code> performs explicit 1-way cross validation for small data sets and hold-out scoring for larger data sets.</li>
 </ul>
-<p>‘vtreat’ uses a number of cross-training and jackknife style procedures to try to mitigate these effects. The suggested best practice is (if you have enough data) to split your randomly into at least the following disjoint data sets:</p>
+<p>‘vtreat’ uses a number of cross-training and jackknife style procedures to try to mitigate these effects. The suggested best practice (if you have enough data) is to split your data randomly into at least the following disjoint data sets:</p>
 <ul>
-<li>Encoding Calibration : a data set used for the ‘designTreatmentsC()’ or ‘designTreatmentsN()’ step and not used again for training or test.</li>
-<li>Training : a data set used (after ‘prepare()’) for training your model.</li>
-<li>Test : a data set used (after ‘prepare()’) for estimating your model’s out of training performance.</li>
+<li><strong>Encoding Calibration</strong> : a data set used for the <code>designTreatmentsC()</code> or <code>designTreatmentsN()</code> step and not used again for training or test.</li>
+<li><strong>Training</strong> : a data set used (after <code>prepare()</code>) for training your model.</li>
+<li><strong>Test</strong> : a data set used (after <code>prepare()</code>) for estimating your model’s out of training performance.</li>
 </ul>
-<p>The idea is: taking the extra step to perform the ‘designTreatmentsC()’ or ‘designTreatmentsN()’ on data disjoint from training makes the training data more exchangeable with test and avoids the issue that ‘vtreat’ may be hiding a large number of degrees of freedom in variables it derives from large categoricals.</p>
-<p>An trivial execution example (not demonstrating any cal/train/test split) is given below. Variables that do not move during hold-out testing are considered “not to move.”</p>
+<p>Taking the extra step to perform the <code>designTreatmentsC()</code> or <code>designTreatmentsN()</code> on data disjoint from training makes the training data more exchangeable with test and avoids the issue that ‘vtreat’ may be hiding a large number of degrees of freedom in variables it derives from large categoricals.</p>
+<p>Some trivial execution examples (not demonstrating any cal/train/test split) are given below. Variables that do not move during hold-out testing are considered “not to move.”</p>
+<hr />
+<div id="a-categorical-outcome-example" class="section level2">
+<h2>A Categorical Outcome Example</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(vtreat)
 dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
    <span class="dt">z=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="ot">NA</span>,<span class="dv">6</span>),<span class="dt">y=</span><span class="kw">c</span>(<span class="ot">FALSE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">TRUE</span>))
@@ -126,13 +139,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;design var z Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:18 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;design var z Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:26 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -182,6 +195,8 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## [1] &quot;treatmentplan&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC$treatments[[<span class="dv">1</span>]])</code></pre></div>
 <pre><code>## [1] &quot;vtreat 'Categoric Indicators'('x'(integer,factor)-&gt;character-&gt;'x_lev_NA','x_lev_x.a','x_lev_x.b')&quot;</code></pre>
+<p>Here we demonstrate the optional scaling feature of <code>prepare()</code>, which scales and centers all the variables to mean 0, and slope 1 with respect to y: In other words, it rescales the variables to “y-units”. This is useful for downstream principal components analysis.</p>
+<p><code>scale=FALSE</code> by default.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainCTreated &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC,dTrainC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">TRUE</span>)
 <span class="kw">head</span>(dTrainCTreated)</code></pre></div>
 <pre><code>##   x_lev_NA  x_lev_x.a x_lev_x.b x_catP      x_catB       z_clean z_isBAD
@@ -219,6 +234,10 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 2     -0.1  0.1666667         1    0.1  0.05164882  4.918919e-01    -0.1
 ## 3     -0.1  0.1666667         0    0.7  0.05164882  4.918919e-01    -0.1
 ## 4      0.5  0.1666667         0    0.4  0.46186845 -2.220446e-16     0.5</code></pre>
+<hr />
+</div>
+<div id="a-numeric-outcome-example" class="section level2">
+<h2>A Numeric Outcome Example</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># numeric example</span>
 dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
    <span class="dt">z=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="ot">NA</span>,<span class="dv">7</span>),<span class="dt">y=</span><span class="kw">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">0</span>,<span class="dv">1</span>,<span class="dv">1</span>))
@@ -238,13 +257,13 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsN =<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;design var z Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:18 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:18 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;design var z Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:26 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:26 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -353,6 +372,7 @@ dTestNTreatedS &lt;-<span class="st"> </span><span class="kw">prepare</span>(tre
 ## 2 0.5238095 -0.0952381
 ## 3 0.5238095 -0.0952381
 ## 4 0.0000000  0.5714286</code></pre>
+</div>
 
 
 

@@ -9,11 +9,11 @@
 <meta name="generator" content="pandoc" />
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta name="author" content="John Mount, Nina Zumel" />
+<meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-03-18" />
+<meta name="date" content="2016-04-14" />
 
-<title>vtreat variable types</title>
+<title>Variable Types</title>
 
 
 
@@ -68,9 +68,9 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="fluid-row" id="header">
 
 
-<h1 class="title">vtreat variable types</h1>
-<h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-03-18</em></h4>
+<h1 class="title">Variable Types</h1>
+<h4 class="author"><em>Win-Vector LLC</em></h4>
+<h4 class="date"><em>2016-04-14</em></h4>
 
 </div>
 
@@ -87,23 +87,23 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <li>When the target to predict is numeric.</li>
 <li>When there is no supplied target to predict.</li>
 </ul>
-<p>In all cases vtreat variable names are built by appending a notation onto the original user supplied column name. In all cases the easiest way to examine the derived variables is to look at the ‘scoreFrame’ component of the returned treatment plan.</p>
+<p>In all cases vtreat variable names are built by appending a notation onto the original user supplied column name. In all cases the easiest way to examine the derived variables is to look at the <code>scoreFrame</code> component of the returned treatment plan.</p>
 <p>We will outline each of these situations below:</p>
-<div id="when-the-target-to-predict-is-categorical" class="section level1">
-<h1>When the target to predict is categorical</h1>
+<div id="when-the-target-to-predict-is-categorical" class="section level2">
+<h2>When the target to predict is categorical</h2>
 <p>An example categorical variable treatment is demonstrated below:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(vtreat)
 dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
    <span class="dt">z=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="ot">NA</span>,<span class="dv">6</span>),<span class="dt">y=</span><span class="kw">c</span>(<span class="ot">FALSE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">TRUE</span>),
    <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
 treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var z Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:16:27 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var z Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:32 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC$scoreFrame[,<span class="kw">c</span>(<span class="st">'origName'</span>,<span class="st">'varName'</span>,<span class="st">'code'</span>,<span class="st">'varMoves'</span>,<span class="st">'sig'</span>)])</code></pre></div>
 <pre><code>##   origName   varName  code varMoves        sig
 ## 1        x  x_lev_NA   lev     TRUE 0.20766228
@@ -113,7 +113,7 @@ treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</sp
 ## 5        x    x_catB  catB     TRUE 0.05044486
 ## 6        z   z_clean clean     TRUE 0.14299775
 ## 7        z   z_isBAD isBAD     TRUE 0.20766228</code></pre>
-<p>For each user supplied variable or column (in this case ‘x’ and ‘z’) ‘vtreat’ proposes derived or treated variables (in this case ‘x_lev_x.a’, ‘x_lev_x.b’, ‘x_catP’, ‘x_catB’, ‘z_clean’, and ‘z_isBAD’). The mapping from original variable name to derived variable name is given by comparing the columns ‘origName’ and ‘varName’. One can map facts about the new variables back to the original variables as follows:</p>
+<p>For each user supplied variable or column (in this case <code>x</code> and <code>z</code>) ‘vtreat’ proposes derived or treated variables (in this case <code>x_lev_x.a</code>, <code>x_lev_x.b</code>, <code>x_catP</code>, <code>x_catB</code>, <code>z_clean</code>, and <code>z_isBAD</code>). The mapping from original variable name to derived variable name is given by comparing the columns <code>origName</code> and <code>varName</code>. One can map facts about the new variables back to the original variables as follows:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Build a map from vtreat names back to reasonable display names</span>
 vmap &lt;-<span class="st"> </span><span class="kw">as.list</span>(treatmentsC$scoreFrame$origName)
 <span class="kw">names</span>(vmap) &lt;-<span class="st"> </span>treatmentsC$scoreFrame$varName
@@ -125,31 +125,31 @@ vmap &lt;-<span class="st"> </span><span class="kw">as.list</span>(treatmentsC$s
 <pre><code>##   origName        sig
 ## 1        x 0.05044486
 ## 2        z 0.14299775</code></pre>
-<p>Essentially a derived variable name is built by concatenating an original variable name and a treatment type (also recorded in the ‘code’ column for convenience). The codes give the different ‘vtreat’ variable types (or really meanings, as all derived variables are numeric).</p>
+<p>Essentially a derived variable name is built by concatenating an original variable name and a treatment type (also recorded in the <code>code</code> column for convenience). The codes give the different ‘vtreat’ variable types (or really meanings, as all derived variables are numeric).</p>
 <p>For categorical targets the possible variable types are as follows:</p>
 <ul>
-<li>clean : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
-<li>is_Bad : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
-<li>lev : a 0/1 indicator indicating a particular value of a categorical variable was present. For example ‘x_lev_x.a’ is 1 when the original ‘x’ variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts.</li>
-<li>cat_B : a single variable Bayesian model of the log-ratio in outcome distribution conditioned on the observed value of the original variable. In our example: ‘x_catB’ = log(P[y|x]/P[y]). This encoding is especially useful for categorical variables that have a large number of levels, but be aware it can obscure degrees of freedom if not used properly.</li>
-<li>cat_P : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common.</li>
+<li><strong>clean</strong> : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
+<li><strong>is_Bad</strong> : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
+<li><strong>lev</strong> : a 0/1 indicator indicating a particular value of a categorical variable was present. For example <code>x_lev_x.a</code> is 1 when the original <code>x</code> variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts. In some cases a special level code is used to represent pooled rare values.</li>
+<li><strong>cat_B</strong> : a single variable Bayesian model of the log-ratio in outcome distribution conditioned on the observed value of the original variable. In our example: <code>x_catB = log(P[y|x]/P[y])</code>. This encoding is especially useful for categorical variables that have a large number of levels, but be aware it can obscure degrees of freedom if not used properly.</li>
+<li><strong>cat_P</strong> : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common. Probably not good for direct use in a model, but possibly useful for metanalysis on the variable.</li>
 </ul>
 </div>
-<div id="when-the-target-to-predict-is-numeric" class="section level1">
-<h1>When the target to predict is numeric</h1>
+<div id="when-the-target-to-predict-is-numeric" class="section level2">
+<h2>When the target to predict is numeric</h2>
 <p>An example numeric variable treatment is demonstrated below:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(vtreat)
 dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
    <span class="dt">z=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="ot">NA</span>,<span class="dv">6</span>),<span class="dt">y=</span><span class="kw">as.numeric</span>(<span class="kw">c</span>(<span class="ot">FALSE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">TRUE</span>)),
    <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
 treatmentsN &lt;-<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var z Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:16:27 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var z Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:32 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN$scoreFrame[,<span class="kw">c</span>(<span class="st">'origName'</span>,<span class="st">'varName'</span>,<span class="st">'code'</span>,<span class="st">'varMoves'</span>,<span class="st">'sig'</span>)])</code></pre></div>
 <pre><code>##   origName   varName  code varMoves       sig
 ## 1        x  x_lev_NA   lev     TRUE 1.0000000
@@ -162,53 +162,53 @@ treatmentsN &lt;-<span class="st"> </span><span class="kw">designTreatmentsN</sp
 ## 8        z   z_isBAD isBAD     TRUE 1.0000000</code></pre>
 <p>The treatment of numeric targets is similar to that of categorical targets. In the numeric case the possible derived variable types are:</p>
 <ul>
-<li>clean : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
-<li>is_Bad : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
-<li>lev : a 0/1 indicator indicating a particular value of a categorical variable was present. For example ‘x_lev_x.a’ is 1 when the original ‘x’ variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts. In some cases a special level code is used to represent pooled rare values.</li>
-<li>cat_N : a single variable regression model of the difference in outcome expectation conditioned on the observed value of the original variable. In our example: ‘x_catN’ = E[y|x] - E[y]. This encoding is especially useful for categorical variables that have a large number of levels, but be aware it can obscure degrees of freedom if not used properly.</li>
-<li>cat_P : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common.</li>
-<li>cat_D : a “deviation fact” about a categorical level tells us if ‘y’ is concentrated or diffuse when conditioned on the observed level of the original categorical variable.</li>
+<li><strong>clean</strong> : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
+<li><strong>is_Bad</strong> : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
+<li><strong>lev</strong> : a 0/1 indicator indicating a particular value of a categorical variable was present. For example <code>x_lev_x.a</code> is 1 when the original <code>x</code> variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts. In some cases a special level code is used to represent pooled rare values.</li>
+<li><strong>cat_N</strong> : a single variable regression model of the difference in outcome expectation conditioned on the observed value of the original variable. In our example: <code>x_catN = E[y|x] - E[y]</code>. This encoding is especially useful for categorical variables that have a large number of levels, but be aware it can obscure degrees of freedom if not used properly.</li>
+<li><strong>cat_P</strong> : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common. Tells us if the original level was rare or common. Probably not good for direct use in a model, but possibly useful for metanalysis on the variable.</li>
+<li><strong>cat_D</strong> : a “deviation fact” about a categorical level tells us if ‘y’ is concentrated or diffuse when conditioned on the observed level of the original categorical variable. Probably not good for direct use in a model, but possibly useful for metanalysis on the variable.</li>
 </ul>
-<p>Note: for categorical targets we don’t need ‘cat_D’ variables as this information is already encoded in ‘cat_B’ variables.</p>
+<p>Note: for categorical targets we don’t need <code>cat\_D</code> variables as this information is already encoded in <code>cat\_B</code> variables.</p>
 </div>
-<div id="when-there-is-no-supplied-target-to-predict" class="section level1">
-<h1>When there is no supplied target to predict</h1>
+<div id="when-there-is-no-supplied-target-to-predict" class="section level2">
+<h2>When there is no supplied target to predict</h2>
 <p>An example “no target” variable treatment is demonstrated below:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(vtreat)
 dTrainZ &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
    <span class="dt">z=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="ot">NA</span>,<span class="dv">6</span>),
    <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
 treatmentsZ &lt;-<span class="st"> </span><span class="kw">designTreatmentsZ</span>(dTrainZ,<span class="kw">colnames</span>(dTrainZ))</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;design var z Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:16:27 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:16:27 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;design var z Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:32 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:32 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsZ$scoreFrame[,<span class="kw">c</span>(<span class="st">'origName'</span>,<span class="st">'varName'</span>,<span class="st">'code'</span>,<span class="st">'varMoves'</span>)])</code></pre></div>
 <pre><code>##   origName varName  code varMoves
 ## 1        x  x_catP  catP     TRUE
 ## 2        z z_clean clean     TRUE
 ## 3        z z_isBAD isBAD     TRUE</code></pre>
-<p>Note: because there is no user supplied target the ‘scoreFrame’ significance columns are not meaningful, and are populated only for regularity of code interface. Beyond that the no-target treatments are similar to the earlier treatments. Possible derived variable types in this case are:</p>
+<p>Note: because there is no user supplied target the <code>scoreFrame</code> significance columns are not meaningful, and are populated only for regularity of code interface. Beyond that the no-target treatments are similar to the earlier treatments. Possible derived variable types in this case are:</p>
 <ul>
-<li>clean : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
-<li>is_Bad : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
-<li>lev : a 0/1 indicator indicating a particular value of a categorical variable was present. For example ‘x_lev_x.a’ is 1 when the original ‘x’ variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts. In some cases a special level code is used to represent pooled rare values.</li>
-<li>cat_P : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common.</li>
+<li><strong>clean</strong> : a numeric variable passed through with all NA/NaN/infinite values replaced with either zero or mean value of the non-NA/NaN/infinite examples of the variable.</li>
+<li><strong>is_Bad</strong> : a companion to the ‘clean’ treatment. ‘is_Bad’ is an indicator that indicates a value replacement has occurred. Form many noisy datasets this column can be more informative than the clean column!</li>
+<li><strong>lev</strong> : a 0/1 indicator indicating a particular value of a categorical variable was present. For example <code>x_lev_x.a</code> is 1 when the original <code>x</code> variable had a value of “a”. These indicators are essentially variables representing explicit encoding of levels as contrasts. In some cases a special level code is used to represent pooled rare values.</li>
+<li><strong>cat_P</strong> : a “prevalence fact” about a categorical level. Tells us if the original level was rare or common. Probably not good for direct use in a model, but possibly useful for metanalysis on the variable.</li>
 </ul>
 </div>
-<div id="overall" class="section level1">
-<h1>Overall</h1>
-<p>Variables that “do not move” (don’t take on at least two values during treatment design) or don’t achieve at least a minimal significance are suppressed. The ‘catB/catN’ variables are essentially single variable models and are very useful for re-encoding categorical variables that take on a very large number of values (such as zip-codes).</p>
+<div id="overall" class="section level2">
+<h2>Overall</h2>
+<p>Variables that “do not move” (don’t take on at least two values during treatment design) or don’t achieve at least a minimal significance are suppressed. The <code>catB</code>/<code>catN</code> variables are essentially single variable models and are very useful for re-encoding categorical variables that take on a very large number of values (such as zip-codes).</p>
 <p>The intended use of ‘vtreat’ is as follows:</p>
 <ul>
 <li>Data is split into three non-overlapping portions</li>
-<li>One portion is used to “designtreatments” (we sometime informally call this calibration).</li>
+<li>One portion is used to “design treatments” (we sometime informally call this calibration).</li>
 <li>Another portion is used to train a model.</li>
 <li>The remaining portion is used to evaluate the model.</li>
 </ul>
-<p>‘vtreat’ attempts to compute “out of sample” significances for each varaible effect ( the ‘sig’ column in ‘scoreFrame’ through cross-validation techniques).</p>
-<p>‘vtreat’ is primarily intended to be “y-aware” processing. Of particular interest is using ‘vtreat::prepare()’ with ‘scale=TRUE’ which tries to put most columns in ‘y-effect’ units which can be an important pre-processing step before attempting dimension reduction (such as principal components methods).</p>
+<p>‘vtreat’ attempts to compute “out of sample” significances for each variable effect ( the <code>sig</code> column in <code>scoreFrame</code>) through cross-validation techniques.</p>
+<p>‘vtreat’ is primarily intended to be “y-aware” processing. Of particular interest is using <code>vtreat::prepare()</code> with <code>scale=TRUE</code> which tries to put most columns in ‘y-effect’ units. This can be an important pre-processing step before attempting dimension reduction (such as principal components methods).</p>
 </div>
 <div id="links" class="section level1">
 <h1>Links</h1>

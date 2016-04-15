@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-03-18" />
+<meta name="date" content="2016-04-14" />
 
 <title>vtreat overfit</title>
 
@@ -70,35 +70,39 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat overfit</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-03-18</em></h4>
+<h4 class="date"><em>2016-04-14</em></h4>
 
 </div>
 
 
 <p>Example showing safe “best practice” use of the <a href="https://cran.r-project.org/package=vtreat">‘vtreat’</a> variable preparation library. For more on vtreat see <a href="http://www.win-vector.com/blog/2015/09/vtreat-up-on-cran/">here</a> and <a href="https://github.com/WinVector/vtreat">here</a>.</p>
-<p>Build an example data frame with no relation between x and y. We are using a synthetic data set so we know what the “right answer is” (no signal). False fitting on no-signal variables is bad for at least two reasons:</p>
+<p>Below we generate an example data frame with no relation between x and y. We are using a synthetic data set so we know what the “right answer is” (no signal). False fitting on no-signal variables is bad for several reasons:</p>
 <ul>
+<li>It creates undesirable biases in variable quality estimates and in subsequent models.</li>
+<li>It “hides degrees of freedom” from subsequent models.</li>
 <li>It creates the false impression you have a good result (which you may fail to falsify).</li>
 <li>Complex bad variables can starve out simple weak good variables.</li>
 </ul>
 <p>This example shows things we don’t want to happen, and then the additional precautions that help prevent them.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">22626</span>)
-d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">sample</span>(<span class="kw">paste</span>(<span class="st">'level'</span>,<span class="dv">1</span>:<span class="dv">1000</span>,<span class="dt">sep=</span><span class="st">''</span>),<span class="dv">2000</span>,<span class="dt">replace=</span><span class="ot">TRUE</span>)) <span class="co"># independent variables.</span>
+d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">sample</span>(<span class="kw">paste</span>(<span class="st">'level'</span>,<span class="dv">1</span>:<span class="dv">1000</span>,<span class="dt">sep=</span><span class="st">''</span>),<span class="dv">2000</span>,<span class="dt">replace=</span><span class="ot">TRUE</span>)) <span class="co"># independent variable.</span>
 d$y &lt;-<span class="st"> </span><span class="kw">runif</span>(<span class="kw">nrow</span>(d))&gt;<span class="fl">0.5</span>  <span class="co"># the quantity to be predicted, notice: independent of variables.</span>
 d$rgroup &lt;-<span class="st"> </span><span class="kw">round</span>(<span class="dv">100</span>*<span class="kw">runif</span>(<span class="kw">nrow</span>(d)))  <span class="co"># the random group used for splitting the data set, not a variable.</span></code></pre></div>
-<p>Bad practice: use same set of data to prepare variable encoding and train a model. Leads to false belief (derived from training set) that model had a good fit. Largely due to the treated variable appearing to consume only one degree of freedom, when it consumes many more. In many cases a reasonable setting of ‘pruneSig’ (say 0.01) will help against a variable being considered desirable, but selected variables may still be mis-used by downstream modeling.</p>
+<div id="bad-practice-using-the-same-data-to-treat-and-to-train" class="section level2">
+<h2>Bad Practice: Using the same data to treat and to train</h2>
+<p>Using the same set of data to prepare the variable encoding and train the model can lead to the false belief (derived from the training set) that the model fit well. This is largely due to the treated variable appearing to consume only one degree of freedom, when it in fact consumes many more. In many cases a reasonable setting of <code>pruneSig</code> (say 0.01) will help against a noise variable being considered desirable, but selected variables may still be mis-used by downstream modeling.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrain &lt;-<span class="st"> </span>d[d$rgroup&lt;=<span class="dv">80</span>,,drop=<span class="ot">FALSE</span>]
 dTest &lt;-<span class="st"> </span>d[d$rgroup&gt;<span class="dv">80</span>,,drop=<span class="ot">FALSE</span>]
 <span class="kw">library</span>(<span class="st">'vtreat'</span>)
 treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dTrain,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
   <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:33 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:33 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:33 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:33 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:33 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:34 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:31 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
   <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
 )
@@ -144,6 +148,7 @@ plotRes &lt;-<span class="st"> </span>function(d,predName,yName,title) {
   <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">'accuracy'</span>,acc))
 }
 
+<span class="co"># evaluate model on training</span>
 <span class="kw">plotRes</span>(dTrain,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on train'</span>)</code></pre></div>
 <pre><code>## [1] &quot;model1 on train&quot;
 ##        pred
@@ -151,7 +156,8 @@ plotRes &lt;-<span class="st"> </span>function(d,predName,yName,title) {
 ##   FALSE   546  262
 ##   TRUE     80  750
 ## [1] &quot;accuracy 0.791208791208791&quot;</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTestTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTest,<span class="dt">pruneSig=</span><span class="kw">c</span>())
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># evaluate model on test</span>
+dTestTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTest,<span class="dt">pruneSig=</span><span class="kw">c</span>())
 dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<span class="dt">newdata=</span>dTestTreated,<span class="dt">type=</span><span class="st">'response'</span>)
 <span class="kw">plotRes</span>(dTest,<span class="st">'predM1'</span>,<span class="st">'y'</span>,<span class="st">'model1 on test'</span>)</code></pre></div>
 <pre><code>## [1] &quot;model1 on test&quot;
@@ -160,8 +166,10 @@ dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<s
 ##   FALSE    62  113
 ##   TRUE     72  115
 ## [1] &quot;accuracy 0.488950276243094&quot;</code></pre>
-<p>The above is bad: we saw a “significant” model fit on training data (even though there is no relation to be found). This means the treated training data can be confusing to machine learning techniques and to the analyst. The issue is the training data is no longer exchangeable with the test data because the training data was used to build the variable encodings. One way to avoid this is to not use the training data for variable encoding construction, but instead use a third set for this task.</p>
-<p>First notice vtreat did thing there was any usable signal, and did not want us to use the variables (we got them by setting ‘pruneSig=c()’). Also notice we set rareCount=0, which allows use of very rare levels (which help drive the problem).</p>
+<p>The above is bad: we saw a “significant” model fit on training data (even though there is no relation to be found). This means the treated training data can be confusing to machine learning techniques and to the analyst. The issue is that the training data is no longer exchangeable with the test data because the training data was used to build the variable encodings. One way to avoid this is to not use the training data for variable encoding construction, but instead use a third set for this task.</p>
+<div id="what-went-wrong" class="section level3">
+<h3>What went wrong?</h3>
+<p>Notice that vtreat did not think there was any usable signal, and did not want us to use the variables: the values in <code>treatments$scoreFrame$sig</code> are all much larger than a nominally acceptable significance level like 0.05. The variables stayed in our model because we did not prune them (<em>ie</em> we set <code>pruneSig=c()</code>). Also notice we set <code>rareCount=0</code>, which allows the use of very rare levels (which help drive the problem).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatments$scoreFrame)</code></pre></div>
 <pre><code>##   varName varMoves PRESSRsquared psig       sig catPRSquared      csig
 ## 1  x_catP     TRUE  -0.002147806    1 0.4887020 0.0002111396 0.4887020
@@ -169,12 +177,16 @@ dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<s
 ##   needsSplit origName code
 ## 1       TRUE        x catP
 ## 2       TRUE        x catB</code></pre>
-<p>‘vtreat’ thinks a signal as strong as the one seen on the derived variable ‘x_catB’ happens at least 70% of the time for a variable with that sort of distribution: even when there is no signal. But also notice the down-stream machine learning (in this case a standard logistic regression) used the variable wrong. It gave it a non-negligible coefficient (around 3) and thought it had a reliable estimate of the coefficient and significant model that almost halved deviance (when in fact it was given nothing). So any variables that do get through may have distributional issues (and misleadingly low apparent degrees of freedom).</p>
-<p>The biggest contributors to this distributional issue tend to be rare levels of categorical variables. Since the individual levels are rare we have unreliable estimates for there effects, but if there are very many of them we may see quite a large effect. To help combat this we have a control called ‘rareLevels’. Any level that is observed no more than ‘rareLevels’ times during training is re-mapped to a new special level called “rare” and not allowed to directly contribute (i.e. can not generated unique indicator columns, and doesn’t have a direct effect on ‘catB’ or ‘catN’ encodings). If all the rare levels have a distinct behavior after grouping the “rare” level can capture that.</p>
-<p>Another undesirable effect is over-estimating significance of derived variable fit for ‘catB’ and ‘catN’ impact coded variables. To fight this vtreat attempts to estimate out of sample or cross-validated effect significances (when it has enough data). So with enough data setting the ‘pruneSig’ parameter during prepare will help remove noise variables. One can set ‘pruneSig’ to something like 1/number-of-columns to ensure that with high probability only an constant number of truly useless variables make it to later modeling. However, the significance of a given effect size for variables that actually have some signal (i.e. non-noise variables) can still be sensitive to in/out sample scoring and the hiding of degrees of freedom that occurs when a large categorical variable (that represents a large number of degrees of freedom) is re-coded as an impact or effect (which appears to have only a single degree of freedom).</p>
+<p>Subsequently, the down-stream machine learning (in this case a standard logistic regression) used the variable incorrectly. The modeling algorithm gave the variable a non-negligible coefficient (around 3) that it thought was reliably bounded away from zero; it also believed that the resulting model almost halved deviance (when in fact it explained nothing). So any variables that do get through may have distributional issues (and misleadingly low apparent degrees of freedom).</p>
+<p><strong>Rare levels of a categorical variable</strong></p>
+<p>The biggest contributors to this distributional issue tend to be rare levels of categorical variables. Since the individual levels are rare we have unreliable estimates for their effects, and if there are very many of them we may see quite a large effect in aggregate. To help combat this we have a control called <code>rareLevels</code>. Any level that is observed no more than <code>rareLevels</code> times during training is re-mapped to a new special level called <em>rare</em> and not allowed to directly contribute (i.e. can not generate unique indicator columns, and doesn’t have a direct effect on <code>catB</code> or <code>catN</code> encodings). If all the rare levels have a distinct behavior after grouping, the <em>rare</em> level can capture that.</p>
+<p><strong>Impact-coding of categorical variables with many levels</strong></p>
+<p>Another undesirable effect is over-estimating significance of derived variable fit for <code>catB</code> and <code>catN</code> impact-coded variables. To fight this vtreat attempts to estimate out of sample or cross-validated effect significances (when it has enough data). With enough data, setting the <code>pruneSig</code> parameter during <code>prepare()</code> will help remove noise variables. One can set <code>pruneSig</code> to something like <em>1/number-of-columns</em> to ensure that with high probability only an constant number of truly useless variables make it to later modeling. However, the significance of a given effect size for variables that actually have some signal (i.e. non-noise variables) can still be sensitive to in/out sample scoring and the hiding of degrees of freedom that occurs when a large categorical variable (that represents a large number of degrees of freedom) is re-coded as an impact or effect (which appears to have only a single degree of freedom).</p>
 <p>We next show how to avoid these undesirable illusory effects: better practice in partitioning and using training data. We are doing more with our data (essentially chaining models), so we have to take a bit more care with our data.</p>
-<p>Correct example: use different sets to prepare variable encoding and train a model. Leads to false belief (derived from training set) that model had a good fit. Largely due to the treated variable appearing to consume only one degree of freedom, when it consumes many more.</p>
-<p>Remember, the goal isn’t good performance on training- it is good performance on future data (simulated by test). So doing well on training and bad on test is worse than doing bad on both test and training.</p>
+</div>
+</div>
+<div id="correct-practice-use-different-data-to-treat-and-train" class="section level2">
+<h2>Correct Practice: Use different data to treat and train</h2>
 <p>Below is part of our suggested work pattern: coding/train/test split.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dCode &lt;-<span class="st"> </span>d[d$rgroup&lt;=<span class="dv">20</span>,,drop=<span class="ot">FALSE</span>]
 dTrain &lt;-<span class="st"> </span>d[(d$rgroup&gt;<span class="dv">20</span>) &amp;<span class="st"> </span>(d$rgroup&lt;=<span class="dv">80</span>),,drop=<span class="ot">FALSE</span>]
@@ -182,12 +194,12 @@ treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmen
                                         <span class="dt">rareCount=</span><span class="dv">0</span>,  <span class="co"># Note set this to something larger, like 5</span>
                                         <span class="dt">rareSig=</span><span class="kw">c</span>() <span class="co"># Note set this to something like 0.3</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:34 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;design var x Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;scoring treatments Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;have treatment plan Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;rescoring complex variables Thu Apr 14 19:55:31 2016&quot;
+## [1] &quot;done rescoring complex variables Thu Apr 14 19:55:31 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
                                  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: set this to filter, like 0.05 or 1/nvars</span>
 )
@@ -244,41 +256,10 @@ dTest$predM2 &lt;-<span class="st"> </span><span class="kw">predict</span>(m2,<s
 ##   FALSE  175
 ##   TRUE   187
 ## [1] &quot;accuracy 0.483425414364641&quot;</code></pre>
-<p>In the above example we saw training and test performance are similar (and where they should be as there is no signal). Notice the coding set can (falsely) show high performance. This is the bad behavior we wanted to isolate out of the training set.</p>
-<p>Also be wary, on small data sets vtreat::designTreatments can not always get accurate out-of sample estimates of variable performance (in these cases it falls back to untrustworthy in-sample estimates). This is something we will improve over time, but vtreat is intended mostly for production applications on large data sets.</p>
-<p>Bad small example:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsBad &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(d[d$rgroup&lt;=<span class="dv">0</span>,,<span class="dt">drop=</span><span class="ot">FALSE</span>],<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
-                      <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note set this to something larger, like 5</span>
-)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:34 2016&quot;</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsBad$scoreFrame[treatmentsBad$scoreFrame$sig&lt;=<span class="fl">0.05</span>,,<span class="dt">drop=</span><span class="ot">FALSE</span>])</code></pre></div>
-<pre><code>##  [1] varName       varMoves      PRESSRsquared psig          sig          
-##  [6] catPRSquared  csig          needsSplit    origName      code         
-## &lt;0 rows&gt; (or 0-length row.names)</code></pre>
-<p>We would have preferred no variables to have received a “good score.”</p>
-<p>So even better is to perform the 3-way data split, set pruneSig to something reasonable, and do not set rareCount to zero (leave it at the default or a reasonable count like 5 or 10).</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dCode &lt;-<span class="st"> </span>d[d$rgroup&lt;=<span class="dv">20</span>,,drop=<span class="ot">FALSE</span>]
-dTrain &lt;-<span class="st"> </span>d[(d$rgroup&gt;<span class="dv">20</span>) &amp;<span class="st"> </span>(d$rgroup&lt;=<span class="dv">80</span>),,drop=<span class="ot">FALSE</span>]
-<span class="kw">tryCatch</span>(
-  { treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dCode,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>)
-  dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,<span class="dt">pruneSig=</span><span class="fl">0.01</span>)},
-  <span class="dt">error=</span>function(x) { <span class="kw">print</span>(<span class="kw">paste</span>(<span class="st">'caught'</span>,x)); <span class="kw">return</span>(<span class="kw">c</span>()) }
-)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;design var x Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;scoring treatments Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;have treatment plan Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;rescoring complex variables Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Mar 18 11:17:34 2016&quot;
-## [1] &quot;caught Error in vtreat::prepare(treatments, dTrain, pruneSig = 0.01): no usable vars\n&quot;</code></pre>
-<pre><code>## NULL</code></pre>
-<p>And in this case we are (properly) told are no variables to work with (and prevented from accidentally continuing a bad analysis).</p>
-<p>There are, of course, other methods to avoid the bias introduced in using the same data to generate the variable encodings and then train a model using those variables. vtreat incorporates a number of these (smoothing controlled through ‘smFactor’, pruning of rare levels controlled through ‘rareSig’ and ‘rareCount’, and <a href="http://www.win-vector.com/blog/2015/10/using-differential-privacy-to-reuse-training-data/">cross-constructed training frames</a> accessed by setting ‘returnXFrame=TRUE’). But we feel when you have a lot of data the simplicity (and statistical soundness) of the three way split is attractive.</p>
+<p>In the above example we saw training and test performance are similar – and equally poor, as they should be since there is no signal. Though it didn’t happen in this case, note the coding set can (falsely) show high performance. This is the bad behavior we wanted to isolate out of the training set.</p>
+<p>Remember, the goal isn’t good performance on training- it is good performance on future data (simulated by test). So doing well on training and bad on test is worse than doing bad on both test and training.</p>
+<p>There are, of course, other methods to avoid the bias introduced in using the same data to both treat/encode the variables and to train the model. vtreat incorporates a number of these methods, including smoothing (controlled through <code>smFactor</code>) and pruning of rare levels (controlled through <code>rareSig</code>). A more effective technique: cross-constructed training frames can also be accessed by using <code>mkCrossFrameCExperiment</code> or <code>mkCrossFrameNExperiment</code>.</p>
+</div>
 
 
 
