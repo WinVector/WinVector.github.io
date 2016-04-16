@@ -5,6 +5,6 @@ Support files for the video course
   John Mount
 
 http://www.win-vector.com/blog/introduction-to-data-science/
-https://www.udemy.com/introduction-to-data-science/?couponCode=C2
+https://www.udemy.com/introduction-to-data-science/?couponCode=C3
 
 
