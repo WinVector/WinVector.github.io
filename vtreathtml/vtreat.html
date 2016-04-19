@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-04-18" />
+<meta name="date" content="2016-04-19" />
 
 <title>vtreat package</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat package</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-04-18</em></h4>
+<h4 class="date"><em>2016-04-19</em></h4>
 
 </div>
 
@@ -139,13 +139,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;design var x Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;design var z Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;scoring treatments Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;have treatment plan Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;rescoring complex variables Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;done rescoring complex variables Mon Apr 18 10:09:58 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;design var x Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;design var z Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;scoring treatments Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;have treatment plan Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;rescoring complex variables Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;done rescoring complex variables Tue Apr 19 11:31:15 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -255,13 +255,13 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsN =<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;design var x Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;design var z Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;scoring treatments Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;have treatment plan Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;rescoring complex variables Mon Apr 18 10:09:58 2016&quot;
-## [1] &quot;done rescoring complex variables Mon Apr 18 10:09:58 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;design var x Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;design var z Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;scoring treatments Tue Apr 19 11:31:15 2016&quot;
+## [1] &quot;have treatment plan Tue Apr 19 11:31:16 2016&quot;
+## [1] &quot;rescoring complex variables Tue Apr 19 11:31:16 2016&quot;
+## [1] &quot;done rescoring complex variables Tue Apr 19 11:31:16 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -370,6 +370,12 @@ dTestNTreatedS &lt;-<span class="st"> </span><span class="kw">prepare</span>(tre
 ## 2 0.5238095 -0.0952381
 ## 3 0.5238095 -0.0952381
 ## 4 0.0000000  0.5714286</code></pre>
+<p>Related work:</p>
+<ul>
+<li><em>Applied Multiple Regression/Correlation Analysis for the Behavioral Sciences</em>, 2nd edition, 1983, Jacob Cohen, Patricia Cohen (called the concept “effects coded variables”).</li>
+<li><a href="http://dl.acm.org/citation.cfm?id=507538">“A preprocessing scheme for high-cardinality categorical attributes in classification and prediction problems”</a> Daniele Micci-Barreca, ACM SIGKDD Explorations, Volume 3 Issue 1, July 2001 Pages 27-32.</li>
+<li><a href="https://blogs.technet.microsoft.com/machinelearning/2015/02/17/big-learning-made-easy-with-counts/">“Big Learning Made Easy – with Counts!”</a>, Misha Bilenko, Cortana Intelligence and Machine Learning Blog, 2015.</li>
+</ul>
 </div>
 
 
