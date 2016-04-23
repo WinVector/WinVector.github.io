@@ -17,7 +17,7 @@ library('glmnet')
 
 # load the data as in the book
 # change this path to match your directory structure
-dir = '~/Documents/work/zmPDSwR/KDD2009/' 
+dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
 
 d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
                 header=T,sep='\t',na.strings=c('NA',''), 
@@ -72,7 +72,7 @@ trainPlan = mkCrossFrameCExperiment(dTrain,
 treatmentsC = trainPlan$treatments
 treatedTrainM = trainPlan$crossFrame
 
-selvars = treatmentsC$varName[treatmentsC$sig<kddSig]
+selvars = treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<kddSig]
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 
 treatedTest = prepare(treatmentsC,
@@ -120,10 +120,7 @@ for(mname in c('glmPred','gbmPred')) {
     #print(modelGBMs)
     #print(summary(modelGBMs))
     nTrees = gbm.perf(modelGBMs)
-    treatedTrainP[[mname]] = predict(modelGBMs,
-                                     newdata=treatedTrainM,type='response',
-                                     n.trees=nTrees) 
-    treatedTestP[[mname]] = predict(modelGBMs,
+   treatedTestP[[mname]] = predict(modelGBMs,
                                     newdata=treatedTest,type='response',
                                     n.trees=nTrees)
   } else {
@@ -132,10 +129,7 @@ for(mname in c('glmPred','gbmPred')) {
                     alpha=0.5,
                     family='binomial')
     #print(summary(modelglms))
-    treatedTrainP[[mname]] = as.numeric(predict(modelglms,
-                                     newx=as.matrix(treatedTrainM[,selvars,drop=FALSE]),
-                                     type='response'))
-    treatedTestP[[mname]] = as.numeric(predict(modelglms,
+     treatedTestP[[mname]] = as.numeric(predict(modelglms,
                                     newx=as.matrix(treatedTest[,selvars,drop=FALSE]),
                                     type='response'))
   }

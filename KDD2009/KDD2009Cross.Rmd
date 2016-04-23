@@ -117,6 +117,7 @@ treatedTestP = treatedTest[, yName, drop=FALSE]
 
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
 
+  mname='gbm'
   print("*****************************")
   print(date())
   print(paste(mname,length(selvars)))
