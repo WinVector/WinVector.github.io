@@ -116,11 +116,10 @@ treatedTestP = treatedTest[, yName, drop=FALSE]
 
 
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
-for(mname in c('gbmPred','glmPred')) {
+
   print("*****************************")
   print(date())
   print(paste(mname,length(selvars)))
-  if(mname=='gbmPred') {
     modelGBMs = gbm(as.formula(formulaS),
                     data=treatedTrain,
                     distribution='bernoulli',
@@ -135,22 +134,7 @@ for(mname in c('gbmPred','glmPred')) {
                                      n.trees=nTrees) 
     treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
                                     n.trees=nTrees)
-  } else {
-    modelglms = glm(as.formula(formulaS),
-                    data=treatedTrain,
-                    family=binomial(link='logit')
-    )
-    #print(summary(modelglms))
-    treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrain,type='response')
-    treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
-  }
-  
-  t1 = paste(mname,'trainingM data')
-  print(DoubleDensityPlot(treatedTrainP, mname, yName, 
-                          title=t1))
-  print(ROCPlot(treatedTrainP, mname, yName, 
-                title=t1))
-  
+
   t2 = paste(mname,'test data')
   print(DoubleDensityPlot(treatedTestP, mname, yName, 
                           title=t2))
@@ -158,6 +142,6 @@ for(mname in c('gbmPred','glmPred')) {
                 title=t2))
   print(date())
   print("*****************************")
-}
+
 
 ```

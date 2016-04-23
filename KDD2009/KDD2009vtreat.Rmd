@@ -12,11 +12,12 @@ library('parallel')
 library('gbm')
 #library('class')
 library('ggplot2')
+library('glmnet')
 
 
 # load the data as in the book
 # change this path to match your directory structure
-dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
+dir = '~/Documents/work/zmPDSwR/KDD2009/' 
 
 d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
                 header=T,sep='\t',na.strings=c('NA',''), 
@@ -32,19 +33,17 @@ upselling = read.table(paste(dir,'orange_small_train_upselling.labels.txt',sep='
 d$upselling = upselling$V1
 set.seed(729375)
 d$rgroup = runif(dim(d)[[1]])
-dTrainM = subset(d,rgroup<=0.5)  # set for building models
-dTrainC = subset(d,(rgroup>0.5) & (rgroup<=0.9)) # set for impact coding
+dTrain = subset(d,rgroup<=0.9)  # set for building models
 dTest = subset(d,rgroup>0.9) # set for evaluation
 debug = FALSE
 if(debug) {
-  dTrainM <- dTrainM[sample.int(nrow(dTrainM),100),]
-  dTrainC <- dTrainC[sample.int(nrow(dTrainC),100),]
+  dTrain <- dTrain[sample.int(nrow(dTrainM),100),]
   dTest <- dTest[sample.int(nrow(dTest),100),]
 }
 rm(list=c('d','churn','appetency','upselling','dir'))
 outcomes = c('churn','appetency','upselling')
 nonvars <- c(outcomes,'rgroup')
-vars = setdiff(colnames(dTrainM),
+vars = setdiff(colnames(dTrain),
                 nonvars)
 yName = 'churn'
 yTarget = 1
@@ -63,21 +62,17 @@ if(!debug) {
   cl <- parallel::makeCluster(ncore)
 }
 
-# build treatments on just the coding data
-treatmentsC = designTreatmentsC(dTrainC,
-    vars,yName,yTarget,
-    smFactor=2.0, 
-    parallelCluster=cl,
-    verbose=TRUE)
-
+# build treatments 
 kddSig = 0.05
 
+trainPlan = mkCrossFrameCExperiment(dTrain,
+    vars,yName,yTarget,
+    smFactor=2.0, 
+    parallelCluster=cl)
+treatmentsC = trainPlan$treatments
+treatedTrainM = trainPlan$crossFrame
 
-treatedTrainM = prepare(treatmentsC,
-                        dTrainM,
-                        pruneSig=kddSig, 
-                        parallelCluster=cl)
-selvars = setdiff(colnames(treatedTrainM),nonvars)
+selvars = treatmentsC$varName[treatmentsC$sig<kddSig]
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 
 treatedTest = prepare(treatmentsC,
@@ -110,7 +105,7 @@ treatedTestP = treatedTest[, yName, drop=FALSE]
 
 
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
-for(mname in c('gbmPred','glmPred')) {
+for(mname in c('glmPred','gbmPred')) {
   print("*****************************")
   print(date())
   print(paste(mname,length(selvars)))
@@ -125,25 +120,25 @@ for(mname in c('gbmPred','glmPred')) {
     #print(modelGBMs)
     #print(summary(modelGBMs))
     nTrees = gbm.perf(modelGBMs)
-    treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrainM,type='response',
+    treatedTrainP[[mname]] = predict(modelGBMs,
+                                     newdata=treatedTrainM,type='response',
                                      n.trees=nTrees) 
-    treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
+    treatedTestP[[mname]] = predict(modelGBMs,
+                                    newdata=treatedTest,type='response',
                                     n.trees=nTrees)
   } else {
-    modelglms = glm(as.formula(formulaS),
-                    data=treatedTrainM,
-                    family=binomial(link='logit')
-    )
+    modelglms = cv.glmnet(x = as.matrix(treatedTrainM[,selvars,drop=FALSE]),
+                       y = treatedTrainM[[yName]],
+                    alpha=0.5,
+                    family='binomial')
     #print(summary(modelglms))
-    treatedTrainP[[mname]] = predict(modelglms,newdata=treatedTrainM,type='response')
-    treatedTestP[[mname]] = predict(modelglms,newdata=treatedTest,type='response')
+    treatedTrainP[[mname]] = as.numeric(predict(modelglms,
+                                     newx=as.matrix(treatedTrainM[,selvars,drop=FALSE]),
+                                     type='response'))
+    treatedTestP[[mname]] = as.numeric(predict(modelglms,
+                                    newx=as.matrix(treatedTest[,selvars,drop=FALSE]),
+                                    type='response'))
   }
-  
-  t1 = paste(mname,'trainingM data')
-  print(DoubleDensityPlot(treatedTrainP, mname, yName, 
-                          title=t1))
-  print(ROCPlot(treatedTrainP, mname, yName, 
-                title=t1))
   
   t2 = paste(mname,'test data')
   print(DoubleDensityPlot(treatedTestP, mname, yName, 
