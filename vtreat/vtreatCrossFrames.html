@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-04-23" />
+<meta name="date" content="2016-04-29" />
 
 <title>vtreat cross frames</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat cross frames</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-04-23</em></h4>
+<h4 class="date"><em>2016-04-29</em></h4>
 
 </div>
 
@@ -118,22 +118,23 @@ treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmen
                                         <span class="st">'y'</span>,<span class="ot">TRUE</span>,
   <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;design var xBad1 Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;design var xBad2 Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;design var xBad3 Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;design var xGood1 Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;design var xGood2 Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;scoring treatments Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;have treatment plan Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;rescoring complex variables Sat Apr 23 10:44:46 2016&quot;
-## [1] &quot;done rescoring complex variables Sat Apr 23 10:44:47 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var xBad1 Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var xBad2 Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var xBad3 Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var xGood1 Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var xGood2 Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;scoring treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;have treatment plan Fri Apr 29 11:24:17 2016&quot;
+## [1] &quot;rescoring complex variables Fri Apr 29 11:24:17 2016&quot;
+## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:17 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
   <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
 )
 m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~xBad1_catB +<span class="st"> </span>xBad2_catB +<span class="st"> </span>xBad3_catB +<span class="st"> </span>xGood1_clean +<span class="st"> </span>xGood2_clean,
-          <span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))
-<span class="kw">print</span>(<span class="kw">summary</span>(m1))  <span class="co"># notice low residual deviance</span></code></pre></div>
+          <span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))</code></pre></div>
+<pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(<span class="kw">summary</span>(m1))  <span class="co"># notice low residual deviance</span></code></pre></div>
 <pre><code>## 
 ## Call:
 ## glm(formula = y ~ xBad1_catB + xBad2_catB + xBad3_catB + xGood1_clean + 
@@ -190,16 +191,16 @@ treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmen
                                         <span class="st">'y'</span>,<span class="ot">TRUE</span>,
   <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;design var xBad1 Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;design var xBad2 Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;design var xBad3 Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;design var xGood1 Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;design var xGood2 Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;scoring treatments Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;have treatment plan Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;rescoring complex variables Sat Apr 23 10:44:47 2016&quot;
-## [1] &quot;done rescoring complex variables Sat Apr 23 10:44:48 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;design var xBad1 Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;design var xBad2 Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;design var xBad3 Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;design var xGood1 Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;design var xGood2 Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;scoring treatments Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;have treatment plan Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;rescoring complex variables Fri Apr 29 11:24:18 2016&quot;
+## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:18 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
   <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
 )
@@ -301,7 +302,17 @@ prep &lt;-<span class="st"> </span>vtreat::<span class="kw">mkCrossFrameCExperim
   <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
 )
 dTrainTreated &lt;-<span class="st"> </span>prep$crossFrame
-treatments &lt;-<span class="st"> </span>prep$treatments</code></pre></div>
+treatments &lt;-<span class="st"> </span>prep$treatments
+<span class="kw">print</span>(treatments$scoreFrame[,<span class="kw">c</span>(<span class="st">'varName'</span>,<span class="st">'psig'</span>,<span class="st">'csig'</span>)])</code></pre></div>
+<pre><code>##        varName         psig         csig
+## 1   xBad1_catP 1.000000e+00 3.224267e-01
+## 2   xBad1_catB 1.000000e+00 6.171946e-01
+## 3   xBad2_catP 1.000000e+00 5.498734e-01
+## 4   xBad2_catB 1.000000e+00 1.584766e-01
+## 5   xBad3_catP 1.000000e+00 2.620407e-01
+## 6   xBad3_catB 1.191614e-01 1.122569e-02
+## 7 xGood1_clean 4.814396e-11 6.072599e-12
+## 8 xGood2_clean 5.942344e-20 8.286789e-21</code></pre>
 <p>Now fit the model to <em>the cross-frame</em> rather than to <code>prepare(treatments, dTrain)</code> (the treated training data).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">m1 &lt;-<span class="st"> </span><span class="kw">glm</span>(y~xBad1_catB +<span class="st"> </span>xBad2_catB +<span class="st"> </span>xBad3_catB +<span class="st"> </span>xGood1_clean +<span class="st"> </span>xGood2_clean,
           <span class="dt">data=</span>dTrainTreated,<span class="dt">family=</span><span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))

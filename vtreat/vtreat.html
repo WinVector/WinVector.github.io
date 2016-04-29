@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-04-23" />
+<meta name="date" content="2016-04-29" />
 
 <title>vtreat package</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat package</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-04-23</em></h4>
+<h4 class="date"><em>2016-04-29</em></h4>
 
 </div>
 
@@ -139,13 +139,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;design var x Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;design var z Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;scoring treatments Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;have treatment plan Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;rescoring complex variables Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;done rescoring complex variables Sat Apr 23 10:44:45 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var x Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var z Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;scoring treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;have treatment plan Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;rescoring complex variables Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:16 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -255,13 +255,13 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsN =<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;design var x Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;design var z Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;scoring treatments Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;have treatment plan Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;rescoring complex variables Sat Apr 23 10:44:45 2016&quot;
-## [1] &quot;done rescoring complex variables Sat Apr 23 10:44:45 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var x Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;design var z Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;scoring treatments Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;have treatment plan Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;rescoring complex variables Fri Apr 29 11:24:16 2016&quot;
+## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:16 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
