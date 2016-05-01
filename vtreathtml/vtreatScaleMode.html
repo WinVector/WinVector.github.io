@@ -11,7 +11,7 @@
 
 <meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-04-29" />
+<meta name="date" content="2016-04-30" />
 
 <title>vtreat scale mode</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat scale mode</h1>
 <h4 class="author"><em>Win-Vector LLC</em></h4>
-<h4 class="date"><em>2016-04-29</em></h4>
+<h4 class="date"><em>2016-04-30</em></h4>
 
 </div>
 
@@ -107,13 +107,13 @@ dTrainCTreatedScaled &lt;-<span class="st"> </span><span class="kw">prepare</spa
 <p>This is the “standard way” to run vtreat – with the exception that for this example we set <code>pruneSig</code> to <code>NULL</code> to suppress variable pruning, instead of setting it to a value in the interval <code>(0,1)</code>. The principle is: vtreats inflicts the minimal possible alterations on the data, leaving as much as possible to the downstream machine learning code. This does turn out to already be a lot of alteration. Mostly vtreat is taking only steps that are unsafe to leave for later: re-encoding of large categoricals, re-coding of aberrant values, and bulk pruning of variables.</p>
 <p>However some procedures, in particular principal components analysis or geometric clustering, assume all of the columns have been fully transformed. The usual assumption (“more honored in the breach than the observance”) is that the columns are centered (mean zero) and scaled. The non y-aware meaning of “scaled” is unit variance. However, vtreat is designed to emphasize y-aware processing and we feel the y-aware sense of scaling should be: unit slope when regressed against y. If you want standard scaling you can use the standard frame produced by vtreat and scale it yourself. If you want vtreat style y-aware scaling you (which we strongly think is the right thing to do) you can use <code>vtreat::prepare(scale=TRUE)</code> which produces a frame that looks like the following:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(dTrainCTreatedScaled)</code></pre></div>
-<pre><code>##   x_lev_NA  x_lev_x.a x_lev_x.b x_catP      x_catB     y
-## 1     -0.1 -0.1666667         0   -0.2 -0.18838870 FALSE
-## 2     -0.1 -0.1666667         0   -0.2 -0.18838870 FALSE
-## 3     -0.1 -0.1666667         0   -0.2 -0.18838870  TRUE
-## 4     -0.1  0.1666667         0    0.1  0.05164882 FALSE
-## 5     -0.1  0.1666667         0    0.1  0.05164882  TRUE
-## 6      0.5  0.1666667         0    0.4  0.46186845  TRUE</code></pre>
+<pre><code>##   x_lev_NA  x_lev_x.a     x_lev_x.b x_catP      x_catB     y
+## 1     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 FALSE
+## 2     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 FALSE
+## 3     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870  TRUE
+## 4     -0.1  0.1666667 -9.614813e-17    0.1  0.05164882 FALSE
+## 5     -0.1  0.1666667 -9.614813e-17    0.1  0.05164882  TRUE
+## 6      0.5  0.1666667  4.807407e-17    0.4  0.46186845  TRUE</code></pre>
 <p>First we can check the claims. Are the variables mean-zero and slope 1 when regressed against y?</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">slopeFrame &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">varName =</span> treatmentsC$scoreFrame$varName,
                          <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
@@ -135,11 +135,11 @@ slopeFrame$badSlope &lt;-
 <span class="st">  </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(slopeFrame$slope), <span class="ot">TRUE</span>, <span class="kw">abs</span>(slopeFrame$slope -<span class="st"> </span><span class="dv">1</span>) &gt;<span class="st"> </span><span class="fl">1.e-8</span>)
 <span class="kw">print</span>(slopeFrame)</code></pre></div>
 <pre><code>##     varName          mean slope        sig badSlope
-## 1  x_lev_NA  6.938894e-18     1 0.20766228    FALSE
-## 2 x_lev_x.a  0.000000e+00     1 0.40972582    FALSE
-## 3 x_lev_x.b  0.000000e+00    NA 1.00000000     TRUE
-## 4    x_catP -7.401487e-17     1 0.25493078    FALSE
-## 5    x_catB  2.312965e-18     1 0.05044486    FALSE</code></pre>
+## 1  x_lev_NA -6.938894e-18     1 0.20766228    FALSE
+## 2 x_lev_x.a -2.775558e-17     1 0.40972582    FALSE
+## 3 x_lev_x.b  4.108149e-33     0 1.00000000     TRUE
+## 4    x_catP  1.850372e-17     1 0.25493078    FALSE
+## 5    x_catB -2.312965e-18     1 0.05044486    FALSE</code></pre>
 <p>The above claims are true with the exception of the derived variable <code>x_lev_x.b</code>. This is because the outcome variable <code>y</code> has identical distribution when the original variable <code>x==‘b’</code> and when <code>x!=‘b’</code> (on half the time in both cases). This means <code>y</code> is perfectly independent of <code>x==‘b’</code> and the regression slope must be zero (thus, cannot be 1). vtreat now treats this as needing to scale by a multiplicative factor of zero. Note also that the significance level associated with <code>x_lev_x.b</code> is large, making this variable easy to prune. The <code>varMoves</code> and significance facts in <code>treatmentsC$scoreFrame</code> are about the unscaled frame (where <code>x_lev_x.b</code> does in fact move).</p>
 <p>Previous versions of vtreat (0.5.22 and earlier) would copy variables that could not be sensibly scaled into the treated frame unaltered. This was considered the “most faithful” thing to do. However we now feel that this practice was not safe for many downstream procedures, such as principal components analysis and geometric clustering.</p>
 

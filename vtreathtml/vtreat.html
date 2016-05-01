@@ -11,7 +11,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-04-29" />
+<meta name="date" content="2016-04-30" />
 
 <title>vtreat package</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title">vtreat package</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-04-29</em></h4>
+<h4 class="date"><em>2016-04-30</em></h4>
 
 </div>
 
@@ -96,13 +96,13 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>In addition to the treatment objects <code>designTreatmentsC()</code> and <code>designTreatmentsN()</code> also return a data frame named <code>scoreFrame</code> which contains columns:</p>
 <ul>
 <li><code>varName</code>: name of new variable</li>
-<li><code>origName</code>: name of original variable that the variable was derived from (can repeat)</li>
-<li><code>varMove</code> : logical TRUE if the variable varied during training; only variables that move will be in the treated frame.</li>
-<li><code>PRESSRsquared</code> : a PRESS-held out R-squared of a linear fit from each variable to the y-value. Scores of zero and below are very bad, scores near one are very good.</li>
-<li><code>psig</code> : significance of observed variable ‘PRESSRsquared’ value under an in-sample permutation test.</li>
-<li><code>catPRSquared</code> : for categorical outcomes: deviance based pseudo-Rsquared.</li>
-<li><code>csig</code> : for categorical outcomes: significance of observed variable catPRSquared value under an in-sample permutation test.</li>
-<li><code>sig</code> : <code>csig</code> for categorical outcomes, <code>psig</code> otherwise.</li>
+<li><code>origName</code>: name of original variable that the variable was derived from (can repeat).</li>
+<li><code>code</code>: what time of treatment was performed to create the derived variable (useful for filtering).</li>
+<li><code>varMoves</code>: logical TRUE if the variable varied during training; only variables that move will be in the treated frame.</li>
+<li><code>psig</code>: linear significnace of regerssing derived variable against a 0/1 indicator target.</li>
+<li><code>csig</code>: for categorical outcomes: significance of observed variable catPRSquared value under an in-sample permutation test.</li>
+<li><code>sig</code>: <code>csig</code> for categorical outcomes, <code>psig</code> otherwise.</li>
+<li><code>needsSplit</code>: is the variable a sub model and require out of sample scoring.</li>
 </ul>
 <p>In all cases we have two undesirable upward biases on the scores:</p>
 <ul>
@@ -139,13 +139,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;design var x Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;design var z Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;scoring treatments Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;have treatment plan Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;rescoring complex variables Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:16 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;design var x Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;design var z Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;scoring treatments Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;have treatment plan Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;rescoring complex variables Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;done rescoring complex variables Sat Apr 30 17:17:15 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -165,22 +165,22 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 
 ## 
 ## $scoreFrame
-##     varName varMoves PRESSRsquared     psig        sig  catPRSquared
-## 1  x_lev_NA     TRUE   -0.48999814 1.000000 0.20766228  1.908745e-01
-## 2 x_lev_x.a     TRUE   -0.99999000 1.000000 0.40972582  8.170417e-02
-## 3 x_lev_x.b     TRUE   -1.51850123 1.000000 1.00000000 -2.220446e-16
-## 4    x_catP     TRUE   -0.52729749 1.000000 0.25493078  1.558205e-01
-## 5    x_catB     TRUE    0.11661930 0.507669 0.05044486  4.600526e-01
-## 6   z_clean     TRUE   -0.09178145 1.000000 0.14299775  2.579298e-01
-## 7   z_isBAD     TRUE   -0.48999814 1.000000 0.20766228  1.908745e-01
-##         csig needsSplit origName  code
-## 1 0.20766228      FALSE        x   lev
-## 2 0.40972582      FALSE        x   lev
-## 3 1.00000000      FALSE        x   lev
-## 4 0.25493078       TRUE        x  catP
-## 5 0.05044486       TRUE        x  catB
-## 6 0.14299775      FALSE        z clean
-## 7 0.20766228      FALSE        z isBAD
+##     varName varMoves      psig        sig       csig needsSplit origName
+## 1  x_lev_NA     TRUE 0.3739010 0.20766228 0.20766228      FALSE        x
+## 2 x_lev_x.a     TRUE 0.5185185 0.40972582 0.40972582      FALSE        x
+## 3 x_lev_x.b     TRUE 1.0000000 1.00000000 1.00000000      FALSE        x
+## 4    x_catP     TRUE 0.3739010 0.25493078 0.25493078       TRUE        x
+## 5    x_catB     TRUE 0.1155611 0.05044486 0.05044486       TRUE        x
+## 6   z_clean     TRUE 0.2562868 0.14299775 0.14299775      FALSE        z
+## 7   z_isBAD     TRUE 0.3739010 0.20766228 0.20766228      FALSE        z
+##    code
+## 1   lev
+## 2   lev
+## 3   lev
+## 4  catP
+## 5  catB
+## 6 clean
+## 7 isBAD
 ## 
 ## $outcomename
 ## [1] &quot;y&quot;
@@ -191,6 +191,9 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## $outcomeType
 ## [1] &quot;Binary&quot;
 ## 
+## $vtreatVersion
+## [1] '0.5.25'
+## 
 ## attr(,&quot;class&quot;)
 ## [1] &quot;treatmentplan&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC$treatments[[<span class="dv">1</span>]])</code></pre></div>
@@ -199,13 +202,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 <p><code>scale=FALSE</code> by default.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainCTreated &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC,dTrainC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">TRUE</span>)
 <span class="kw">head</span>(dTrainCTreated)</code></pre></div>
-<pre><code>##   x_lev_NA  x_lev_x.a x_lev_x.b x_catP      x_catB     z_clean z_isBAD
-## 1     -0.1 -0.1666667         0   -0.2 -0.18838870 -0.38648649    -0.1
-## 2     -0.1 -0.1666667         0   -0.2 -0.18838870 -0.21081081    -0.1
-## 3     -0.1 -0.1666667         0   -0.2 -0.18838870 -0.03513514    -0.1
-## 4     -0.1  0.1666667         0    0.1  0.05164882  0.14054054    -0.1
-## 5     -0.1  0.1666667         0    0.1  0.05164882  0.00000000     0.5
-## 6      0.5  0.1666667         0    0.4  0.46186845  0.49189189    -0.1
+<pre><code>##   x_lev_NA  x_lev_x.a     x_lev_x.b x_catP      x_catB     z_clean z_isBAD
+## 1     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 -0.38648649    -0.1
+## 2     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 -0.21081081    -0.1
+## 3     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 -0.03513514    -0.1
+## 4     -0.1  0.1666667 -9.614813e-17    0.1  0.05164882  0.14054054    -0.1
+## 5     -0.1  0.1666667 -9.614813e-17    0.1  0.05164882  0.00000000     0.5
+## 6      0.5  0.1666667  4.807407e-17    0.4  0.46186845  0.49189189    -0.1
 ##       y
 ## 1 FALSE
 ## 2 FALSE
@@ -217,21 +220,21 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 <span class="co"># all input variables should be mean 0</span>
 <span class="kw">sapply</span>(dTrainCTreated[,varsC,<span class="dt">drop=</span><span class="ot">FALSE</span>],mean)</code></pre></div>
 <pre><code>##      x_lev_NA     x_lev_x.a     x_lev_x.b        x_catP        x_catB 
-##  6.938894e-18  0.000000e+00  0.000000e+00 -7.401487e-17  2.312965e-18 
+## -6.938894e-18 -2.775558e-17  4.108149e-33  1.850372e-17 -2.312965e-18 
 ##       z_clean       z_isBAD 
-##  2.775558e-17  6.938894e-18</code></pre>
+##  9.251859e-18 -6.938894e-18</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># all slopes should be 1 for variables with dTrainCTreated$scoreFrame$sig&lt;1</span>
 <span class="kw">sapply</span>(varsC,function(c) { <span class="kw">lm</span>(<span class="kw">paste</span>(<span class="st">'y'</span>,c,<span class="dt">sep=</span><span class="st">'~'</span>),
    <span class="dt">data=</span>dTrainCTreated)$coefficients[[<span class="dv">2</span>]]})</code></pre></div>
 <pre><code>##  x_lev_NA x_lev_x.a x_lev_x.b    x_catP    x_catB   z_clean   z_isBAD 
-##         1         1        NA         1         1         1         1</code></pre>
+##         1         1         0         1         1         1         1</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTestCTreated &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC,dTestC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">TRUE</span>)
 <span class="kw">head</span>(dTestCTreated)</code></pre></div>
-<pre><code>##   x_lev_NA  x_lev_x.a x_lev_x.b x_catP      x_catB   z_clean z_isBAD
-## 1     -0.1 -0.1666667         0   -0.2 -0.18838870 0.4918919    -0.1
-## 2     -0.1  0.1666667         0    0.1  0.05164882 0.4918919    -0.1
-## 3     -0.1  0.1666667         0    0.7  0.05164882 0.4918919    -0.1
-## 4      0.5  0.1666667         0    0.4  0.46186845 0.0000000     0.5</code></pre>
+<pre><code>##   x_lev_NA  x_lev_x.a     x_lev_x.b x_catP      x_catB   z_clean z_isBAD
+## 1     -0.1 -0.1666667  4.807407e-17   -0.2 -0.18838870 0.4918919    -0.1
+## 2     -0.1  0.1666667 -9.614813e-17    0.1  0.05164882 0.4918919    -0.1
+## 3     -0.1  0.1666667  4.807407e-17    0.7  0.05164882 0.4918919    -0.1
+## 4      0.5  0.1666667  4.807407e-17    0.4  0.46186845 0.0000000     0.5</code></pre>
 <hr />
 </div>
 <div id="a-numeric-outcome-example" class="section level2">
@@ -255,13 +258,13 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsN =<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;design var x Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;design var z Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;scoring treatments Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;have treatment plan Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;rescoring complex variables Fri Apr 29 11:24:16 2016&quot;
-## [1] &quot;done rescoring complex variables Fri Apr 29 11:24:16 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;design var x Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;design var z Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;scoring treatments Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;have treatment plan Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;rescoring complex variables Sat Apr 30 17:17:15 2016&quot;
+## [1] &quot;done rescoring complex variables Sat Apr 30 17:17:15 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -284,30 +287,24 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 
 ## 
 ## $scoreFrame
-##     varName varMoves PRESSRsquared      psig       sig needsSplit origName
-## 1  x_lev_NA     TRUE  -0.379258198 1.0000000 1.0000000      FALSE        x
-## 2 x_lev_x.a     TRUE  -0.652770648 1.0000000 1.0000000      FALSE        x
-## 3 x_lev_x.b     TRUE  -1.260402813 1.0000000 1.0000000      FALSE        x
-## 4    x_catP     TRUE  -0.389486438 1.0000000 1.0000000       TRUE        x
-## 5    x_catN     TRUE  -0.266446584 1.0000000 1.0000000       TRUE        x
-## 6    x_catD     TRUE  -0.927072127 1.0000000 1.0000000       TRUE        x
-## 7   z_clean     TRUE   0.008889632 0.8406476 0.8406476      FALSE        z
-## 8   z_isBAD     TRUE  -0.379258198 1.0000000 1.0000000      FALSE        z
-##    code
-## 1   lev
-## 2   lev
-## 3   lev
-## 4  catP
-## 5  catN
-## 6  catD
-## 7 clean
-## 8 isBAD
+##     varName varMoves      psig       sig needsSplit origName  code
+## 1  x_lev_NA     TRUE 0.2855909 0.2855909      FALSE        x   lev
+## 2 x_lev_x.a     TRUE 0.3524132 0.3524132      FALSE        x   lev
+## 3 x_lev_x.b     TRUE 0.8456711 0.8456711      FALSE        x   lev
+## 4    x_catP     TRUE 0.2721791 0.2721791       TRUE        x  catP
+## 5    x_catN     TRUE 0.3548219 0.3548219       TRUE        x  catN
+## 6    x_catD     TRUE 0.4835362 0.4835362       TRUE        x  catD
+## 7   z_clean     TRUE 0.1724763 0.1724763      FALSE        z clean
+## 8   z_isBAD     TRUE 0.2855909 0.2855909      FALSE        z isBAD
 ## 
 ## $outcomename
 ## [1] &quot;y&quot;
 ## 
 ## $outcomeType
 ## [1] &quot;Numeric&quot;
+## 
+## $vtreatVersion
+## [1] '0.5.25'
 ## 
 ## attr(,&quot;class&quot;)
 ## [1] &quot;treatmentplan&quot;</code></pre>
@@ -332,9 +329,9 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 <span class="co"># all input variables should be mean 0</span>
 <span class="kw">sapply</span>(dTrainNTreated[,varsN,<span class="dt">drop=</span><span class="ot">FALSE</span>],mean) </code></pre></div>
 <pre><code>##      x_lev_NA     x_lev_x.a     x_lev_x.b        x_catP        x_catN 
-## -3.965082e-18  0.000000e+00  2.974054e-18  7.930164e-17  0.000000e+00 
+## -3.965082e-18  0.000000e+00 -2.974054e-18  7.930164e-17 -3.965082e-18 
 ##        x_catD       z_clean       z_isBAD 
-##  0.000000e+00  4.757324e-17 -3.967986e-18</code></pre>
+## -9.515810e-17  4.757324e-17 -3.967986e-18</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># all slopes should be 1 for variables with treatmentsN$scoreFrame$sig&lt;1</span>
 <span class="kw">sapply</span>(varsN,function(c) { <span class="kw">lm</span>(<span class="kw">paste</span>(<span class="st">'y'</span>,c,<span class="dt">sep=</span><span class="st">'~'</span>),
    <span class="dt">data=</span>dTrainNTreated)$coefficients[[<span class="dv">2</span>]]}) </code></pre></div>
@@ -363,7 +360,7 @@ dTestNTreatedS &lt;-<span class="st"> </span><span class="kw">prepare</span>(tre
 <pre><code>##     x_lev_NA  x_lev_x.a   x_lev_x.b x_catP        x_catN     x_catD
 ## 1 -0.0952381 -0.1785714 -0.02857143   -0.2 -1.785714e-01 -0.1785714
 ## 2 -0.0952381  0.2380952  0.07142857    0.2  7.142857e-02  0.2380952
-## 3 -0.0952381  0.2380952 -0.02857143    0.6 -1.982541e-17  0.2380952
+## 3 -0.0952381  0.2380952 -0.02857143    0.6 -1.586033e-17  0.2380952
 ## 4  0.5714286  0.2380952 -0.02857143    0.4  5.714286e-01  0.2380952
 ##     z_clean    z_isBAD
 ## 1 0.5238095 -0.0952381
