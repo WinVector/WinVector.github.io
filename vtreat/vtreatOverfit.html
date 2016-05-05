@@ -7,11 +7,12 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-05-02" />
+<meta name="date" content="2016-05-05" />
 
 <title>vtreat overfit</title>
 
@@ -57,6 +58,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </style>
 
 
+
 <link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
 
 </head>
@@ -65,14 +67,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 
-<div class="fluid-row" id="header">
 
-
-<h1 class="title">vtreat overfit</h1>
+<h1 class="title toc-ignore">vtreat overfit</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-05-02</em></h4>
+<h4 class="date"><em>2016-05-05</em></h4>
 
-</div>
 
 
 <p>Example showing safe “best practice” use of the <a href="https://cran.r-project.org/package=vtreat">‘vtreat’</a> variable preparation library. For more on vtreat see <a href="http://www.win-vector.com/blog/2015/09/vtreat-up-on-cran/">here</a> and <a href="https://github.com/WinVector/vtreat">here</a>.</p>
@@ -97,12 +96,12 @@ dTest &lt;-<span class="st"> </span>d[d$rgroup&gt;<span class="dv">80</span>,,dr
 treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(dTrain,<span class="st">'x'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,
   <span class="dt">rareCount=</span><span class="dv">0</span> <span class="co"># Note: usually want rareCount&gt;0, setting to zero to illustrate problem</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Mon May  2 23:46:08 2016&quot;
-## [1] &quot;design var x Mon May  2 23:46:08 2016&quot;
-## [1] &quot;scoring treatments Mon May  2 23:46:08 2016&quot;
-## [1] &quot;have treatment plan Mon May  2 23:46:09 2016&quot;
-## [1] &quot;rescoring complex variables Mon May  2 23:46:09 2016&quot;
-## [1] &quot;done rescoring complex variables Mon May  2 23:46:09 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu May  5 06:54:37 2016&quot;
+## [1] &quot;design var x Thu May  5 06:54:37 2016&quot;
+## [1] &quot;scoring treatments Thu May  5 06:54:37 2016&quot;
+## [1] &quot;have treatment plan Thu May  5 06:54:37 2016&quot;
+## [1] &quot;rescoring complex variables Thu May  5 06:54:37 2016&quot;
+## [1] &quot;done rescoring complex variables Thu May  5 06:54:37 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
   <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: usually want pruneSig to be a small fraction, setting to null to illustrate problem</span>
 )
@@ -171,9 +170,12 @@ dTest$predM1 &lt;-<span class="st"> </span><span class="kw">predict</span>(m1,<s
 <h3>What went wrong?</h3>
 <p>Notice that vtreat did not think there was any usable signal, and did not want us to use the variables: the values in <code>treatments$scoreFrame$sig</code> are all much larger than a nominally acceptable significance level like 0.05. The variables stayed in our model because we did not prune them (<em>ie</em> we set <code>pruneSig=c()</code>). Also notice we set <code>rareCount=0</code>, which allows the use of very rare levels (which help drive the problem).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatments$scoreFrame)</code></pre></div>
-<pre><code>##   varName varMoves      psig       sig      csig needsSplit origName code
-## 1  x_catP     TRUE 0.3952662 0.3948575 0.3948575       TRUE        x catP
-## 2  x_catB     TRUE 0.8455744 0.8454619 0.8454619       TRUE        x catB</code></pre>
+<pre><code>##   varName varMoves      lsig       sig      csig needsSplit
+## 1  x_catP     TRUE 0.3952662 0.3948575 0.3948575       TRUE
+## 2  x_catB     TRUE 0.8455744 0.8454619 0.8454619       TRUE
+##   extraModelDegrees origName code
+## 1               819        x catP
+## 2               819        x catB</code></pre>
 <p>Subsequently, the down-stream machine learning (in this case a standard logistic regression) used the variable incorrectly. The modeling algorithm gave the variable a non-negligible coefficient (around 3) that it thought was reliably bounded away from zero; it also believed that the resulting model almost halved deviance (when in fact it explained nothing). So any variables that do get through may have distributional issues (and misleadingly low apparent degrees of freedom).</p>
 <p><strong>Rare levels of a categorical variable</strong></p>
 <p>The biggest contributors to this distributional issue tend to be rare levels of categorical variables. Since the individual levels are rare we have unreliable estimates for their effects, and if there are very many of them we may see quite a large effect in aggregate. To help combat this we have a control called <code>rareLevels</code>. Any level that is observed no more than <code>rareLevels</code> times during training is re-mapped to a new special level called <em>rare</em> and not allowed to directly contribute (i.e. can not generate unique indicator columns, and doesn’t have a direct effect on <code>catB</code> or <code>catN</code> encodings). If all the rare levels have a distinct behavior after grouping, the <em>rare</em> level can capture that.</p>
@@ -191,12 +193,12 @@ treatments &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmen
                                         <span class="dt">rareCount=</span><span class="dv">0</span>,  <span class="co"># Note set this to something larger, like 5</span>
                                         <span class="dt">rareSig=</span><span class="kw">c</span>() <span class="co"># Note set this to something like 0.3</span>
 )</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Mon May  2 23:46:09 2016&quot;
-## [1] &quot;design var x Mon May  2 23:46:09 2016&quot;
-## [1] &quot;scoring treatments Mon May  2 23:46:09 2016&quot;
-## [1] &quot;have treatment plan Mon May  2 23:46:09 2016&quot;
-## [1] &quot;rescoring complex variables Mon May  2 23:46:09 2016&quot;
-## [1] &quot;done rescoring complex variables Mon May  2 23:46:09 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu May  5 06:54:37 2016&quot;
+## [1] &quot;design var x Thu May  5 06:54:37 2016&quot;
+## [1] &quot;scoring treatments Thu May  5 06:54:37 2016&quot;
+## [1] &quot;have treatment plan Thu May  5 06:54:37 2016&quot;
+## [1] &quot;rescoring complex variables Thu May  5 06:54:37 2016&quot;
+## [1] &quot;done rescoring complex variables Thu May  5 06:54:37 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">dTrainTreated &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatments,dTrain,
                                  <span class="dt">pruneSig=</span><span class="kw">c</span>() <span class="co"># Note: set this to filter, like 0.05 or 1/nvars</span>
 )
