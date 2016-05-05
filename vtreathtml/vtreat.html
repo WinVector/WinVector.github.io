@@ -106,7 +106,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>In all cases we have two undesirable upward biases on the scores:</p>
 <ul>
 <li>The treated variables view the training data during construction (for setting of NA values, missing values, levels, and more). So this gives an upward bias when trying to measure treated variable utility on training data. Until the data set is at least 1000 good rows we ignore this effect. After 1000 rows we design variables on a pseudo-randomly chosen 80% of the rows and score on the complimentary 20% of the rows.</li>
-<li>The scoring procedure itself involves a fit (linear regression for <code>PRESSRsquared</code> or logistic regression for <code>catPRSquared</code>). So in each of these cases we would like the regression itself to only be evaluated on held-out data. The PRESS statistic does just that (fast 1-way cross validation). The <code>catPseudoRSquared</code> performs explicit 1-way cross validation for small data sets and hold-out scoring for larger data sets.</li>
+<li>The scoring procedure itself involves a fit (linear regression for regression or logistic regression for classification). In each of these cases we would like the scoring itself to only be evaluated on variables constructed on held-out data. This is simulated through a cross-validation procedure.</li>
 </ul>
 <p>‘vtreat’ uses a number of cross-training and jackknife style procedures to try to mitigate these effects. The suggested best practice (if you have enough data) is to split your data randomly into at least the following disjoint data sets:</p>
 <ul>
@@ -138,13 +138,13 @@ dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu May  5 07:10:03 2016&quot;
-## [1] &quot;design var x Thu May  5 07:10:03 2016&quot;
-## [1] &quot;design var z Thu May  5 07:10:03 2016&quot;
-## [1] &quot;scoring treatments Thu May  5 07:10:03 2016&quot;
-## [1] &quot;have treatment plan Thu May  5 07:10:03 2016&quot;
-## [1] &quot;rescoring complex variables Thu May  5 07:10:03 2016&quot;
-## [1] &quot;done rescoring complex variables Thu May  5 07:10:04 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu May  5 07:17:00 2016&quot;
+## [1] &quot;design var x Thu May  5 07:17:00 2016&quot;
+## [1] &quot;design var z Thu May  5 07:17:00 2016&quot;
+## [1] &quot;scoring treatments Thu May  5 07:17:00 2016&quot;
+## [1] &quot;have treatment plan Thu May  5 07:17:00 2016&quot;
+## [1] &quot;rescoring complex variables Thu May  5 07:17:00 2016&quot;
+## [1] &quot;done rescoring complex variables Thu May  5 07:17:00 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
@@ -257,13 +257,13 @@ dTrainN &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span c
 ## 3    c 30
 ## 4 &lt;NA&gt; NA</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsN =<span class="st"> </span><span class="kw">designTreatmentsN</span>(dTrainN,<span class="kw">colnames</span>(dTrainN),<span class="st">'y'</span>)</code></pre></div>
-<pre><code>## [1] &quot;desigining treatments Thu May  5 07:10:04 2016&quot;
-## [1] &quot;design var x Thu May  5 07:10:04 2016&quot;
-## [1] &quot;design var z Thu May  5 07:10:04 2016&quot;
-## [1] &quot;scoring treatments Thu May  5 07:10:04 2016&quot;
-## [1] &quot;have treatment plan Thu May  5 07:10:04 2016&quot;
-## [1] &quot;rescoring complex variables Thu May  5 07:10:04 2016&quot;
-## [1] &quot;done rescoring complex variables Thu May  5 07:10:04 2016&quot;</code></pre>
+<pre><code>## [1] &quot;desigining treatments Thu May  5 07:17:00 2016&quot;
+## [1] &quot;design var x Thu May  5 07:17:00 2016&quot;
+## [1] &quot;design var z Thu May  5 07:17:00 2016&quot;
+## [1] &quot;scoring treatments Thu May  5 07:17:00 2016&quot;
+## [1] &quot;have treatment plan Thu May  5 07:17:00 2016&quot;
+## [1] &quot;rescoring complex variables Thu May  5 07:17:00 2016&quot;
+## [1] &quot;done rescoring complex variables Thu May  5 07:17:00 2016&quot;</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsN)</code></pre></div>
 <pre><code>## $treatments
 ## $treatments[[1]]
