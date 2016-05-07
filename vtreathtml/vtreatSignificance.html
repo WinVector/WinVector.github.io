@@ -12,7 +12,7 @@
 
 <meta name="author" content="John Mount, Nina Zumel" />
 
-<meta name="date" content="2016-05-05" />
+<meta name="date" content="2016-05-07" />
 
 <title>vtreat significance</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">vtreat significance</h1>
 <h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2016-05-05</em></h4>
+<h4 class="date"><em>2016-05-07</em></h4>
 
 
 
@@ -81,16 +81,16 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <p>As a lower bound think of what sort of good variables get thrown out at a given setting of <code>pruneSig</code>. For example suppose our problem is categorization in a data set with <em>n/2</em> positive examples and <em>n/2</em> negative examples. Consider the observed significance of a rare indicator variable that is on <em>k</em> times in training and is only on for positive instances. A random variable that is on <em>k</em> times would achieve this purity with probability <span class="math inline">\(2^{-k}\)</span>, so we expect it to have a <em>-log(significance)</em> in the ballpark of <em>k</em>. So a <code>pruneSig</code> of <span class="math inline">\(2^{-k}\)</span> will filter all such variables out (be they good or bad). Thus if you want levels or indicators that are on only a <em>z</em> fraction of the time on a training set of size <em>n</em> you want <code>pruneSig</code> &gt;&gt; <span class="math inline">\(2^{-z*n}\)</span>.</p>
 <p>Example:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">signk &lt;-<span class="st"> </span>function(n,k) {
-  d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">y=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>,n/<span class="dv">2</span>),<span class="kw">rep</span>(<span class="ot">FALSE</span>,n/<span class="dv">2</span>)),<span class="dt">v=</span><span class="ot">FALSE</span>)
-  d[<span class="kw">seq_len</span>(k),<span class="st">'v'</span>] &lt;-<span class="st"> </span><span class="ot">TRUE</span>
-  vtreat::<span class="kw">designTreatmentsC</span>(d,<span class="st">'v'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,<span class="dt">verbose=</span><span class="ot">FALSE</span>)$scoreFrame[<span class="dv">1</span>,<span class="st">'sig'</span>]
+  sigTab &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">y=</span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>,n/<span class="dv">2</span>),<span class="kw">rep</span>(<span class="ot">FALSE</span>,n/<span class="dv">2</span>)),<span class="dt">v=</span><span class="ot">FALSE</span>)
+  sigTab[<span class="kw">seq_len</span>(k),<span class="st">'v'</span>] &lt;-<span class="st"> </span><span class="ot">TRUE</span>
+  vtreat::<span class="kw">designTreatmentsC</span>(sigTab,<span class="st">'v'</span>,<span class="st">'y'</span>,<span class="ot">TRUE</span>,<span class="dt">verbose=</span><span class="ot">FALSE</span>)$scoreFrame[<span class="dv">1</span>,<span class="st">'sig'</span>]
 }
-d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">k=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">10</span>,<span class="dv">20</span>,<span class="dv">50</span>,<span class="dv">100</span>))
+sigTab &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">k=</span><span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>,<span class="dv">4</span>,<span class="dv">5</span>,<span class="dv">10</span>,<span class="dv">20</span>,<span class="dv">50</span>,<span class="dv">100</span>))
 <span class="co"># If you want to see a rare but perfect indicator of positive class</span>
 <span class="co"># that's only on k times out of 1000, this is the lower bound on pruneSig</span>
-d$sigEst =<span class="st"> </span><span class="kw">vapply</span>(d$k,function(k) <span class="kw">signk</span>(<span class="dv">1000</span>,k),<span class="kw">numeric</span>(<span class="dv">1</span>)) 
-d$minusLogSig =<span class="st"> </span>-<span class="kw">log</span>(d$sigEst) <span class="co"># we expect this to be approximately k</span>
-<span class="kw">print</span>(d)</code></pre></div>
+sigTab$sigEst =<span class="st"> </span><span class="kw">vapply</span>(sigTab$k,function(k) <span class="kw">signk</span>(<span class="dv">1000</span>,k),<span class="kw">numeric</span>(<span class="dv">1</span>)) 
+sigTab$minusLogSig =<span class="st"> </span>-<span class="kw">log</span>(sigTab$sigEst) <span class="co"># we expect this to be approximately k</span>
+<span class="kw">print</span>(sigTab)</code></pre></div>
 <pre><code>##     k       sigEst minusLogSig
 ## 1   1 2.388636e-01    1.431863
 ## 2   2 9.565153e-02    2.347044
@@ -101,7 +101,112 @@ d$minusLogSig =<span class="st"> </span>-<span class="kw">log</span>(d$sigEst) <
 ## 7  20 1.131954e-07   15.994150
 ## 8  50 2.209988e-17   38.350959
 ## 9 100 1.952762e-34   77.618649</code></pre>
-<p>For a data set with 100 variables (and 1000 rows), you might want to set <code>pruneSig</code> &lt;= 0.01 to limit the number of pure noise variables that enter the model. Note that this value is smaller than the lower bounds given above for <span class="math inline">\(k &lt; 5\)</span>. This means that in a data set of this width and length, you may not be able to detect rare but perfect indicators that occur fewer than 5 times.</p>
+<p>For a data set with 100 variables (and 1000 rows), you might want to set <code>pruneSig</code> &lt;= 0.01 to limit the number of pure noise variables that enter the model. Note that this value is smaller than the lower bounds given above for <span class="math inline">\(k &lt; 5\)</span>. This means that in a data set of this width and length, you may not be able to detect rare but perfect indicators that occur fewer than 5 times. You would have a chance of using such rare indicators in a <em>catN</em> or <em>catB</em> effects coded variable.</p>
+<p>Below we design a data frame with a perfect categorical variable (completely determines the outcome y) where each level occurs exactly 2 times. The individual levels are insignificant, but we can still extract a significant <em>catB</em> effect coded variable.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">set.seed</span>(<span class="dv">3346</span>)
+n &lt;-<span class="st"> </span><span class="dv">1000</span>
+k &lt;-<span class="st"> </span><span class="dv">4</span>
+d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">y=</span><span class="kw">rbinom</span>(n,<span class="dt">size=</span><span class="dv">1</span>,<span class="dt">prob=</span><span class="fl">0.5</span>)&gt;<span class="dv">0</span>)
+d$catVarNoise &lt;-<span class="st"> </span><span class="kw">rep</span>(<span class="kw">paste0</span>(<span class="st">'lev'</span>,<span class="kw">sprintf</span>(<span class="st">&quot;%03d&quot;</span>,<span class="dv">1</span>:<span class="kw">floor</span>(n/k))),(k<span class="dv">+1</span>))[<span class="dv">1</span>:n]
+d$catVarPerfect &lt;-<span class="st"> </span><span class="kw">paste0</span>(d$catVar,<span class="kw">substr</span>(<span class="kw">as.character</span>(d$y),<span class="dv">1</span>,<span class="dv">1</span>))
+d &lt;-<span class="st"> </span>d[<span class="kw">order</span>(d$catVarPerfect),]
+<span class="kw">head</span>(d)</code></pre></div>
+<pre><code>##         y catVarNoise catVarPerfect
+## 1   FALSE      lev001       lev001F
+## 501 FALSE      lev001       lev001F
+## 251  TRUE      lev001       lev001T
+## 751  TRUE      lev001       lev001T
+## 2   FALSE      lev002       lev002F
+## 252 FALSE      lev002       lev002F</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC &lt;-<span class="st"> </span>vtreat::<span class="kw">designTreatmentsC</span>(d,<span class="kw">c</span>(<span class="st">'catVarNoise'</span>,<span class="st">'catVarPerfect'</span>),<span class="st">'y'</span>,<span class="ot">TRUE</span>)</code></pre></div>
+<pre><code>## [1] &quot;desigining treatments Sat May  7 06:23:38 2016&quot;
+## [1] &quot;design var catVarNoise Sat May  7 06:23:38 2016&quot;
+## [1] &quot;design var catVarPerfect Sat May  7 06:23:38 2016&quot;
+## [1] &quot;scoring treatments Sat May  7 06:23:38 2016&quot;
+## [1] &quot;have treatment plan Sat May  7 06:23:38 2016&quot;
+## [1] &quot;rescoring complex variables Sat May  7 06:23:38 2016&quot;
+## [1] &quot;done rescoring complex variables Sat May  7 06:23:38 2016&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Estimate effect significance (not coeficient significance).</span>
+estSigGLM &lt;-<span class="st"> </span>function(xVar,yVar,<span class="dt">numberOfHiddenDegrees=</span><span class="dv">0</span>) {
+  d &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span>xVar,<span class="dt">y=</span>yVar,<span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)
+  model &lt;-<span class="st"> </span>stats::<span class="kw">glm</span>(stats::<span class="kw">as.formula</span>(<span class="st">'y~x'</span>),
+                      <span class="dt">data=</span>d,
+                      <span class="dt">family=</span>stats::<span class="kw">binomial</span>(<span class="dt">link=</span><span class="st">'logit'</span>))
+  delta_deviance &lt;-<span class="st"> </span>model$null.deviance -<span class="st"> </span>model$deviance
+  delta_df &lt;-<span class="st"> </span>model$df.null -<span class="st"> </span>model$df.residual +<span class="st"> </span>numberOfHiddenDegrees
+  pRsq &lt;-<span class="st"> </span><span class="fl">1.0</span> -<span class="st"> </span>model$deviance/model$null.deviance
+  sig &lt;-<span class="st"> </span>stats::<span class="kw">pchisq</span>(delta_deviance, delta_df, <span class="dt">lower.tail=</span><span class="ot">FALSE</span>)
+  sig
+}
+
+prepD &lt;-<span class="st"> </span>vtreat::<span class="kw">prepare</span>(treatmentsC,d,<span class="dt">pruneSig=</span><span class="kw">c</span>())</code></pre></div>
+<p>vtreat produces good variable significances using out of sample simulation (cross frames).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(treatmentsC$scoreFrame[<span class="kw">c</span>(<span class="st">'varName'</span>,<span class="st">'origName'</span>,<span class="st">'sig'</span>)])</code></pre></div>
+<pre><code>##              varName      origName           sig
+## 1   catVarNoise_catB   catVarNoise  6.394690e-01
+## 2 catVarPerfect_catP catVarPerfect  1.268369e-01
+## 3 catVarPerfect_catB catVarPerfect 4.744649e-208</code></pre>
+<p>Signal carrying complex variables can score as signficant, even those composed of rare levels.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">glm</span>(y~d$catVarPerfect==<span class="st">'lev001T'</span>,<span class="dt">data=</span>d,<span class="dt">family=</span>binomial))</code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ d$catVarPerfect == &quot;lev001T&quot;, family = binomial, 
+##     data = d)
+## 
+## Deviance Residuals: 
+##    Min      1Q  Median      3Q     Max  
+## -1.152  -1.152  -1.152   1.203   1.203  
+## 
+## Coefficients:
+##                                   Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept)                       -0.06014    0.06334  -0.949    0.342
+## d$catVarPerfect == &quot;lev001T&quot;TRUE  13.62620  378.59287   0.036    0.971
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1385.5  on 999  degrees of freedom
+## Residual deviance: 1382.6  on 998  degrees of freedom
+## AIC: 1386.6
+## 
+## Number of Fisher Scoring iterations: 12</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">estSigGLM</span>(prepD$catVarPerfect_catB,prepD$y,<span class="dv">0</span>) <span class="co"># wrong est</span></code></pre></div>
+<pre><code>## Warning: glm.fit: algorithm did not converge</code></pre>
+<pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
+<pre><code>## [1] 2.958641e-303</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">estSigGLM</span>(prepD$catVarPerfect_catB,prepD$y,
+          <span class="dt">numberOfHiddenDegrees=</span><span class="kw">length</span>(<span class="kw">unique</span>(d$catVarPerfect))-<span class="dv">1</span>)</code></pre></div>
+<pre><code>## Warning: glm.fit: algorithm did not converge
+
+## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
+<pre><code>## [1] 3.963376e-90</code></pre>
+<p>Noise variables (those without a relation to outcome) are also scored correctly as long was we account for the degrees of freedom.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(<span class="kw">glm</span>(y~d$catVarNoise==<span class="st">'lev001'</span>,<span class="dt">data=</span>d,<span class="dt">family=</span>binomial))</code></pre></div>
+<pre><code>## 
+## Call:
+## glm(formula = y ~ d$catVarNoise == &quot;lev001&quot;, family = binomial, 
+##     data = d)
+## 
+## Deviance Residuals: 
+##    Min      1Q  Median      3Q     Max  
+## -1.177  -1.154  -1.154   1.201   1.201  
+## 
+## Coefficients:
+##                               Estimate Std. Error z value Pr(&gt;|z|)
+## (Intercept)                   -0.05624    0.06340  -0.887    0.375
+## d$catVarNoise == &quot;lev001&quot;TRUE  0.05624    1.00201   0.056    0.955
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1385.5  on 999  degrees of freedom
+## Residual deviance: 1385.5  on 998  degrees of freedom
+## AIC: 1389.5
+## 
+## Number of Fisher Scoring iterations: 3</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">estSigGLM</span>(prepD$catVarNoise_catB,prepD$y,<span class="dv">0</span>) <span class="co"># wrong est</span></code></pre></div>
+<pre><code>## [1] 3.293351e-59</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">estSigGLM</span>(prepD$catVarNoise_catB,prepD$y,
+          <span class="dt">numberOfHiddenDegrees=</span><span class="kw">length</span>(<span class="kw">unique</span>(d$catVarNoise))-<span class="dv">1</span>)</code></pre></div>
+<pre><code>## [1] 0.2696832</code></pre>
 
 
 
