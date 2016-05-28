@@ -12,7 +12,7 @@
 
 <meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-05-07" />
+<meta name="date" content="2016-05-28" />
 
 <title>vtreat scale mode</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">vtreat scale mode</h1>
 <h4 class="author"><em>Win-Vector LLC</em></h4>
-<h4 class="date"><em>2016-05-07</em></h4>
+<h4 class="date"><em>2016-05-28</em></h4>
 
 
 
@@ -140,6 +140,7 @@ slopeFrame$badSlope &lt;-
 ## 4    x_catP  1.850372e-17     1 0.25493078    FALSE
 ## 5    x_catB -2.312965e-18     1 0.05044486    FALSE</code></pre>
 <p>The above claims are true with the exception of the derived variable <code>x_lev_x.b</code>. This is because the outcome variable <code>y</code> has identical distribution when the original variable <code>x==‘b’</code> and when <code>x!=‘b’</code> (on half the time in both cases). This means <code>y</code> is perfectly independent of <code>x==‘b’</code> and the regression slope must be zero (thus, cannot be 1). vtreat now treats this as needing to scale by a multiplicative factor of zero. Note also that the significance level associated with <code>x_lev_x.b</code> is large, making this variable easy to prune. The <code>varMoves</code> and significance facts in <code>treatmentsC$scoreFrame</code> are about the unscaled frame (where <code>x_lev_x.b</code> does in fact move).</p>
+<p>For a good discussion of the application of *y&amp;-aware scaling to Principal Components Analysis please see <a href="http://www.win-vector.com/blog/2016/05/pcr_part2_yaware/">here</a>.</p>
 <p>Previous versions of vtreat (0.5.22 and earlier) would copy variables that could not be sensibly scaled into the treated frame unaltered. This was considered the “most faithful” thing to do. However we now feel that this practice was not safe for many downstream procedures, such as principal components analysis and geometric clustering.</p>
 
 
