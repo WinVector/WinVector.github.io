@@ -12,7 +12,7 @@
 
 <meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-06-13" />
+<meta name="date" content="2016-06-18" />
 
 <title>vtreat scale mode</title>
 
@@ -70,7 +70,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">vtreat scale mode</h1>
 <h4 class="author"><em>Win-Vector LLC</em></h4>
-<h4 class="date"><em>2016-06-13</em></h4>
+<h4 class="date"><em>2016-06-18</em></h4>
 
 
 
@@ -140,8 +140,72 @@ slopeFrame$badSlope &lt;-
 ## 4    x_catP  1.850372e-17     1 0.25493078    FALSE
 ## 5    x_catB -2.312965e-18     1 0.05044486    FALSE</code></pre>
 <p>The above claims are true with the exception of the derived variable <code>x_lev_x.b</code>. This is because the outcome variable <code>y</code> has identical distribution when the original variable <code>x==‘b’</code> and when <code>x!=‘b’</code> (on half the time in both cases). This means <code>y</code> is perfectly independent of <code>x==‘b’</code> and the regression slope must be zero (thus, cannot be 1). vtreat now treats this as needing to scale by a multiplicative factor of zero. Note also that the significance level associated with <code>x_lev_x.b</code> is large, making this variable easy to prune. The <code>varMoves</code> and significance facts in <code>treatmentsC$scoreFrame</code> are about the unscaled frame (where <code>x_lev_x.b</code> does in fact move).</p>
-<p>For a good discussion of the application of *y&amp;-aware scaling to Principal Components Analysis please see <a href="http://www.win-vector.com/blog/2016/05/pcr_part2_yaware/">here</a>.</p>
+<p>For a good discussion of the application of <em>y</em>-aware scaling to Principal Components Analysis please see <a href="http://www.win-vector.com/blog/2016/05/pcr_part2_yaware/">here</a>.</p>
 <p>Previous versions of vtreat (0.5.22 and earlier) would copy variables that could not be sensibly scaled into the treated frame unaltered. This was considered the “most faithful” thing to do. However we now feel that this practice was not safe for many downstream procedures, such as principal components analysis and geometric clustering.</p>
+<div id="categorical-outcome-mode-catscalingtrue" class="section level3">
+<h3>Categorical outcome mode “catScaling=TRUE”</h3>
+<p>As of version <code>0.5.26</code> <code>vtreat</code> also supports a “scaling mode for categorical outcomes.” In this mode scaling is performed using the coefficient of a logistic regression fit on a categorical instead of the coefficient of a linear fit (with the outcome encoded as a zero/one indicator).</p>
+<p>The idea is with this mode on we are scaling as a logistic regession would- so we are in logistic regression “link space” (where logistic regressio assume effects are additive). The mode may be well suited for principal components analysis or principal components regerssion where the target variable is a categorical (i.e. classification tasks).</p>
+<p>To get this effect we must set the argument <code>catScaling=TRUE</code> in <code>vtreat::designTreatmentsC</code> or <code>vtreat::mkCrossFrameCExperiment</code>. WE demonstrate this below.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC2 &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>,
+                                  <span class="dt">catScaling=</span><span class="ot">TRUE</span>,
+                                  <span class="dt">verbose=</span><span class="ot">FALSE</span>)
+dTrainCTreatedScaled2 &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC2,dTrainC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">TRUE</span>)
+<span class="kw">print</span>(dTrainCTreatedScaled2)</code></pre></div>
+<pre><code>##    x_lev_NA  x_lev_x.a x_lev_x.b     x_catP     x_catB     y
+## 1 -3.161922 -0.6931472         0 -0.9396225 -0.9993205 FALSE
+## 2 -3.161922 -0.6931472         0 -0.9396225 -0.9993205 FALSE
+## 3 -3.161922 -0.6931472         0 -0.9396225 -0.9993205  TRUE
+## 4 -3.161922  0.6931472         0  0.4698112  0.2739746 FALSE
+## 5 -3.161922  0.6931472         0  0.4698112  0.2739746  TRUE
+## 6 15.809611  0.6931472         0  1.8792449  2.4500121  TRUE</code></pre>
+<p>Notice the new scaled frame is in a different scale than the original scaled frame. It likely is a function of the problem domain which scaling is more appropiate or useful.</p>
+<p>The new scaled columns are again mean-0 (so they are not exactly the logistic link values, which may not have been so shifted). The new scaled columns do not necissarily have linear model slope 1 as the original scaled columns did as we see below:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">colMeans</span>(dTrainCTreatedScaled2)</code></pre></div>
+<pre><code>##     x_lev_NA    x_lev_x.a    x_lev_x.b       x_catP       x_catB 
+## 0.000000e+00 0.000000e+00 0.000000e+00 3.700743e-16 1.850372e-17 
+##            y 
+## 5.000000e-01</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">lm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = y ~ x_lev_NA, data = dTrainCTreatedScaled)
+## 
+## Coefficients:
+## (Intercept)     x_lev_NA  
+##         0.5          1.0</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">lm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled2)</code></pre></div>
+<pre><code>## 
+## Call:
+## lm(formula = y ~ x_lev_NA, data = dTrainCTreatedScaled2)
+## 
+## Coefficients:
+## (Intercept)     x_lev_NA  
+##     0.50000      0.03163</code></pre>
+<p>The new scaled columns, however are in good logistic link units.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">glm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled,<span class="dt">family=</span>binomial)</code></pre></div>
+<pre><code>## 
+## Call:  glm(formula = y ~ x_lev_NA, family = binomial, data = dTrainCTreatedScaled)
+## 
+## Coefficients:
+## (Intercept)     x_lev_NA  
+##       2.756       31.619  
+## 
+## Degrees of Freedom: 5 Total (i.e. Null);  4 Residual
+## Null Deviance:       8.318 
+## Residual Deviance: 6.73  AIC: 10.73</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">glm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled2,<span class="dt">family=</span>binomial)</code></pre></div>
+<pre><code>## 
+## Call:  glm(formula = y ~ x_lev_NA, family = binomial, data = dTrainCTreatedScaled2)
+## 
+## Coefficients:
+## (Intercept)     x_lev_NA  
+##       2.756        1.000  
+## 
+## Degrees of Freedom: 5 Total (i.e. Null);  4 Residual
+## Null Deviance:       8.318 
+## Residual Deviance: 6.73  AIC: 10.73</code></pre>
+</div>
 
 
 
