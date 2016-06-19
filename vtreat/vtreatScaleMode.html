@@ -12,7 +12,7 @@
 
 <meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-06-18" />
+<meta name="date" content="2016-06-19" />
 
 <title>vtreat scale mode</title>
 
@@ -70,11 +70,11 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">vtreat scale mode</h1>
 <h4 class="author"><em>Win-Vector LLC</em></h4>
-<h4 class="date"><em>2016-06-18</em></h4>
+<h4 class="date"><em>2016-06-19</em></h4>
 
 
 
-<p><code>vtreat::prepare(scale=TRUE)</code> is a variation of <code>vtreat::prepare()</code> intended to prepare data frames so all the derived input or independent (x) variables are fully in outcome or dependent variable (y) units (in the sense of a regression; categorical/logical y’s are treated as 0/1 indicators) and mean-zero.</p>
+<p><code>vtreat::prepare(scale=TRUE)</code> is a variation of <code>vtreat::prepare()</code> intended to prepare data frames so all the derived input or independent (x) variables are fully in outcome or dependent variable (y) units (in the sense of a regression; categorical/logical y’s are treated as 0/1 indicators, version <code>0.5.26</code> and newer can <a href="https://github.com/WinVector/Examples/blob/master/PCR/YAwarePCAclassification.md">directly model categorical outcomes “in link units” using logistic regression</a> without the 0/1 indicator encoding, this version is currently available <a href="https://github.com/WinVector/vtreat">here</a>) and mean-zero.</p>
 <p>This is the appropriate preparation before a geometry/metric sensitive modeling step such as principal components analysis or clustering (such as k-means clustering).</p>
 <p>Normally (with <code>vtreat::prepare(scale=FALSE)</code>) vtreat passes through a number of variables with minimal alteration (cleaned numerics), builds 0/1 indicator variables for various conditions (categorical levels, presence of NAs, and so on), and builds some “in y-units” variables (catN, catB) that are in fact sub-models. With <code>vtreat::prepare(scale=TRUE)</code> all of these numeric variables are then re-processed to have mean zero, and slope 1 (when possible) when numerically regressed against the y-variable.</p>
 <p>This is easiest to illustrate with a concrete example.</p>
