@@ -12,7 +12,7 @@
 
 <meta name="author" content="Win-Vector LLC" />
 
-<meta name="date" content="2016-06-19" />
+<meta name="date" content="2016-06-21" />
 
 <title>vtreat scale mode</title>
 
@@ -70,22 +70,24 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 <h1 class="title toc-ignore">vtreat scale mode</h1>
 <h4 class="author"><em>Win-Vector LLC</em></h4>
-<h4 class="date"><em>2016-06-19</em></h4>
+<h4 class="date"><em>2016-06-21</em></h4>
 
 
 
-<p><code>vtreat::prepare(scale=TRUE)</code> is a variation of <code>vtreat::prepare()</code> intended to prepare data frames so all the derived input or independent (x) variables are fully in outcome or dependent variable (y) units (in the sense of a regression; categorical/logical y’s are treated as 0/1 indicators, version <code>0.5.26</code> and newer can <a href="https://github.com/WinVector/Examples/blob/master/PCR/YAwarePCAclassification.md">directly model categorical outcomes “in link units” using logistic regression</a> without the 0/1 indicator encoding, this version is currently available <a href="https://github.com/WinVector/vtreat">here</a>) and mean-zero.</p>
+<p><code>vtreat::prepare(scale=TRUE)</code> is a variation of <code>vtreat::prepare()</code> intended to prepare data frames so all the derived input or independent (<code>x</code>) variables are fully in outcome or dependent variable (<code>y</code>) units. This is in the sense of a linear regression for numeric <code>y</code>’s (<code>vtreat::designTreatmentsN</code> and <code>vtreat::mkCrossFrameNExperiment</code>).<br />
+For classification problems (or categorical <code>y</code>’s) as of version <code>0.5.26</code> and newer (available <a href="https://github.com/WinVector/vtreat">here</a>) scaling is established through a a logistic regression <a href="https://github.com/WinVector/Examples/blob/master/PCR/YAwarePCAclassification.md">“in link units”</a> or as 0/1 indicators depending on the setting of the <code>catScaling</code> argument in <code>vtreat::designTreatmentsC</code> or <code>vtreat::mkCrossFrameNExperiment</code>. Prior to this version classification the scaling calculation (and only the scaling calculation) was always handled as a linear regression against a 0/1 <code>y</code>-indicator.</p>
 <p>This is the appropriate preparation before a geometry/metric sensitive modeling step such as principal components analysis or clustering (such as k-means clustering).</p>
-<p>Normally (with <code>vtreat::prepare(scale=FALSE)</code>) vtreat passes through a number of variables with minimal alteration (cleaned numerics), builds 0/1 indicator variables for various conditions (categorical levels, presence of NAs, and so on), and builds some “in y-units” variables (catN, catB) that are in fact sub-models. With <code>vtreat::prepare(scale=TRUE)</code> all of these numeric variables are then re-processed to have mean zero, and slope 1 (when possible) when numerically regressed against the y-variable.</p>
+<p>Normally (with <code>vtreat::prepare(scale=FALSE)</code>) vtreat passes through a number of variables with minimal alteration (cleaned numeric), builds 0/1 indicator variables for various conditions (categorical levels, presence of NAs, and so on), and builds some “in y-units” variables (catN, catB) that are in fact sub-models. With <code>vtreat::prepare(scale=TRUE)</code> all of these numeric variables are then re-processed to have mean zero, and slope 1 (when possible) when appropriately regressed against the y-variable.</p>
 <p>This is easiest to illustrate with a concrete example.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">'vtreat'</span>)
 dTrainC &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">x=</span><span class="kw">c</span>(<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'a'</span>,<span class="st">'b'</span>,<span class="st">'b'</span>,<span class="ot">NA</span>),
                       <span class="dt">y=</span><span class="kw">c</span>(<span class="ot">FALSE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">FALSE</span>,<span class="ot">TRUE</span>,<span class="ot">TRUE</span>))
 treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>,
+                                 <span class="dt">catScaling=</span><span class="ot">FALSE</span>,
                                  <span class="dt">verbose=</span><span class="ot">FALSE</span>)
 dTrainCTreatedUnscaled &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC,dTrainC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">FALSE</span>)
 dTrainCTreatedScaled &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC,dTrainC,<span class="dt">pruneSig=</span><span class="kw">c</span>(),<span class="dt">scale=</span><span class="ot">TRUE</span>)</code></pre></div>
-<p>The standard vtreat treated frame converts the original data from this:</p>
+<p>Note we have set <code>catScaling=FALSE</code> to ask that we treat <code>y</code> as a 0/1 indicator and scale using linear regression. The standard vtreat treated frame converts the original data from this:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(dTrainC)</code></pre></div>
 <pre><code>##      x     y
 ## 1    a FALSE
@@ -146,7 +148,7 @@ slopeFrame$badSlope &lt;-
 <h3>Categorical outcome mode “catScaling=TRUE”</h3>
 <p>As of version <code>0.5.26</code> <code>vtreat</code> also supports a “scaling mode for categorical outcomes.” In this mode scaling is performed using the coefficient of a logistic regression fit on a categorical instead of the coefficient of a linear fit (with the outcome encoded as a zero/one indicator).</p>
 <p>The idea is with this mode on we are scaling as a logistic regession would- so we are in logistic regression “link space” (where logistic regressio assume effects are additive). The mode may be well suited for principal components analysis or principal components regerssion where the target variable is a categorical (i.e. classification tasks).</p>
-<p>To get this effect we must set the argument <code>catScaling=TRUE</code> in <code>vtreat::designTreatmentsC</code> or <code>vtreat::mkCrossFrameCExperiment</code>. WE demonstrate this below.</p>
+<p>To ensure this effect we set the argument <code>catScaling=TRUE</code> in <code>vtreat::designTreatmentsC</code> or <code>vtreat::mkCrossFrameCExperiment</code>. WE demonstrate this below.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">treatmentsC2 &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</span>(dTrainC,<span class="kw">colnames</span>(dTrainC),<span class="st">'y'</span>,<span class="ot">TRUE</span>,
                                   <span class="dt">catScaling=</span><span class="ot">TRUE</span>,
                                   <span class="dt">verbose=</span><span class="ot">FALSE</span>)
@@ -183,28 +185,14 @@ dTrainCTreatedScaled2 &lt;-<span class="st"> </span><span class="kw">prepare</sp
 ## (Intercept)     x_lev_NA  
 ##     0.50000      0.03163</code></pre>
 <p>The new scaled columns, however are in good logistic link units.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">glm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled,<span class="dt">family=</span>binomial)</code></pre></div>
-<pre><code>## 
-## Call:  glm(formula = y ~ x_lev_NA, family = binomial, data = dTrainCTreatedScaled)
-## 
-## Coefficients:
-## (Intercept)     x_lev_NA  
-##       2.756       31.619  
-## 
-## Degrees of Freedom: 5 Total (i.e. Null);  4 Residual
-## Null Deviance:       8.318 
-## Residual Deviance: 6.73  AIC: 10.73</code></pre>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">glm</span>(y~x_lev_NA,<span class="dt">data=</span>dTrainCTreatedScaled2,<span class="dt">family=</span>binomial)</code></pre></div>
-<pre><code>## 
-## Call:  glm(formula = y ~ x_lev_NA, family = binomial, data = dTrainCTreatedScaled2)
-## 
-## Coefficients:
-## (Intercept)     x_lev_NA  
-##       2.756        1.000  
-## 
-## Degrees of Freedom: 5 Total (i.e. Null);  4 Residual
-## Null Deviance:       8.318 
-## Residual Deviance: 6.73  AIC: 10.73</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"> <span class="kw">vapply</span>(slopeFrame$varName,
+                           function(c) {
+                             <span class="kw">glm</span>(<span class="kw">paste</span>(<span class="st">'y'</span>, c, <span class="dt">sep =</span> <span class="st">'~'</span>),<span class="dt">family=</span>binomial,
+                                <span class="dt">data =</span> dTrainCTreatedScaled2)$coefficients[[<span class="dv">2</span>]]
+                           },
+                           <span class="kw">numeric</span>(<span class="dv">1</span>))</code></pre></div>
+<pre><code>##  x_lev_NA x_lev_x.a x_lev_x.b    x_catP    x_catB 
+##         1         1        NA         1         1</code></pre>
 </div>
 
 
