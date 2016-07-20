@@ -1,0 +1,136 @@
+---
+title: "KDD2009"
+author: "Win-Vector LLC"
+date: "July 18, 2016"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library('vtreat')
+library('WVPlots') # see: https://github.com/WinVector/WVPlots
+```
+
+```{r inith2o}
+# See installH2O.R for how to install h2o
+# From: http://learn.h2o.ai/content/tutorials/deeplearning/
+# See also: http://www.r-bloggers.com/things-to-try-after-user-part-1-deep-learning-with-h2o/
+library('h2o')
+h2o.init(nthreads=-1, max_mem_size="2G")
+h2o.removeAll() ## clean slate - just in case the cluster was already running
+
+ncore <- parallel::detectCores()
+cl <- parallel::makeCluster(ncore)
+```
+
+```{r loaddata}
+# see: https://github.com/WinVector/PreparingDataWorkshop/tree/master/KDD2009
+d = read.table('orange_small_train.data.gz',
+               header=T,sep='\t',na.strings=c('NA',''), 
+               strip.white = TRUE,
+               stringsAsFactors=FALSE)
+churn = read.table('orange_small_train_churn.labels.txt',
+                   header=F,sep='\t',
+                   strip.white = TRUE,
+                   stringsAsFactors = FALSE)
+d$churn = churn$V1
+set.seed(729375)
+rgroup = runif(dim(d)[[1]])
+dTrain = d[rgroup<=0.9,]  # set for building models
+dTest = d[rgroup>0.9,] # set for evaluation
+rm(list=c('d','churn'))
+outcomes = c('churn','appetency','upselling')
+nonvars <- c(outcomes,'rgroup')
+vars = setdiff(colnames(dTrain),
+                nonvars)
+yName = 'churn'
+yTarget = 1
+```
+
+```{r preparedata}
+# build data treatments
+set.seed(239525)
+
+# build treatments 
+trainPlan = mkCrossFrameCExperiment(dTrain,
+    vars,yName,yTarget,
+    smFactor=2.0, 
+    parallelCluster=cl)
+print(trainPlan$method)
+treatmentsC = trainPlan$treatments
+treatedTrainM = trainPlan$crossFrame
+
+#kddSig = 1/nrow(treatmentsC$scoreFrame)
+selvars <- setdiff(colnames(treatedTrainM),outcomes)
+treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
+
+treatedTest = prepare(treatmentsC,
+                      dTest,
+                      varRestriction=selvars,
+                      pruneSig=NULL, 
+                      parallelCluster=cl)
+treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+```
+
+
+```{r fit1}
+# simple default, production model would require hyperparameter search
+vrsel <- runif(nrow(treatedTrainM))<=0.1
+trainSet <- as.h2o(treatedTrainM[!vrsel,])
+valSet <-  as.h2o(treatedTrainM[vrsel,])
+goodvars <- treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<1/nrow(treatmentsC$scoreFrame)]
+
+hyper_params <- list(
+  hidden=list(c(32,32,32),c(64,64)),
+  input_dropout_ratio=c(0,0.05),
+  rate=c(0.01,0.02),
+  rate_annealing=c(1e-8,1e-7,1e-6)
+)
+
+print(date())
+g <- h2o.grid(
+  algorithm="deeplearning",
+  grid_id="dl_grid", 
+  training_frame=trainSet, 
+  validation_frame=valSet,
+  x=goodvars,
+  y=yName,
+  epochs=100,
+  stopping_metric="misclassification",
+  stopping_tolerance=1e-2,        ## stop when misclassification does not improve by >=1% for 2 scoring events
+  stopping_rounds=20,
+  score_validation_samples=10000, ## downsample validation set for faster scoring
+  score_duty_cycle=0.025,         ## don't score more than 2.5% of the wall time
+  adaptive_rate=F,                ## manually tuned learning rate
+  momentum_start=0.5,             ## manually tuned momentum
+  momentum_stable=0.9, 
+  momentum_ramp=1e7, 
+  l1=1e-5,
+  l2=1e-5,
+  activation=c("Rectifier"),
+  max_w2=10,                      ## can help improve stability for Rectifier
+  hyper_params=hyper_params
+)
+print(date())
+
+print(g@summary_table[1,])
+m <- h2o.getModel(g@model_ids[[1]])
+summary(m)
+plot(m)
+pTrain <- predict(m,newdata=as.h2o(treatedTrainM))
+treatedTrainM$pred <- as.data.frame(pTrain[,'TRUE'])[[1]]
+WVPlots::ROCPlot(treatedTrainM,'pred',yName,'prediction on train')
+pTest <- predict(m,newdata=as.h2o(treatedTest))
+treatedTest$pred <- as.data.frame(pTest[,'TRUE'])[[1]]
+WVPlots::ROCPlot(treatedTest,'pred',yName,'prediction on test')
+```
+
+
+```{r shutdown}
+h2o.shutdown(prompt=FALSE)
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+```
+

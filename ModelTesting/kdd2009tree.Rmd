@@ -1,0 +1,96 @@
+---
+title: "kdd2008tree"
+author: "Win-Vector LLC"
+date: "July 18, 2016"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library('vtreat')
+library('WVPlots') # see: https://github.com/WinVector/WVPlots
+library('rpart')
+library('caret')
+#library('doMC')
+```
+
+```{r inith2o}
+ncore <- parallel::detectCores()
+#registerDoMC(cores = ncore)
+cl <- parallel::makeCluster(ncore)
+```
+
+```{r loaddata}
+# see: https://github.com/WinVector/PreparingDataWorkshop/tree/master/KDD2009
+d = read.table('orange_small_train.data.gz',
+               header=T,sep='\t',na.strings=c('NA',''), 
+               strip.white = TRUE,
+               stringsAsFactors=FALSE)
+churn = read.table('orange_small_train_churn.labels.txt',
+                   header=F,sep='\t',
+                   strip.white = TRUE,
+                   stringsAsFactors = FALSE)
+d$churn = churn$V1
+set.seed(729375)
+rgroup = runif(dim(d)[[1]])
+dTrain = d[rgroup<=0.9,]  # set for building models
+dTest = d[rgroup>0.9,] # set for evaluation
+rm(list=c('d','churn'))
+outcomes = c('churn','appetency','upselling')
+nonvars <- c(outcomes,'rgroup')
+vars = setdiff(colnames(dTrain),
+                nonvars)
+yName = 'churn'
+yTarget = 1
+```
+
+```{r preparedata}
+# build data treatments
+set.seed(239525)
+
+# build treatments 
+trainPlan = mkCrossFrameCExperiment(dTrain,
+    vars,yName,yTarget,
+    smFactor=2.0, 
+    parallelCluster=cl)
+print(trainPlan$method)
+treatmentsC = trainPlan$treatments
+treatedTrainM = trainPlan$crossFrame
+
+#kddSig = 1/nrow(treatmentsC$scoreFrame)
+selvars <- setdiff(colnames(treatedTrainM),outcomes)
+treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
+
+treatedTest = prepare(treatmentsC,
+                      dTest,
+                      varRestriction=selvars,
+                      pruneSig=NULL, 
+                      parallelCluster=cl)
+treatedTest[[yName]] = treatedTest[[yName]]==yTarget
+```
+
+
+```{r fit1}
+goodvars <- treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<1/nrow(treatmentsC$scoreFrame)]
+
+form <- paste(yName,paste(goodvars,collapse=' + '),sep=' ~ ')
+rcontrol <- rpart.control(cp = 0.001)
+m <- rpart(form,treatedTrainM,control=rcontrol)
+
+summary(m)
+pTrain <- predict(m,newdata=treatedTrainM)
+treatedTrainM$pred <- as.numeric(pTrain)
+WVPlots::ROCPlot(treatedTrainM,'pred',yName,'prediction on train')
+pTest <- predict(m,newdata=treatedTest)
+treatedTest$pred <- as.numeric(pTest)
+WVPlots::ROCPlot(treatedTest,'pred',yName,'prediction on test')
+```
+
+
+```{r shutdown}
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+```
+
