@@ -67,7 +67,7 @@ kddSig = 0.05
 
 trainPlan = mkCrossFrameCExperiment(dTrain,
     vars,yName,yTarget,
-    smFactor=2.0, 
+    smFactor=2.0, rareCount = 2, rareSig = 0.5,
     parallelCluster=cl)
 treatmentsC = trainPlan$treatments
 treatedTrainM = trainPlan$crossFrame
