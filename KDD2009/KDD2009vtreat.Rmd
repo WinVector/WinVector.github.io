@@ -73,6 +73,9 @@ treatmentsC = trainPlan$treatments
 treatedTrainM = trainPlan$crossFrame
 
 selvars = treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<kddSig]
+
+print(treatmentsC$scoreFrame[,c('varName','sig')])
+
 treatedTrainM[[yName]] = treatedTrainM[[yName]]==yTarget
 
 treatedTest = prepare(treatmentsC,
@@ -97,7 +100,7 @@ if(!is.null(cl)) {
 #
 # This gets us back to AUC 0.72
 
-print(selvars)
+#print(selvars)
 
 # prepare plotting frames
 treatedTrainP = treatedTrainM[, yName, drop=FALSE]
