@@ -1,0 +1,141 @@
+---
+title: "FalseZipf"
+author: "Win-Vector LLC"
+date: "September 18, 2016"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE)
+library('ggplot2')
+
+# draw item i with probability pi
+draw <- function(universe,n) {
+  u <- sort(runif(n))
+  idxs <- findInterval(u,c(0,universe$cumsum),rightmost.closed = TRUE)
+  idxs <- pmin(idxs,nrow(universe))
+  # permute
+  idxs <- idxs[sample.int(n,n,replace=FALSE)]
+  idxs
+}
+
+nRanks = 200
+sampleSize = 1000
+contrainPosition = 20
+```
+
+```{r zipfian}
+# generate population of items with Zipfian probabilities
+set.seed(23234)
+zipfianUniverse <- data.frame(theoreticalRank=seq_len(nRanks))
+zipfianUniverse$theoreticalProb <- 1/zipfianUniverse$theoreticalRank^1.1
+zipfianUniverse$theoreticalProb <- zipfianUniverse$theoreticalProb/sum(zipfianUniverse$theoreticalProb)
+zipfianUniverse <- zipfianUniverse[order(zipfianUniverse$theoreticalProb,decreasing=TRUE),,
+                                       drop=FALSE]
+zipfianUniverse$cumsum <- cumsum(zipfianUniverse$theoreticalProb)
+
+zipfianUniverse$theoreticalProbConstrained <- zipfianUniverse$theoreticalProb*
+  ifelse(zipfianUniverse$theoreticalRank>=contrainPosition,0.01,1.0)
+zipfianUniverse$missedMass =  zipfianUniverse$theoreticalProb -
+  zipfianUniverse$theoreticalProbConstrained
+zipfianUniverse$missedMass[zipfianUniverse$missedMass<=0] <- NA
+zipfianUniverse$theoreticalProbConstrained <- zipfianUniverse$theoreticalProbConstrained/
+  sum(zipfianUniverse$theoreticalProbConstrained)
+
+
+observedZ <- data.frame(theoreticalRank=draw(zipfianUniverse,sampleSize))
+countsZ <- as.data.frame(table(theoreticalRank=observedZ$theoreticalRank))
+countsZ$theoreticalRank <- as.integer(as.character(countsZ$theoreticalRank))
+countsZ$Freq <- countsZ$Freq/sum(countsZ$Freq)
+countsZ$observedRank <- rank(-countsZ$Freq)
+observedZ$Freq <- countsZ$Freq[match(observedZ$theoreticalRank,
+                                     countsZ$theoreticalRank)]
+
+ggplot(data=zipfianUniverse,aes(x=theoreticalRank,y=theoreticalProb,
+                                ymin=0,ymax=theoreticalProb)) + 
+  geom_line() + 
+  ggtitle("plot of Zipfian original population\ntheoretical item probability as a function of rank\nZipfian original universe")
+
+
+ggplot(data=zipfianUniverse,aes(x=theoreticalRank,y=theoreticalProb,
+                                ymin=0,ymax=theoreticalProb)) + 
+  geom_ribbon(alpha=0.2) +
+  geom_ribbon(aes(ymax=missedMass),fill='blue') +
+  geom_line() + 
+  ggtitle("plot of Zipfian original population\ntheoretical item probability as a function of rank\nZipfian original universe")
+sum(zipfianUniverse$missedMass,na.rm=TRUE)
+
+
+ggplot(data=zipfianUniverse,aes(x=theoreticalRank,y=theoreticalProb)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of Zipfian original population\ntheoretical item probability as a function of rank\nZipfian original universe")
+lm(log(theoreticalProb)~log(theoreticalRank),data=zipfianUniverse,
+   weights=zipfianUniverse$theoreticalProb)
+
+ggplot(data=zipfianUniverse,aes(x=theoreticalRank,y=theoreticalProbConstrained)) + 
+  geom_point() +
+  ggtitle("log log plot of constrained population\ntheoretical item probability as a function of rank\nconstrained Zipfian original universe")
+
+ggplot(data=zipfianUniverse,aes(x=theoreticalRank,y=theoreticalProbConstrained)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  ggtitle("log log plot of constrained population\ntheoretical item probability as a function of rank\nconstrained Zipfian original universe")
+
+ggplot(data=countsZ,aes(x=observedRank,y=Freq)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of sample\nestimated frequency as a function of estimated rank\nZipfian original universe")
+lm(log(Freq)~log(observedRank),data=countsZ,
+   weights=countsZ$Freq)
+
+ggplot(data=countsZ,aes(x=theoreticalRank,y=Freq)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of sample\nestimated frequency as a function of theoretical rank\nZipfian original universe")
+lm(log(Freq)~log(theoreticalRank),data=countsZ,
+   weights=countsZ$Freq)
+```
+
+
+
+```{r lognormal}
+# generate population of items with empirical log-normal probabilities
+set.seed(23234)
+logNormalUniverse <- data.frame(theoreticalProb=rlnorm(nRanks))
+logNormalUniverse$theoreticalProb <- logNormalUniverse$theoreticalProb/sum(logNormalUniverse$theoreticalProb)
+logNormalUniverse <- logNormalUniverse[order(logNormalUniverse$theoreticalProb,decreasing=TRUE),,
+                                       drop=FALSE]
+logNormalUniverse$theoreticalRank <- seq_len(nrow(logNormalUniverse))
+logNormalUniverse$cumsum <- cumsum(logNormalUniverse$theoreticalProb)
+
+
+observedLN <- data.frame(theoreticalRank=draw(logNormalUniverse,sampleSize))
+countsLN <- as.data.frame(table(theoreticalRank=observedLN$theoreticalRank))
+countsLN$theoreticalRank <-  as.integer(as.character(countsLN$theoreticalRank))
+countsLN$Freq <- countsLN$Freq/sum(countsLN$Freq)
+countsLN$observedRank <- rank(-countsLN$Freq)
+observedLN$Freq <- countsLN$Freq[match(observedLN$theoreticalRank,
+                                       countsLN$theoreticalRank)]
+
+ggplot(data=logNormalUniverse,aes(x=theoreticalRank,y=theoreticalProb)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of log normal original population\ntheoretical item probability as a function of rank\nlog normal original universe")
+lm(log(theoreticalProb)~log(theoreticalRank),data=logNormalUniverse,
+   weights=logNormalUniverse$theoreticalProb)
+  
+ggplot(data=countsLN,aes(x=observedRank,y=Freq)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of sample\nestimated frequency as a function of estimated rank\nlog normal original universe")
+lm(log(Freq)~log(observedRank),data=countsLN,
+   weights=countsLN$Freq)
+
+ggplot(data=countsLN,aes(x=theoreticalRank,y=Freq)) + 
+  geom_point() + scale_y_log10() + scale_x_log10() +
+  geom_smooth(method='lm',se=FALSE) +
+  ggtitle("log log plot of sample\nestimated frequency as a function of theoretical rank\nlog normal original universe")
+lm(log(Freq)~log(theoreticalRank),data=countsLN,
+   weights=countsLN$Freq)
+```
+
