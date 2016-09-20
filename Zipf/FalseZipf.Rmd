@@ -5,6 +5,8 @@ date: "September 18, 2016"
 output: html_document
 ---
 
+Support materials for Win-Vector LLC blog article [Relative error distributions, without the heavy tail theatrics](http://www.win-vector.com/blog/2016/09/relative-error-distributions-without-the-heavy-tail-theatrics/).
+
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 library('ggplot2')
