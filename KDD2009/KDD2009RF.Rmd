@@ -99,7 +99,7 @@ testP[[yName]] = testP[[yName]]==yTarget
 ti = 'RF prediction on test'
 print(DoubleDensityPlot(testP, 'pred', yName, 
                                title=ti))
-print(ROCPlot(testP, 'pred', yName, 
+print(ROCPlot(testP, 'pred', yName, yTarget,
                      title=ti))
 
 ```

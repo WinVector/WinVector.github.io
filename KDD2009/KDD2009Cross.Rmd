@@ -139,7 +139,7 @@ formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
   t2 = paste(mname,'test data')
   print(DoubleDensityPlot(treatedTestP, mname, yName, 
                           title=t2))
-  print(ROCPlot(treatedTestP, mname, yName, 
+  print(ROCPlot(treatedTestP, mname, yName, yTarget,
                 title=t2))
   print(date())
   print("*****************************")
