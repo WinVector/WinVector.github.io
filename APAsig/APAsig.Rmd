@@ -13,8 +13,10 @@ output: html_document
 #      https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf
 # Not linking direclty to the style guide as they charge for it.
 #
-formatAPAR2 <- function(R2,FValue,numdf,dendf,
+formatAPAR2 <- function(FValue,numdf,dendf,
                                         pCutOff=1.0e-5) {
+  Funscaled <- FValue*(numdf/dendf)
+  R2 <- 1 - 1/(Funscaled+1)
   pValue <-  stats::pf(FValue,
                        numdf, 
                        dendf,
@@ -30,6 +32,11 @@ formatAPAR2 <- function(R2,FValue,numdf,dendf,
          ', ',pString,').')
 }
 
+formatAPAR2fromCite <- function(numdf,dendf,FValue,
+                                        pCutOff=1.0e-5) {
+  formatAPAR2(FValue,numdf,dendf,pCutOff)
+}
+
 # Format from model.
 formatLinearRegressionModelAPAR2 <- function(linearRegressionModel,
                                              pCutOff=1.0e-5) {
@@ -38,8 +45,7 @@ formatLinearRegressionModelAPAR2 <- function(linearRegressionModel,
   FValue <- fstats[['value']]
   numdf <-  fstats[['numdf']]
   dendf <- fstats[['dendf']]
-  R2 <- fitSummary$r.squared
-  formatAPAR2(R2,FValue,numdf,dendf,pCutOff)
+  formatAPAR2(FValue,numdf,dendf,pCutOff)
 }
 
 # Format from data.
@@ -52,8 +58,7 @@ formatLinearRegressionFitAPAR2 <- function(predictions,y,nParameters,
   p1 <- 1
   p2 <- 1 + nParameters
   FValue = ((rss1-rss2)/(p2-p1))/(rss2/(n-p2))
-  R2 <- 1 - rss2/rss1
-  formatAPAR2(R2,FValue,p2-p1,n-p2,pCutOff)
+  formatAPAR2(FValue,p2-p1,n-p2,pCutOff)
 }
 ```
 
@@ -61,19 +66,52 @@ Example showing we can get the items reported by `summary(model)` into one
 well-behaved string.
 
 ```{r demo}
-d <- data.frame(x=1:8)
-d$y <- d$x^2
+library('ggplot2')
+d <- data.frame(x=0.2*(1:20))
+d$y <- cos(d$x)
 model <- lm(y~x,data=d)
+d$prediction <- predict(model,newdata=d)
 
+ggplot(data=d,aes(x=prediction,y=y)) +
+  geom_point() + geom_abline() 
 print(summary(model))
 ```
 
-```{r results='asis'}
-cat(formatLinearRegressionModelAPAR2(model))
-```
+Examples showing how to get the summary from the model.
 
 ```{r results='asis'}
-cat(formatLinearRegressionFitAPAR2(predictions=predict(model,newdata=d),y=d$y,
-                               nParameters=1,meany=mean(d$y)))
+formatLinearRegressionModelAPAR2(model)
+```
+
+Or frome the data.
+
+```{r results='asis'}
+formatLinearRegressionFitAPAR2(predictions=d$prediction,y=d$y,
+                               nParameters=1,meany=mean(d$y))
+```
+
+Separate extracted example from https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf.
+
+```{r results='asis'}
+formatAPAR2fromCite(numdf=2,dendf=55,FValue=5.56)
+```
+
+Looks like statCheck checks the p-value, but not the R-squared.
+
+```{r}
+library('statcheck')
+s <- statcheck('(R2=.38, F(2,55)=5.56, p < .01)')
+```
+```{r results='asis', comment=NA}
+print(xtable::xtable(t(s)),type='html')
+```
+
+Check ours (had to change <code>%le;</code> to "<" to be seen).
+
+```{r}
+s <- statcheck('(R2=0.17, F(2,55)=5.56, p<0.00632)')
+```
+```{r results='asis', comment=NA}
+print(xtable::xtable(t(s)),type='html')
 ```
 
