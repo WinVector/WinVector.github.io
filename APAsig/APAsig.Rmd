@@ -16,17 +16,22 @@ Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016
 # Not linking direclty to the style guide as they charge for it.
 #
 formatAPAR2 <- function(FValue,numdf,dendf,
-                                        pCutOff=1.0e-5) {
+                        pLargeCutoff=0.05,
+                        pSmallCutoff=1.0e-5) {
   Funscaled <- FValue*(numdf/dendf)
   R2 <- 1 - 1/(Funscaled+1)
   pValue <-  stats::pf(FValue,
                        numdf, 
                        dendf,
                        lower.tail=FALSE)
-  if(pValue<pCutOff) {
-    pString <- paste0('<i>p</i>&lt;',sprintf('%.3g',pCutOff))
+  if(pValue>=pLargeCutoff) {
+    pString <- '<i>p</i>=n.s.'
   } else {
-    pString <- paste0('<i>p</i>&le;',sprintf('%.3g',pValue))
+    if(pValue<pSmallCutoff) {
+      pString <- paste0('<i>p</i>&lt;',sprintf('%.3g',pSmallCutoff))
+    } else {
+      pString <- paste0('<i>p</i>&le;',sprintf('%.3g',pValue))
+    }
   }
   paste0('<b>F Test</b> summary: (<i>R</i><sup>2</sup>=',sprintf('%.2g',R2),
          ', <i>F</i>(',numdf,',',dendf,')=',
@@ -35,32 +40,35 @@ formatAPAR2 <- function(FValue,numdf,dendf,
 }
 
 formatAPAR2fromCite <- function(numdf,dendf,FValue,
-                                        pCutOff=1.0e-5) {
-  formatAPAR2(FValue,numdf,dendf,pCutOff)
+                                pLargeCutoff=0.05,
+                                pSmallCutoff=1.0e-5) {
+  formatAPAR2(FValue,numdf,dendf,pLargeCutoff,pSmallCutoff)
 }
 
 # Format from model.
 formatLinearRegressionModelAPAR2 <- function(linearRegressionModel,
-                                             pCutOff=1.0e-5) {
+                                             pLargeCutoff=0.05,
+                                             pSmallCutoff=1.0e-5) {
   fitSummary <- summary(linearRegressionModel)
   fstats <- fitSummary$fstatistic
   FValue <- fstats[['value']]
   numdf <-  fstats[['numdf']]
   dendf <- fstats[['dendf']]
-  formatAPAR2(FValue,numdf,dendf,pCutOff)
+  formatAPAR2(FValue,numdf,dendf,pLargeCutoff,pSmallCutoff)
 }
 
 # Format from data.
 formatLinearRegressionFitAPAR2 <- function(predictions,y,nParameters,
                                            meany=mean(y),
-                                           pCutOff=1.0e-5) {
+                                           pLargeCutoff=0.05,
+                                           pSmallCutoff=1.0e-5) {
   n <- length(y)
   rss1 <- sum((y-meany)^2)
   rss2 <- sum((y-predictions)^2)
   p1 <- 1
   p2 <- 1 + nParameters
   FValue = ((rss1-rss2)/(p2-p1))/(rss2/(n-p2))
-  formatAPAR2(FValue,p2-p1,n-p2,pCutOff)
+  formatAPAR2(FValue,p2-p1,n-p2,pLargeCutoff,pSmallCutoff)
 }
 ```
 
