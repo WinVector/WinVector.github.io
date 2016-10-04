@@ -5,7 +5,7 @@ date: "October 2, 2016"
 output: html_document
 ---
 
-Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/).  Uses formatting [R](https://cran.r-project.org) package [sigr](https://github.com/WinVector/sigr).
+Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/).  Uses formatting [R](https://cran.r-project.org) package [sigr](https://github.com/WinVector/sigr). Please see [here](https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf) and [here](http://my.ilstu.edu/~jhkahn/apastats.html) for some notes.
 
 ```{r fns}
 library('sigr') # devtools::install_github('WinVector/sigr')

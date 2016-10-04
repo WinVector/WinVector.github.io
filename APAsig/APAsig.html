@@ -122,7 +122,7 @@ $(document).ready(function () {
 </div>
 
 
-<p>Examples for <a href="http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/">Proofing statistics in papers</a>. Uses formatting <a href="https://cran.r-project.org">R</a> package <a href="https://github.com/WinVector/sigr">sigr</a>.</p>
+<p>Examples for <a href="http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/">Proofing statistics in papers</a>. Uses formatting <a href="https://cran.r-project.org">R</a> package <a href="https://github.com/WinVector/sigr">sigr</a>. Please see <a href="https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf">here</a> and <a href="http://my.ilstu.edu/~jhkahn/apastats.html">here</a> for some notes.</p>
 <pre class="r"><code>library('sigr') # devtools::install_github('WinVector/sigr')</code></pre>
 <p>Example showing we can get the items reported by <code>summary(model)</code> into one well-behaved string.</p>
 <pre class="r"><code>library('ggplot2')
@@ -174,7 +174,7 @@ s &lt;- statcheck('(R2=.38, F(2,55)=5.56, p &lt; .01)')</code></pre>
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Mon Oct  3 18:07:12 2016 -->
+<!-- Mon Oct  3 21:00:21 2016 -->
 <table border="1">
 <tr>
 <th>
@@ -314,7 +314,7 @@ APAfactor
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Mon Oct  3 18:07:12 2016 -->
+<!-- Mon Oct  3 21:00:21 2016 -->
 <table border="1">
 <tr>
 <th>
