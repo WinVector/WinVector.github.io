@@ -5,71 +5,10 @@ date: "October 2, 2016"
 output: html_document
 ---
 
-Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/).
+Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/).  Uses formatting [R](https://cran.r-project.org) package [sigr](https://github.com/WinVector/sigr).
 
 ```{r fns}
-
-# Format quality of a linear regerssion in
-# roughly in "APA Style" ( American Psychological Association ).
-# see: http://my.ilstu.edu/~jhkahn/apastats.html
-#      https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf
-# Not linking direclty to the style guide as they charge for it.
-#
-formatAPAR2 <- function(FValue,numdf,dendf,
-                        pLargeCutoff=0.05,
-                        pSmallCutoff=1.0e-5) {
-  Funscaled <- FValue*(numdf/dendf)
-  R2 <- 1 - 1/(Funscaled+1)
-  pValue <-  stats::pf(FValue,
-                       numdf, 
-                       dendf,
-                       lower.tail=FALSE)
-  if(pValue>=pLargeCutoff) {
-    pString <- '<i>p</i>=n.s.'
-  } else {
-    if(pValue<pSmallCutoff) {
-      pString <- paste0('<i>p</i>&lt;',sprintf('%.3g',pSmallCutoff))
-    } else {
-      pString <- paste0('<i>p</i>&le;',sprintf('%.3g',pValue))
-    }
-  }
-  paste0('<b>F Test</b> summary: (<i>R</i><sup>2</sup>=',sprintf('%.2g',R2),
-         ', <i>F</i>(',numdf,',',dendf,')=',
-         sprintf('%g',FValue),
-         ', ',pString,').')
-}
-
-formatAPAR2fromCite <- function(numdf,dendf,FValue,
-                                pLargeCutoff=0.05,
-                                pSmallCutoff=1.0e-5) {
-  formatAPAR2(FValue,numdf,dendf,pLargeCutoff,pSmallCutoff)
-}
-
-# Format from model.
-formatLinearRegressionModelAPAR2 <- function(linearRegressionModel,
-                                             pLargeCutoff=0.05,
-                                             pSmallCutoff=1.0e-5) {
-  fitSummary <- summary(linearRegressionModel)
-  fstats <- fitSummary$fstatistic
-  FValue <- fstats[['value']]
-  numdf <-  fstats[['numdf']]
-  dendf <- fstats[['dendf']]
-  formatAPAR2(FValue,numdf,dendf,pLargeCutoff,pSmallCutoff)
-}
-
-# Format from data.
-formatLinearRegressionFitAPAR2 <- function(predictions,y,nParameters,
-                                           meany=mean(y),
-                                           pLargeCutoff=0.05,
-                                           pSmallCutoff=1.0e-5) {
-  n <- length(y)
-  rss1 <- sum((y-meany)^2)
-  rss2 <- sum((y-predictions)^2)
-  p1 <- 1
-  p2 <- 1 + nParameters
-  FValue = ((rss1-rss2)/(p2-p1))/(rss2/(n-p2))
-  formatAPAR2(FValue,p2-p1,n-p2,pLargeCutoff,pSmallCutoff)
-}
+library('sigr') # devtools::install_github('WinVector/sigr')
 ```
 
 Example showing we can get the items reported by `summary(model)` into one
@@ -90,20 +29,20 @@ print(summary(model))
 Examples showing how to get the summary from the model.
 
 ```{r results='asis'}
-formatLinearRegressionModelAPAR2(model)
+formatFTestFromModel(model,pSmallCutoff=1.0e-12)
 ```
 
 Or frome the data.
 
 ```{r results='asis'}
-formatLinearRegressionFitAPAR2(predictions=d$prediction,y=d$y,
-                               nParameters=1,meany=mean(d$y))
+formatFTestFromData(predictions=d$prediction,y=d$y,
+                    pSmallCutoff=1.0e-12)
 ```
 
 Separate extracted example from https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf.
 
 ```{r results='asis'}
-formatAPAR2fromCite(numdf=2,dendf=55,FValue=5.56)
+formatFTest(numdf=2,dendf=55,FValue=5.56)
 ```
 
 Looks like statCheck checks the p-value, but not the R-squared.

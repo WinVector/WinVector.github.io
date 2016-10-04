@@ -122,60 +122,9 @@ $(document).ready(function () {
 </div>
 
 
-<p>Examples for <a href="http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/">Proofing statistics in papers</a>.</p>
-<pre class="r"><code># Format quality of a linear regerssion in
-# roughly in &quot;APA Style&quot; ( American Psychological Association ).
-# see: http://my.ilstu.edu/~jhkahn/apastats.html
-#      https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf
-# Not linking direclty to the style guide as they charge for it.
-#
-formatAPAR2 &lt;- function(FValue,numdf,dendf,
-                                        pCutOff=1.0e-5) {
-  Funscaled &lt;- FValue*(numdf/dendf)
-  R2 &lt;- 1 - 1/(Funscaled+1)
-  pValue &lt;-  stats::pf(FValue,
-                       numdf, 
-                       dendf,
-                       lower.tail=FALSE)
-  if(pValue&lt;pCutOff) {
-    pString &lt;- paste0('&lt;i&gt;p&lt;/i&gt;&amp;lt;',sprintf('%.3g',pCutOff))
-  } else {
-    pString &lt;- paste0('&lt;i&gt;p&lt;/i&gt;&amp;le;',sprintf('%.3g',pValue))
-  }
-  paste0('&lt;b&gt;F Test&lt;/b&gt; summary: (&lt;i&gt;R&lt;/i&gt;&lt;sup&gt;2&lt;/sup&gt;=',sprintf('%.2g',R2),
-         ', &lt;i&gt;F&lt;/i&gt;(',numdf,',',dendf,')=',
-         sprintf('%g',FValue),
-         ', ',pString,').')
-}
-
-formatAPAR2fromCite &lt;- function(numdf,dendf,FValue,
-                                        pCutOff=1.0e-5) {
-  formatAPAR2(FValue,numdf,dendf,pCutOff)
-}
-
-# Format from model.
-formatLinearRegressionModelAPAR2 &lt;- function(linearRegressionModel,
-                                             pCutOff=1.0e-5) {
-  fitSummary &lt;- summary(linearRegressionModel)
-  fstats &lt;- fitSummary$fstatistic
-  FValue &lt;- fstats[['value']]
-  numdf &lt;-  fstats[['numdf']]
-  dendf &lt;- fstats[['dendf']]
-  formatAPAR2(FValue,numdf,dendf,pCutOff)
-}
-
-# Format from data.
-formatLinearRegressionFitAPAR2 &lt;- function(predictions,y,nParameters,
-                                           meany=mean(y),
-                                           pCutOff=1.0e-5) {
-  n &lt;- length(y)
-  rss1 &lt;- sum((y-meany)^2)
-  rss2 &lt;- sum((y-predictions)^2)
-  p1 &lt;- 1
-  p2 &lt;- 1 + nParameters
-  FValue = ((rss1-rss2)/(p2-p1))/(rss2/(n-p2))
-  formatAPAR2(FValue,p2-p1,n-p2,pCutOff)
-}</code></pre>
+<p>Examples for <a href="http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/">Proofing statistics in papers</a>. Uses formatting <a href="https://cran.r-project.org">R</a> package <a href="https://github.com/WinVector/sigr">sigr</a>.</p>
+<pre class="r"><code>library('sigr') # devtools::install_github('WinVector/sigr')</code></pre>
+<pre><code>## Loading required package: knitr</code></pre>
 <p>Example showing we can get the items reported by <code>summary(model)</code> into one well-behaved string.</p>
 <pre class="r"><code>library('ggplot2')
 d &lt;- data.frame(x=0.2*(1:20))
@@ -206,14 +155,14 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 ## Multiple R-squared:  0.8601, Adjusted R-squared:  0.8524 
 ## F-statistic: 110.7 on 1 and 18 DF,  p-value: 4.062e-09</code></pre>
 <p>Examples showing how to get the summary from the model.</p>
-<pre class="r"><code>formatLinearRegressionModelAPAR2(model)</code></pre>
-<p>[1] “<b>F Test</b> summary: (<i>R</i><sup>2</sup>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
+<pre class="r"><code>formatFTestFromModel(model,pSmallCutoff=1.0e-12)</code></pre>
+<p>[1] “<b>F Test</b> summary: (<i>R</i><sup>2</sup>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>≤4.06e-09).”</p>
 <p>Or frome the data.</p>
-<pre class="r"><code>formatLinearRegressionFitAPAR2(predictions=d$prediction,y=d$y,
-                               nParameters=1,meany=mean(d$y))</code></pre>
-<p>[1] “<b>F Test</b> summary: (<i>R</i><sup>2</sup>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
+<pre class="r"><code>formatFTestFromData(predictions=d$prediction,y=d$y,
+                    pSmallCutoff=1.0e-12)</code></pre>
+<p>[1] “<b>F Test</b> summary: (<i>R</i><sup>2</sup>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>≤4.06e-09).”</p>
 <p>Separate extracted example from <a href="https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf" class="uri">https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf</a>.</p>
-<pre class="r"><code>formatAPAR2fromCite(numdf=2,dendf=55,FValue=5.56)</code></pre>
+<pre class="r"><code>formatFTest(numdf=2,dendf=55,FValue=5.56)</code></pre>
 <p>[1] “<b>F Test</b> summary: (<i>R</i><sup>2</sup>=0.17, <i>F</i>(2,55)=5.56, <i>p</i>≤0.00632).”</p>
 <p>Looks like statCheck checks the p-value, but not the R-squared.</p>
 <pre class="r"><code>library('statcheck')
@@ -226,7 +175,7 @@ s &lt;- statcheck('(R2=.38, F(2,55)=5.56, p &lt; .01)')</code></pre>
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Sun Oct  2 16:07:37 2016 -->
+<!-- Mon Oct  3 17:47:01 2016 -->
 <table border="1">
 <tr>
 <th>
@@ -366,7 +315,7 @@ APAfactor
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Sun Oct  2 16:07:37 2016 -->
+<!-- Mon Oct  3 17:47:01 2016 -->
 <table border="1">
 <tr>
 <th>
