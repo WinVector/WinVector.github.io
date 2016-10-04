@@ -55,10 +55,10 @@ s <- statcheck('(R2=.38, F(2,55)=5.56, p < .01)')
 print(xtable::xtable(t(s)),type='html')
 ```
 
-Check ours (had to change <code>%le;</code> to "<" to be seen).
+Check ours.
 
 ```{r}
-s <- statcheck('(R2=0.17, F(2,55)=5.56, p<0.00632)')
+s <- statcheck('(R2=0.17, F(2,55)=5.56, p=0.00632)')
 ```
 ```{r results='asis', comment=NA}
 print(xtable::xtable(t(s)),type='html')
