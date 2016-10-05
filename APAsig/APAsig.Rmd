@@ -29,20 +29,20 @@ print(summary(model))
 Examples showing how to get the summary from the model.
 
 ```{r results='asis'}
-formatFTestFromModel(model,pSmallCutoff=1.0e-12)
+formatFTest(model,pSmallCutoff=1.0e-12)
 ```
 
 Or frome the data.
 
 ```{r results='asis'}
-formatFTestFromData(predictions=d$prediction,y=d$y,
+formatFTest(d,'prediction','y',
                     pSmallCutoff=1.0e-12)
 ```
 
 Separate extracted example from https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf.
 
 ```{r results='asis'}
-formatFTest(numdf=2,dendf=55,FValue=5.56)
+formatFTestImpl(numdf=2,dendf=55,FValue=5.56)
 ```
 
 Looks like statCheck checks the p-value, but not the R-squared.

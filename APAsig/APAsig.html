@@ -154,19 +154,19 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 ## Multiple R-squared:  0.8601, Adjusted R-squared:  0.8524 
 ## F-statistic: 110.7 on 1 and 18 DF,  p-value: 4.062e-09</code></pre>
 <p>Examples showing how to get the summary from the model.</p>
-<pre class="r"><code>formatFTestFromModel(model,pSmallCutoff=1.0e-12)</code></pre>
+<pre class="r"><code>formatFTest(model,pSmallCutoff=1.0e-12)</code></pre>
 <p>$test [1] “F Test”</p>
 <p>$numdf [1] 1</p>
 <p>$dendf [1] 18</p>
 <p>$FValue [1] 110.7003</p>
 <p>$format [1] “html”</p>
 <p>$pLargeCutoff [1] 0.05</p>
-<p>$pSmallCutoff [1] 1e-12</p>
+<p>$pSmallCutoff [1] 1e-05</p>
 <p>$R2 [1] 0.8601402</p>
 <p>$pValue [1] 4.062177e-09</p>
-<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>=4.06e-09).”</p>
+<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
 <p>Or frome the data.</p>
-<pre class="r"><code>formatFTestFromData(predictions=d$prediction,y=d$y,
+<pre class="r"><code>formatFTest(d,'prediction','y',
                     pSmallCutoff=1.0e-12)</code></pre>
 <p>$test [1] “F Test”</p>
 <p>$numdf [1] 1</p>
@@ -174,12 +174,12 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 <p>$FValue [1] 110.7003</p>
 <p>$format [1] “html”</p>
 <p>$pLargeCutoff [1] 0.05</p>
-<p>$pSmallCutoff [1] 1e-12</p>
+<p>$pSmallCutoff [1] 1e-05</p>
 <p>$R2 [1] 0.8601402</p>
 <p>$pValue [1] 4.062177e-09</p>
-<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>=4.06e-09).”</p>
+<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
 <p>Separate extracted example from <a href="https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf" class="uri">https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf</a>.</p>
-<pre class="r"><code>formatFTest(numdf=2,dendf=55,FValue=5.56)</code></pre>
+<pre class="r"><code>formatFTestImpl(numdf=2,dendf=55,FValue=5.56)</code></pre>
 <p>$test [1] “F Test”</p>
 <p>$numdf [1] 2</p>
 <p>$dendf [1] 55</p>
@@ -201,7 +201,7 @@ s &lt;- statcheck('(R2=.38, F(2,55)=5.56, p &lt; .01)')</code></pre>
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Tue Oct  4 10:47:07 2016 -->
+<!-- Tue Oct  4 22:50:33 2016 -->
 <table border="1">
 <tr>
 <th>
@@ -341,7 +341,7 @@ APAfactor
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
 <!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Tue Oct  4 10:47:07 2016 -->
+<!-- Tue Oct  4 22:50:34 2016 -->
 <table border="1">
 <tr>
 <th>
