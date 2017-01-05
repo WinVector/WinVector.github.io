@@ -85,7 +85,8 @@ treatmentsC &lt;-<span class="st"> </span><span class="kw">designTreatmentsC</sp
                                  <span class="dt">verbose=</span> <span class="ot">FALSE</span>)
 
 fileName =<span class="st"> </span><span class="kw">paste0</span>(<span class="kw">tempfile</span>(<span class="kw">c</span>(<span class="st">'vtreatPlan'</span>)), <span class="st">'.RDS'</span>)
-<span class="kw">saveRDS</span>(treatmentsC,fileName)</code></pre></div>
+<span class="kw">saveRDS</span>(treatmentsC,fileName)
+<span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">c</span>(<span class="st">'treatmentsC'</span>))</code></pre></div>
 <p>And then to restore and use.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;vtreat&quot;</span>)
 treatmentsC &lt;-<span class="st"> </span><span class="kw">readRDS</span>(fileName)
@@ -99,7 +100,7 @@ dTestCTreated &lt;-<span class="st"> </span><span class="kw">prepare</span>(trea
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">con &lt;-<span class="st"> </span><span class="ot">NULL</span>
 if (<span class="kw">requireNamespace</span>(<span class="st">'RSQLite'</span>, <span class="dt">quietly =</span> <span class="ot">TRUE</span>)) {
   <span class="kw">library</span>(<span class="st">&quot;RSQLite&quot;</span>)
-  con &lt;-<span class="st"> </span><span class="kw">dbConnect</span>(<span class="dt">drv=</span>RSQLite::<span class="kw">SQLite</span>(), <span class="dt">dbname=</span><span class="st">&quot;:memory:&quot;</span>)
+  con &lt;-<span class="st"> </span><span class="kw">dbConnect</span>(<span class="dt">drv=</span><span class="kw">SQLite</span>(), <span class="dt">dbname=</span><span class="st">&quot;:memory:&quot;</span>)
   <span class="co"># create table</span>
   <span class="kw">dbGetQuery</span>(con, <span class="st">'create table if not exists treatments </span>
 <span class="st">                 (key varchar(200) primary key, </span>
@@ -112,7 +113,8 @@ if (<span class="kw">requireNamespace</span>(<span class="st">'RSQLite'</span>, 
   <span class="kw">dbGetPreparedQuery</span>(con, 
                      <span class="st">'insert into treatments (key, treatment) values (:key, :treatment)'</span>,
                      <span class="dt">bind.data=</span>df)
-}</code></pre></div>
+}
+<span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">c</span>(<span class="st">'treatmentsC'</span>,<span class="st">'dTestCTreated'</span>))</code></pre></div>
 <p>And we can read the treatment back in as follows.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if(!<span class="kw">is.null</span>(con)) {
   treatmentsList &lt;-<span class="st"> </span><span class="kw">lapply</span>(
