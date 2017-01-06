@@ -94,6 +94,7 @@ button.code-folding-btn:focus {
 </style>
 
 
+
 <div class="container-fluid main-container">
 
 <!-- tabsets -->
@@ -161,10 +162,10 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 <p>$FValue [1] 110.7003</p>
 <p>$format [1] “html”</p>
 <p>$pLargeCutoff [1] 0.05</p>
-<p>$pSmallCutoff [1] 1e-05</p>
+<p>$pSmallCutoff [1] 1e-12</p>
 <p>$R2 [1] 0.8601402</p>
 <p>$pValue [1] 4.062177e-09</p>
-<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
+<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=1.1e+02, <i>p</i>=4.1e-09).”</p>
 <p>Or frome the data.</p>
 <pre class="r"><code>formatFTest(d,'prediction','y',
                     pSmallCutoff=1.0e-12)</code></pre>
@@ -174,10 +175,10 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 <p>$FValue [1] 110.7003</p>
 <p>$format [1] “html”</p>
 <p>$pLargeCutoff [1] 0.05</p>
-<p>$pSmallCutoff [1] 1e-05</p>
+<p>$pSmallCutoff [1] 1e-12</p>
 <p>$R2 [1] 0.8601402</p>
 <p>$pValue [1] 4.062177e-09</p>
-<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=110.7, <i>p</i>&lt;1e-05).”</p>
+<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.86, <i>F</i>(1,18)=1.1e+02, <i>p</i>=4.1e-09).”</p>
 <p>Separate extracted example from <a href="https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf" class="uri">https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf</a>.</p>
 <pre class="r"><code>formatFTestImpl(numdf=2,dendf=55,FValue=5.56)</code></pre>
 <p>$test [1] “F Test”</p>
@@ -189,7 +190,7 @@ ggplot(data=d,aes(x=prediction,y=y)) +
 <p>$pSmallCutoff [1] 1e-05</p>
 <p>$R2 [1] 0.1681791</p>
 <p>$pValue [1] 0.006321509</p>
-<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.17, <i>F</i>(2,55)=5.56, <i>p</i>=0.00632).”</p>
+<p>$formatStr [1] “<b>F Test</b> summary: (<i>R<sup>2</sup></i>=0.17, <i>F</i>(2,55)=5.6, <i>p</i>=0.0063).”</p>
 <p>Looks like statCheck checks the p-value, but not the R-squared.</p>
 <pre class="r"><code>library('statcheck')
 s &lt;- statcheck('(R2=.38, F(2,55)=5.56, p &lt; .01)')</code></pre>
@@ -200,8 +201,8 @@ s &lt;- statcheck('(R2=.38, F(2,55)=5.56, p &lt; .01)')</code></pre>
   |                                                                       
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
-<!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Tue Oct  4 22:50:33 2016 -->
+<!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
+<!-- Wed Nov  2 14:42:02 2016 -->
 <table border="1">
 <tr>
 <th>
@@ -340,8 +341,8 @@ APAfactor
   |                                                                       
   |=================================================================| 100%</code></pre>
 <pre class="r"><code>print(xtable::xtable(t(s)),type='html')</code></pre>
-<!-- html table generated in R 3.3.1 by xtable 1.8-2 package -->
-<!-- Tue Oct  4 22:50:34 2016 -->
+<!-- html table generated in R 3.3.2 by xtable 1.8-2 package -->
+<!-- Wed Nov  2 14:42:03 2016 -->
 <table border="1">
 <tr>
 <th>
@@ -483,6 +484,7 @@ APAfactor
 $(document).ready(function () {
   $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
 });
+
 
 </script>
 
