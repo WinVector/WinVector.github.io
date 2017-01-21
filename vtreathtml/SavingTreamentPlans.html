@@ -10,9 +10,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta name="author" content="John Mount, Nina Zumel" />
+<meta name="author" content="John Mount" />
 
-<meta name="date" content="2017-01-04" />
+<meta name="date" content="2017-01-21" />
 
 <title>Saving Treatment Plans</title>
 
@@ -69,8 +69,8 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 
 
 <h1 class="title toc-ignore">Saving Treatment Plans</h1>
-<h4 class="author"><em>John Mount, Nina Zumel</em></h4>
-<h4 class="date"><em>2017-01-04</em></h4>
+<h4 class="author"><em>John Mount</em></h4>
+<h4 class="date"><em>2017-01-21</em></h4>
 
 
 
@@ -109,12 +109,22 @@ if (<span class="kw">requireNamespace</span>(<span class="st">'RSQLite'</span>, 
   df &lt;-<span class="st"> </span><span class="kw">data.frame</span>(
     <span class="dt">key=</span><span class="st">'treatmentsC'</span>, 
     <span class="dt">treatment =</span> <span class="kw">I</span>(<span class="kw">list</span>(<span class="kw">serialize</span>(treatmentsC, <span class="ot">NULL</span>))))
-  <span class="co"># And insert it</span>
-  <span class="kw">dbGetPreparedQuery</span>(con, 
-                     <span class="st">'insert into treatments (key, treatment) values (:key, :treatment)'</span>,
-                     <span class="dt">bind.data=</span>df)
-}
-<span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">c</span>(<span class="st">'treatmentsC'</span>,<span class="st">'dTestCTreated'</span>))</code></pre></div>
+  <span class="co"># Clear any previous version</span>
+  <span class="kw">dbGetQuery</span>(con, 
+               <span class="st">&quot;delete from treatments where key='treatmentsC'&quot;</span>)
+  <span class="co"># insert treatmentplan</span>
+  <span class="co"># depreciated</span>
+  <span class="co"># dbGetPreparedQuery(con,</span>
+  <span class="co">#                    'insert into treatments (key, treatment) values (:key, :treatment)',</span>
+  <span class="co">#                    bind.data=df)</span>
+  <span class="kw">dbGetQuery</span>(con, 
+             <span class="st">'insert into treatments (key, treatment) values (:key, :treatment)'</span>,
+             <span class="dt">params=</span>df)
+  constr &lt;-<span class="st"> </span><span class="kw">paste</span>(<span class="kw">capture.output</span>(<span class="kw">print</span>(con)),<span class="dt">collapse=</span><span class="st">'</span><span class="ch">\n</span><span class="st">'</span>)
+  <span class="kw">paste</span>(<span class="st">'saved to db: '</span>, constr)
+}</code></pre></div>
+<pre><code>## [1] &quot;saved to db:  &lt;SQLiteConnection&gt;\n  Path: :memory:\n  Extensions: TRUE&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">rm</span>(<span class="dt">list=</span> <span class="kw">c</span>(<span class="st">'treatmentsC'</span>, <span class="st">'dTestCTreated'</span>))</code></pre></div>
 <p>And we can read the treatment back in as follows.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">if(!<span class="kw">is.null</span>(con)) {
   treatmentsList &lt;-<span class="st"> </span><span class="kw">lapply</span>(
@@ -124,7 +134,13 @@ if (<span class="kw">requireNamespace</span>(<span class="st">'RSQLite'</span>, 
   treatmentsC &lt;-<span class="st"> </span>treatmentsList[[<span class="dv">1</span>]]
   <span class="kw">dbDisconnect</span>(con)
   dTestCTreated &lt;-<span class="st"> </span><span class="kw">prepare</span>(treatmentsC, dTestC, <span class="dt">pruneSig=</span> <span class="kw">c</span>())
+  <span class="kw">print</span>(dTestCTreated)
 }</code></pre></div>
+<pre><code>##   x_lev_NA x_lev_x.a x_lev_x.b    x_catP     x_catB z_clean z_isBAD
+## 1        0         1         0 0.4285714 -0.9807709    10.0       0
+## 2        0         0         1 0.2857143 -0.2876737    20.0       0
+## 3        0         0         0 0.0000000  0.0000000    30.0       0
+## 4        1         0         0 0.2857143  9.6158638     3.2       1</code></pre>
 
 
 
