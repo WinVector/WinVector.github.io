@@ -1,0 +1,22 @@
+
+Zipf’s word frequency law in natural language: a critical review and future directions
+Steven T. Piantadosi June 2, 2015
+
+"The apparent simplicity of the distribution is an artifact of how the distribution is plotted. The standard method for visualizing the word frequency distribution is to count how often each word occurs in a corpus, and sort the word frequency counts by decreasing magnitude. The frequency f(r) of the r’th most frequent word is then plotted against the frequency rank r, yielding typically a mostly linear curve on a log-log plot (Zipf, 1936), corresponding to roughly a power law distribution5. This approach— though essentially universal since Zipf—commits a serious error of data visualization. In estimating the frequency-rank relationship this way, the frequency f(r) and frequency rank r of a word are estimated on the same corpus, leading to correlated errors between the x-location r and y-location f(r) of points in the plot."
+
+
+Similarly, there have also been somewhat more deflationary universal explanations. Remarkably, Belevitch (1959), showed how a Zipfian distribution could arise from a first-order approximation to most common distri- butions; he then showed how the Zipf-Mandelbrot law arose from a second-order approximation. In this kind of account, Zipf’s law could essentially be a kind of statistical artifact of using a frequency/frequency-rank plot, when the real underlying distribution of frequencies is any of a large class of distributions.
+
+http://www.csl.sri.com/users/neumann/#12a
+
+
+powerlaws.pdf from
+http://www-personal.umich.edu/~mejn/courses/2006/cmplxsys899/
+Complex Systems 899, Winter 2006: Theory of Complex Systems
+Instructor: Mark Newman
+Email: mejn@umich.edu
+(has cumulative probability graph fix)
+
+
+http://www.csl.sri.com/users/neumann/belevitch.pdf
+

@@ -1,0 +1,66 @@
+---
+title: "APASig"
+author: "Win-Vector LLC"
+date: "October 2, 2016"
+output: html_document
+---
+
+Examples for [Proofing statistics in papers](http://www.win-vector.com/blog/2016/10/proofing-statistics-in-papers/).  Uses formatting [R](https://cran.r-project.org) package [sigr](https://github.com/WinVector/sigr). Please see [here](https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf) and [here](http://my.ilstu.edu/~jhkahn/apastats.html) for some notes.
+
+```{r fns}
+library('sigr') # devtools::install_github('WinVector/sigr')
+```
+
+Example showing we can get the items reported by `summary(model)` into one
+well-behaved string.
+
+```{r demo}
+library('ggplot2')
+d <- data.frame(x=0.2*(1:20))
+d$y <- cos(d$x)
+model <- lm(y~x,data=d)
+d$prediction <- predict(model,newdata=d)
+
+ggplot(data=d,aes(x=prediction,y=y)) +
+  geom_point() + geom_abline() 
+print(summary(model))
+```
+
+Examples showing how to get the summary from the model.
+
+```{r results='asis'}
+formatFTest(model,pSmallCutoff=1.0e-12)
+```
+
+Or frome the data.
+
+```{r results='asis'}
+formatFTest(d,'prediction','y',
+                    pSmallCutoff=1.0e-12)
+```
+
+Separate extracted example from https://web2.uconn.edu/writingcenter/pdf/Reporting_Statistics.pdf.
+
+```{r results='asis'}
+formatFTestImpl(numdf=2,dendf=55,FValue=5.56)
+```
+
+Looks like statCheck checks the p-value, but not the R-squared.
+
+```{r}
+library('statcheck')
+s <- statcheck('(R2=.38, F(2,55)=5.56, p < .01)')
+```
+```{r results='asis', comment=NA}
+print(xtable::xtable(t(s)),type='html')
+```
+
+Check ours.
+
+```{r}
+s <- statcheck('(R2=0.17, F(2,55)=5.56, p=0.00632)')
+```
+```{r results='asis', comment=NA}
+print(xtable::xtable(t(s)),type='html')
+```
+

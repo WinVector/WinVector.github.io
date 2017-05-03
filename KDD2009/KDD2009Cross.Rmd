@@ -21,6 +21,7 @@ library('parallel')
 library('gbm')
 #library('class')
 library('ggplot2')
+library('randomForest')
 
 
 # load the data as in the book
@@ -113,36 +114,62 @@ print(selvars)
 # prepare plotting frames
 treatedTrainP = treatedTrain[, yName, drop=FALSE]
 treatedTestP = treatedTest[, yName, drop=FALSE]
+```
 
+GBM
 
+```{r kddgbm}
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
+mname='gbm'
+print(date())
+print(paste(mname,length(selvars)))
+modelGBMs = gbm(as.formula(formulaS),
+                data=treatedTrain,
+                distribution='bernoulli',
+                n.trees=1000,
+                interaction.depth=3,
+                keep.data=FALSE,
+                cv.folds=5)
+#print(modelGBMs)
+#print(summary(modelGBMs))
+nTrees = gbm.perf(modelGBMs)
+treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrain,type='response',
+                                 n.trees=nTrees) 
+treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
+                                n.trees=nTrees)
 
-  mname='gbm'
-  print("*****************************")
-  print(date())
-  print(paste(mname,length(selvars)))
-    modelGBMs = gbm(as.formula(formulaS),
-                    data=treatedTrain,
-                    distribution='bernoulli',
-                    n.trees=1000,
-                    interaction.depth=3,
-                    keep.data=FALSE,
-                    cv.folds=5)
-    #print(modelGBMs)
-    #print(summary(modelGBMs))
-    nTrees = gbm.perf(modelGBMs)
-    treatedTrainP[[mname]] = predict(modelGBMs,newdata=treatedTrain,type='response',
-                                     n.trees=nTrees) 
-    treatedTestP[[mname]] = predict(modelGBMs,newdata=treatedTest,type='response',
-                                    n.trees=nTrees)
+t2 = paste(mname,'test data')
+print(DoubleDensityPlot(treatedTestP, mname, yName, 
+                        title=t2))
+print(ROCPlot(treatedTestP, mname, yName, yTarget,
+              title=t2))
+print(date())
+```
 
-  t2 = paste(mname,'test data')
-  print(DoubleDensityPlot(treatedTestP, mname, yName, 
-                          title=t2))
-  print(ROCPlot(treatedTestP, mname, yName, 
-                title=t2))
-  print(date())
-  print("*****************************")
+randomForest
 
+```{r kddrf}
+print(date())
+mname <- 'randomForest'
+model <- randomForest(x=treatedTrain[,selvars,drop=FALSE],
+                      y=as.factor(as.character(treatedTrain[[yName]])))
+print(model)
+treatedTrainP[[mname]]  <- predict(model,newdata=treatedTrain[,selvars,drop=FALSE],
+                                  type='prob')[,'TRUE',drop=TRUE]
+treatedTestP[[mname]]  <- predict(model,newdata=treatedTest[,selvars,drop=FALSE],
+                                  type='prob')[,'TRUE',drop=TRUE]
+t2 = paste(mname,'test data')
+print(DoubleDensityPlot(treatedTestP, mname, yName, 
+                        title=t2))
+print(ROCPlot(treatedTestP, mname, yName, yTarget,
+              title=t2))
+print(date())
+```
 
+save for mutual plots
+
+```{r savepred}
+saveRDS(list(treatedTrainP=treatedTrainP,
+             treatedTestP=treatedTestP),
+        file='KDD2009preds.RDS')
 ```

@@ -1,0 +1,80 @@
+---
+title: "KDD2009PlotRes"
+author: "Win-Vector LLC"
+date: "October 16, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE, results='hide', messages=FALSE, warnings=FALSE}
+library('sigr')    # see https://github.com/WinVector/sigr
+library('WVPlots') # see https://github.com/WinVector/WVPlots
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(25325)
+cl <- c()
+ncore <- parallel::detectCores()
+cl <- parallel::makeCluster(ncore)
+```
+
+```{r}
+d <- readRDS(file='KDD2009preds.RDS') # from KDD2009Cross.Rmd
+set.seed(25325)
+treatedTrainP <- d$treatedTrainP
+treatedTestP <- d$treatedTestP
+WVPlots::ROCPlotPair(treatedTrainP,'gbm','randomForest','churn',TRUE,
+                     'AUC comparison on train',
+                     nrep=1000,
+                     parallelCluster = cl)
+
+
+testD <- WVPlots::ROCPlotPair(treatedTestP,'gbm','randomForest','churn',TRUE,
+                     'AUC comparison on test',
+                     nrep=1000,
+                     parallelCluster = cl, returnScores = TRUE)
+print(testD$plot)
+statsPaired <- testD$aucsig
+print(statsPaired$eFreq)  # fraction of time we saw reversal
+print(statsPaired$eValue) # Student probability of reversal
+statsPaired$observedScore1-statsPaired$observedScore2
+WVPlots::ShadedDensity(statsPaired$resampledScores, "diff", 0, 
+                       title="paired differences in resampled test AUCs") +
+   geom_vline(xintercept = statsPaired$observedScore1-statsPaired$observedScore2)
+WVPlots::PlotDistCountNormal(statsPaired$resampledScores, "diff",'empirical and normal differences') + 
+  geom_vline(xintercept = 0, color='red') + 
+  geom_vline(xintercept = statsPaired$observedScore1-statsPaired$observedScore2,color='darkgreen')
+WVPlots::PlotDistDensityNormal(statsPaired$resampledScores, "diff",'empirical and normal differences') + 
+  geom_vline(xintercept = 0, color='red') + 
+  geom_vline(xintercept = statsPaired$observedScore1-statsPaired$observedScore2,color='darkgreen')
+
+# posterior-like scores by resampling
+statsGBM <- sigr::formatAUCresample(treatedTestP,'gbm','churn',TRUE,
+                                    returnScores=TRUE,parallelCluster=cl)
+resamples <- data.frame(AUC=statsGBM$eScore$resampledScores,
+                        model='gbm',
+                        stringsAsFactors=FALSE)
+statsRF <- sigr::formatAUCresample(treatedTestP,'randomForest','churn',TRUE,
+                                    returnScores=TRUE,parallelCluster=cl)
+resamples <- rbind(resamples,
+                   data.frame(AUC=statsRF$eScore$resampledScores,
+                              model='randomForest',
+                              stringsAsFactors=FALSE))
+observed <- data.frame(model=c('gbm','randomForest'),
+                       AUC=c(statsGBM$eScore$observedScore,statsRF$eScore$observedScore),
+                       stringsAsFactors = FALSE)
+ggplot() + 
+  geom_density(data=resamples,mapping=aes(x=AUC,color=model)) + 
+  geom_vline(data=observed,mapping=aes(xintercept=AUC,color=model)) +
+  ggtitle("resampled test AUCs")
+
+statsGBM$eScore$observedScore
+statsRF$eScore$observedScore
+statsGBM$eScore$observedScore - statsRF$eScore$observedScore
+aggregate(AUC~model,data=resamples,FUN=mean)
+aggregate(AUC~model,data=resamples,FUN=median)
+```
+
+```{r cleanup, include=FALSE}
+if(!is.null(cl)) {
+  parallel::stopCluster(cl)
+  cl <- NULL
+}
+```
