@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="John Mount" />
+
+<meta name="date" content="2017-06-11" />
+
+<title>Join Controller</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Join Controller</h1>
+<h4 class="author"><em>John Mount</em></h4>
+<h4 class="date"><em>2017-06-11</em></h4>
+
+
+
+<div id="replyr-join-controller" class="section level4">
+<h4><a href="https://github.com/WinVector/replyr"><code>replyr</code></a> join controller</h4>
+<p>When working on real world predictive modeling tasks in production the ability to join data and document how you join data is paramount. One of the reasons is there are very strong reasons to organize data in something resembling one of the <a href="https://en.wikipedia.org/wiki/Database_normalization">Codd normal forms</a>. However, for machine learning we need a fully denormalized for (all columns populated into a single to ready to go row, no matter what their provenance, keying, or stride).</p>
+<p>This is not an essential difficulty as in relational data systems moving between these forms can be done by joining, so data stores such as <a href="https://www.postgresql.org">PostgreSQL</a> or <a href="https://spark.apache.org">Apache Spark</a> as designed to provide powerful join capabilities.</p>
+<p>However there are some inessential (in that they can be avoided) but substantial difficulties in managing and documenting long join plans. It is not uncommon to have to join 7 or more tables to get an analysis ready. Doing this directly in <a href="https://www.r-project.org"><code>R</code></a> code leads to hard to manage, hard to inspect, and hard to share spaghetti code (even when using a high-level data abstraction such as <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>).</p>
+<p>The fix is applying the following observations:</p>
+<ul>
+<li>Anything long, repetitive, and tedious should not be done directly.</li>
+<li>Moving specification out of code and into data is of huge benefit.</li>
+</ul>
+<p>To supply such a solution the development version of <a href="https://github.com/WinVector/replyr"><code>replyr</code></a> now supplies a item called a “join controller” under the method <code>replyr::executeLeftJoinPlan()</code>.</p>
+<p>This is easiest to explain through a concrete example, which is what we will do here.</p>
+<p>First let’s load the needed packages.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load packages</span>
+<span class="kw">suppressPackageStartupMessages</span>(<span class="kw">library</span>(<span class="st">&quot;dplyr&quot;</span>))
+<span class="kw">packageVersion</span>(<span class="st">&quot;dplyr&quot;</span>)</code></pre></div>
+<pre><code>## [1] '0.7.0'</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;replyr&quot;</span>)
+<span class="kw">packageVersion</span>(<span class="st">&quot;replyr&quot;</span>)</code></pre></div>
+<pre><code>## [1] '0.3.902'</code></pre>
+<p>Now let’s load some notional example data. For our example we have:</p>
+<ul>
+<li>One primary table of measurements (called “<code>meas1</code>”) keyed by <code>id</code> and <code>date</code>.</li>
+<li>A fact table that maps <code>id</code>s to patient names (called “<code>names</code>”, and keyed by <code>id</code>).</li>
+<li>A second table of additional measurements (called “<code>meas2</code>”) That we consider “nice to have.”</li>
+</ul>
+<p>The data is given below:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load notional example data</span>
+my_db &lt;-<span class="st"> </span>dplyr::<span class="kw">src_sqlite</span>(<span class="st">&quot;:memory:&quot;</span>, 
+                           <span class="dt">create =</span> <span class="ot">TRUE</span>)
+<span class="co"># example data</span>
+meas1 &lt;-<span class="st"> </span><span class="kw">replyr_copy_to</span>(my_db,
+                        <span class="kw">data.frame</span>(<span class="dt">id=</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>),
+                                   <span class="dt">date=</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>),
+                                   <span class="dt">weight=</span> <span class="kw">c</span>(<span class="dv">200</span>, <span class="dv">180</span>, <span class="dv">98</span>, <span class="dv">120</span>),
+                                   <span class="dt">height=</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">54</span>, <span class="dv">12</span>, <span class="dv">14</span>)),
+                        <span class="st">'meas1'</span>)
+names &lt;-<span class="st"> </span><span class="kw">replyr_copy_to</span>(my_db,
+                        <span class="kw">data.frame</span>(<span class="dt">id=</span> <span class="kw">seq_len</span>(<span class="kw">length</span>(letters)),
+                                   <span class="dt">name=</span> letters,
+                                   <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>),
+                        <span class="st">'names'</span>)
+meas2 &lt;-<span class="st"> </span><span class="kw">replyr_copy_to</span>(my_db,
+                        <span class="kw">data.frame</span>(<span class="dt">pid=</span> <span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">3</span>),
+                                   <span class="dt">date=</span> <span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">2</span>),
+                                   <span class="dt">weight=</span> <span class="kw">c</span>(<span class="dv">105</span>, <span class="dv">110</span>),
+                                   <span class="dt">width=</span> <span class="dv">1</span>),
+                        <span class="st">'meas2'</span>)</code></pre></div>
+<p>An important (and very neglected) step in data science tasks is documenting roles of tables, especially their key-structure (which we also call “stride” in the sense it describes how you move from row to row). <code>replyr::tableDesription()</code> is a function that builds an initial description of the tables.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># get the initial description of table defs</span>
+tDesc &lt;-<span class="st"> </span><span class="kw">rbind</span>(<span class="kw">tableDesription</span>(<span class="st">'meas1'</span>, meas1),
+               <span class="kw">tableDesription</span>(<span class="st">'names'</span>, names),
+               <span class="kw">tableDesription</span>(<span class="st">'meas2'</span>, meas2))
+<span class="kw">print</span>(tDesc)</code></pre></div>
+<pre><code>## # A tibble: 3 x 5
+##   tableName        handle   columns      keys isEmpty
+##       &lt;chr&gt;        &lt;list&gt;    &lt;list&gt;    &lt;list&gt;   &lt;lgl&gt;
+## 1     meas1 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;chr [4]&gt;   FALSE
+## 2     names &lt;S3: tbl_dbi&gt; &lt;chr [2]&gt; &lt;chr [2]&gt;   FALSE
+## 3     meas2 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;chr [4]&gt;   FALSE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(tDesc$columns)</code></pre></div>
+<pre><code>## [[1]]
+## [1] &quot;id&quot;     &quot;date&quot;   &quot;weight&quot; &quot;height&quot;
+## 
+## [[2]]
+## [1] &quot;id&quot;   &quot;name&quot;
+## 
+## [[3]]
+## [1] &quot;pid&quot;    &quot;date&quot;   &quot;weight&quot; &quot;width&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(tDesc$keys)</code></pre></div>
+<pre><code>## [[1]]
+##       id     date   weight   height 
+##     &quot;id&quot;   &quot;date&quot; &quot;weight&quot; &quot;height&quot; 
+## 
+## [[2]]
+##     id   name 
+##   &quot;id&quot; &quot;name&quot; 
+## 
+## [[3]]
+##      pid     date   weight    width 
+##    &quot;pid&quot;   &quot;date&quot; &quot;weight&quot;  &quot;width&quot;</code></pre>
+<p><code>tableDesription()</code> is a table that holds the following:</p>
+<ul>
+<li><code>tableName</code>: the abstract name we wish to use for this table.</li>
+<li><code>handle</code>: the actual data handle (either a <code>data.frame</code> or a handle to a remote data source such as <code>PostgreSQL</code> or <code>Spark</code>). Notice in this case it is a “<code>tbl_dbi</code>”.</li>
+<li><code>columns</code>: the list of columns in the table.</li>
+<li><code>keys</code>: a named list mapping abstract key names to table column names. The set of keys together is supposed to uniquely identify rows.</li>
+<li><code>isEmpty</code>: an advisory column indicating if any rows were present when we looked.</li>
+</ul>
+<p>The <code>tableName</code> is “abstract” in that it is not only used to discuss tables. The data is actually found through the handle. This is critical in processes where we may need to run the same set of joins twice on different sets of tables (such as building a machine learning model, and then latter applying the model to new data).</p>
+<p>In the above the <code>keys</code> column is wrong in that it claims every column of each table is a table key. The intent is: the user should edit this table and share it (minus the <code>handle</code> column) with partners for criticism. In our case we declare the primary of the measurement tables to be <code>PatientID</code> and <code>MeasurementDate</code>, and the primary key of the names table to be <code>PatientID</code>. Notice we do this by specifying names lists or vectors mapping desired key names to names actually used in the tables.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># declare keys (and give them consistent names)</span>
+tDesc$keys[[<span class="dv">1</span>]] &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">PatientID=</span> <span class="st">'id'</span>, <span class="dt">MeasurementDate=</span> <span class="st">'date'</span>)
+tDesc$keys[[<span class="dv">2</span>]] &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">PatientID=</span> <span class="st">'id'</span>)
+tDesc$keys[[<span class="dv">3</span>]] &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="dt">PatientID=</span> <span class="st">'pid'</span>, <span class="dt">MeasurementDate=</span> <span class="st">'date'</span>)
+
+<span class="kw">print</span>(tDesc)</code></pre></div>
+<pre><code>## # A tibble: 3 x 5
+##   tableName        handle   columns       keys isEmpty
+##       &lt;chr&gt;        &lt;list&gt;    &lt;list&gt;     &lt;list&gt;   &lt;lgl&gt;
+## 1     meas1 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;list [2]&gt;   FALSE
+## 2     names &lt;S3: tbl_dbi&gt; &lt;chr [2]&gt; &lt;list [1]&gt;   FALSE
+## 3     meas2 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;list [2]&gt;   FALSE</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(tDesc$keys)</code></pre></div>
+<pre><code>## [[1]]
+## [[1]]$PatientID
+## [1] &quot;id&quot;
+## 
+## [[1]]$MeasurementDate
+## [1] &quot;date&quot;
+## 
+## 
+## [[2]]
+## [[2]]$PatientID
+## [1] &quot;id&quot;
+## 
+## 
+## [[3]]
+## [[3]]$PatientID
+## [1] &quot;pid&quot;
+## 
+## [[3]]$MeasurementDate
+## [1] &quot;date&quot;</code></pre>
+<p>The above table could then be circulated to partners for comments and help. Notice since this is not <code>R</code> code we can easily share it with non-<code>R</code> users.</p>
+<p>It is worth confirming the keying as as expected (else some rows can reproduce in bad ways during joining). This is a potentially expensive operation, but it can be done as follows:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">keysAreUnique</span>(tDesc)</code></pre></div>
+<pre><code>## meas1 names meas2 
+##  TRUE  TRUE  TRUE</code></pre>
+<p>Once we are satisfied with our description of tables we can build a join plan. The join plan is an ordered sequence of left-joins (especially when encountering <a href="https://en.wikipedia.org/wiki/Star_schema">star-schemas</a>). It is a remarkable observation that in practice for preparing data for machine learning there is often a primary table that has exactly the set of rows you want to work over. By starting joins from this table we can perform most of our transformations using only left-joins. To keep things simple we have only supplied the join controller for this case.</p>
+<p>A join plan is first build from our table descriptions:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># build the column join plan</span>
+columnJoinPlan &lt;-<span class="st"> </span><span class="kw">buildJoinPlan</span>(tDesc)
+<span class="kw">print</span>(columnJoinPlan)</code></pre></div>
+<pre><code>## # A tibble: 10 x 4
+##    tableName sourceColumn    resultColumn abstractKeyName
+##        &lt;chr&gt;        &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;
+##  1     meas1           id       PatientID       PatientID
+##  2     meas1         date MeasurementDate MeasurementDate
+##  3     meas1       weight    meas1_weight                
+##  4     meas1       height          height                
+##  5     names           id       PatientID       PatientID
+##  6     names         name            name                
+##  7     meas2          pid       PatientID       PatientID
+##  8     meas2         date MeasurementDate MeasurementDate
+##  9     meas2       weight    meas2_weight                
+## 10     meas2        width           width</code></pre>
+<p>Essentially the join plan is an unnest of the columns from the table descriptions. This was anticipated in our article <a href="http://www.win-vector.com/blog/2017/05/managing-spark-data-handles-in-r/">“Managing Spark Data Handles”</a>.</p>
+<p>We then alter the join plan to meet or needs (either through <code>R</code> commands or by exporting the plan to a spreadsheet and editing it there).</p>
+<p>Only columns named in the join plan with a non-blank <code>resultColumn</code> entry are kept in the join. This is very useful as systems of record often have very wide tables (with hundreds of columns) of which we only want a few columns for analysis.</p>
+<p>For example we could decide to exclude the <code>width</code> column by replacing its <code>resultColumn</code> entry with a blank string.</p>
+<p>Since we have edited the join plan it is a good idea to both look at it and also run it through the <code>inspectDescrAndJoinPlan()</code> to look for potential inconsistencies.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># decide we don't want the width column</span>
+columnJoinPlan$resultColumn[columnJoinPlan$resultColumn==<span class="st">'width'</span>] &lt;-<span class="st"> ''</span>
+<span class="co"># double check our plan</span>
+if(!<span class="kw">is.null</span>(<span class="kw">inspectDescrAndJoinPlan</span>(tDesc, columnJoinPlan))) {
+  <span class="kw">stop</span>(<span class="st">&quot;bad join plan&quot;</span>)
+}
+
+<span class="kw">print</span>(columnJoinPlan)</code></pre></div>
+<pre><code>## # A tibble: 10 x 4
+##    tableName sourceColumn    resultColumn abstractKeyName
+##        &lt;chr&gt;        &lt;chr&gt;           &lt;chr&gt;           &lt;chr&gt;
+##  1     meas1           id       PatientID       PatientID
+##  2     meas1         date MeasurementDate MeasurementDate
+##  3     meas1       weight    meas1_weight                
+##  4     meas1       height          height                
+##  5     names           id       PatientID       PatientID
+##  6     names         name            name                
+##  7     meas2          pid       PatientID       PatientID
+##  8     meas2         date MeasurementDate MeasurementDate
+##  9     meas2       weight    meas2_weight                
+## 10     meas2        width</code></pre>
+<p>The join plan is neglected documentation that hurts many non-trivial data science projects. We strongly suggest putting it under source control, and circulating it to project partners for comment.</p>
+<p>Once you have a good join plan executing it is a one-line command with <code>executeLeftJoinPlan()</code>:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># manage the temp names as in:</span>
+<span class="co">#  http://www.win-vector.com/blog/2017/06/managing-intermediate-results-when-using-rsparklyr/</span>
+tempNameGenerator &lt;-<span class="st"> </span><span class="kw">makeTempNameGenerator</span>(<span class="st">&quot;extmps&quot;</span>)
+
+<span class="co"># execute the left joins</span>
+results &lt;-<span class="st"> </span><span class="kw">executeLeftJoinPlan</span>(tDesc, columnJoinPlan, 
+                               <span class="dt">verbose=</span> <span class="ot">TRUE</span>,
+                               <span class="dt">tempNameGenerator=</span> tempNameGenerator)</code></pre></div>
+<pre><code>## [1] &quot;start meas1 Sun Jun 11 12:29:11 2017&quot;
+## [1] &quot; rename/restrict meas1&quot;
+## [1] &quot;   'table_meas1_present' = 'table_meas1_present'&quot;
+## [1] &quot;   'PatientID' = 'id'&quot;
+## [1] &quot;   'MeasurementDate' = 'date'&quot;
+## [1] &quot;   'meas1_weight' = 'weight'&quot;
+## [1] &quot;   'height' = 'height'&quot;
+## [1] &quot; res &lt;- meas1&quot;
+## [1] &quot;done meas1 Sun Jun 11 12:29:11 2017&quot;
+## [1] &quot;start names Sun Jun 11 12:29:11 2017&quot;
+## [1] &quot; rename/restrict names&quot;
+## [1] &quot;   'table_names_present' = 'table_names_present'&quot;
+## [1] &quot;   'PatientID' = 'id'&quot;
+## [1] &quot;   'name' = 'name'&quot;
+## [1] &quot; res &lt;- left_join(res, names, by = c( 'PatientID' ))&quot;
+## [1] &quot;done names Sun Jun 11 12:29:11 2017&quot;
+## [1] &quot;start meas2 Sun Jun 11 12:29:11 2017&quot;
+## [1] &quot; rename/restrict meas2&quot;
+## [1] &quot;   'table_meas2_present' = 'table_meas2_present'&quot;
+## [1] &quot;   'PatientID' = 'pid'&quot;
+## [1] &quot;   'MeasurementDate' = 'date'&quot;
+## [1] &quot;   'meas2_weight' = 'weight'&quot;
+## [1] &quot; res &lt;- left_join(res, meas2, by = c( 'PatientID', 'MeasurementDate' ))&quot;
+## [1] &quot;done meas2 Sun Jun 11 12:29:11 2017&quot;</code></pre>
+<p><code>executeLeftJoinPlan()</code> takes both a table description table (<code>tDesc</code>, keyed by <code>tableName</code>) and the join plan (<code>columnJoinPlan</code>, keyed by <code>tableName</code> and <code>sourceColumn</code>).</p>
+<p>The separation of concerns is strong: all details about then intended left-join sequence are taking from the <code>columnJoinPlan</code>, and only the mapping from abstract table names to tables (or table references/handles) is taken from <code>tDesc</code>. This is deliberate design and makes running the same join plan on two different sets of tables (say once for model construction, and later for model application) very easy. <code>tDesc</code> is a runtime entity (as it binds names to live handles, so can’t be serialized: you must save the code steps to produce it; note only the columns <code>tableName</code> and <code>handle</code> are used so there is no point re-editing the <code>keys</code> column after running <code>tableDesription()</code> on new tables) and <code>columnJoinPlan</code> is a durable entity (has only information, not handles).</p>
+<p>Basically you:</p>
+<ul>
+<li>Build simple procedures to build up <code>tDesc</code>.</li>
+<li>Work hard to get a good <code>columnJoinPlan</code>.</li>
+<li>Save <code>columnJoinPlan</code> in source control and re-load it (not re-build it) when you need it.</li>
+<li>Re-build new <code>tDesc</code> compatible with the saved <code>columnJoinPlan</code> later when you need to work with tables (note only the columns <code>tableName</code> and <code>handle</code> are used during join execution, so you only need to create those).</li>
+</ul>
+<p>As always: the proof is in the pudding. We should look at results:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># print(xtable::xtable(collect(results), digits= 0), type='html') # set results='asis' to use this</span>
+<span class="kw">print</span>(<span class="kw">as.data.frame</span>(results))</code></pre></div>
+<pre><code>##   table_meas1_present PatientID MeasurementDate meas1_weight height
+## 1                   1         1               1          200     60
+## 2                   1         1               2          180     54
+## 3                   1         2               1           98     12
+## 4                   1         2               2          120     14
+##   table_names_present name table_meas2_present meas2_weight
+## 1                   1    a                   0           NA
+## 2                   1    a                   0           NA
+## 3                   1    b                   0           NA
+## 4                   1    b                   1          105</code></pre>
+<p>Notice the joiner add extra columns of the form <code>table_*_present</code> to show which tables had needed rows. This lets us tell different sorts of missingness apart (value <code>NA</code> as there was no row to join, versus value <code>NA</code> as a <code>NA</code> came from a row) and appropriately <code>coalesce</code> results easily. These columns are also very good for collecting statistics on data coverage, and in business settings often are very useful data quality and data provenance features which can often be directly included in machine learning models.</p>
+<p>Also notice the join plan is very specific: every descision (such as what order to operate and how to disambiguate column names) is already explicitly set in the plan. The executor is then allowed to simply move throught the tables left-joining in the order the table names first appear in the plan.</p>
+<p>“Having to join a bunch of tables” is a common step in data science. Therefore you do not want this to be a difficult and undocumented task. By using a join controller you essentially make the documentation the executable specification for the task.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># cleanup</span>
+temps &lt;-<span class="st"> </span><span class="kw">tempNameGenerator</span>(<span class="dt">dumpList=</span> <span class="ot">TRUE</span>)
+for(ti in temps) {
+  <span class="kw">replyr_drop_table_name</span>(my_db, ti)
+}
+<span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())
+<span class="kw">gc</span>(<span class="dt">verbose=</span> <span class="ot">FALSE</span>)</code></pre></div>
+<pre><code>##            used (Mb) gc trigger  (Mb) max used  (Mb)
+## Ncells  1136491 60.7    1770749  94.6  1770749  94.6
+## Vcells 10463555 79.9   27560025 210.3 26460249 201.9</code></pre>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
