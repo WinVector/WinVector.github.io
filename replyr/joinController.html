@@ -77,7 +77,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div id="replyr-join-controller" class="section level4">
 <h4><a href="https://github.com/WinVector/replyr"><code>replyr</code></a> Join Controller</h4>
 <p>This note describes a useful tool we call a “join controller” (and is part of our “<a href="http://www.win-vector.com/blog/tag/r-and-big-data/">R and Big Data</a>” series, please see <a href="http://www.win-vector.com/blog/2017/05/new-series-r-and-big-data-concentrating-on-spark-and-sparklyr/">here</a> for the introduction, and <a href="https://github.com/WinVector/BigDataRStrata2017">here</a> for one our big data courses).</p>
-<p>When working on real world predictive modeling tasks in production the ability to join data and document how you join data is paramount. One of the reasons is: there are very strong reasons to organize production data in something resembling one of the <a href="https://en.wikipedia.org/wiki/Database_normalization">Codd normal forms</a>. However, for machine learning we need a fully denormalized for (all columns populated into a single to ready to go row, no matter what their provenance, keying, or stride).</p>
+<p>When working on real world predictive modeling tasks in production, the ability to join data and document how you join data is paramount. One of the reasons is: there are very strong reasons to organize production data in something resembling one of the <a href="https://en.wikipedia.org/wiki/Database_normalization">Codd normal forms</a>. However, for machine learning we need a fully denormalized for (all columns populated into a single to ready to go row, no matter what their provenance, keying, or stride).</p>
 <p>This is not an essential difficulty as in relational data systems moving between these forms can be done by joining, and data stores such as <a href="https://www.postgresql.org">PostgreSQL</a> or <a href="https://spark.apache.org">Apache Spark</a> as designed to provide powerful join capabilities.</p>
 <p>However there are some inessential (in that they can be avoided) but substantial difficulties in managing and documenting long join plans. It is not uncommon to have to join 7 or more tables to get an analysis ready. This at first seems trivial, but once you add in the important tasks of narrowing tables (eliminating columns not used later) and disambiguating column names (ensuring unique names after the join) the documentation and work can become substantial. Specifying the join process directly in <a href="https://www.r-project.org"><code>R</code></a> code leads to hard to manage, hard to inspect, and hard to share spaghetti code (even when using a high-level data abstraction such as <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>).</p>
 <p>Our experience has been: if you have done non-trivial work with production data you have seen this pain point.</p>
@@ -93,7 +93,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># load packages</span>
 <span class="kw">suppressPackageStartupMessages</span>(<span class="kw">library</span>(<span class="st">&quot;dplyr&quot;</span>))
 <span class="kw">packageVersion</span>(<span class="st">&quot;dplyr&quot;</span>)</code></pre></div>
-<pre><code>## [1] '0.7.0'</code></pre>
+<pre><code>## [1] '0.5.0'</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;replyr&quot;</span>)
 <span class="kw">packageVersion</span>(<span class="st">&quot;replyr&quot;</span>)</code></pre></div>
 <pre><code>## [1] '0.4.0'</code></pre>
@@ -113,18 +113,53 @@ my_db &lt;-<span class="st"> </span>dplyr::<span class="kw">src_sqlite</span>(<s
                           <span class="dt">date=</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">2</span>),
                           <span class="dt">weight=</span> <span class="kw">c</span>(<span class="dv">200</span>, <span class="dv">180</span>, <span class="dv">98</span>, <span class="dv">120</span>),
                           <span class="dt">height=</span> <span class="kw">c</span>(<span class="dv">60</span>, <span class="dv">54</span>, <span class="dv">12</span>, <span class="dv">14</span>)),
-               <span class="st">'meas1_train'</span>)
-<span class="kw">replyr_copy_to</span>(my_db,
+               <span class="st">'meas1_train'</span>)</code></pre></div>
+<pre><code>## Source:   query [?? x 4]
+## Database: sqlite 3.11.1 [:memory:]
+## 
+## # A tibble: ?? x 4
+##      id  date weight height
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1     1     1    200     60
+## 2     1     2    180     54
+## 3     2     1     98     12
+## 4     2     2    120     14</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">replyr_copy_to</span>(my_db,
                <span class="kw">data.frame</span>(<span class="dt">id=</span> <span class="kw">seq_len</span>(<span class="kw">length</span>(letters)),
                           <span class="dt">name=</span> letters,
                           <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>),
-               <span class="st">'names_facts'</span>)
-<span class="kw">replyr_copy_to</span>(my_db,
+               <span class="st">'names_facts'</span>)</code></pre></div>
+<pre><code>## Source:   query [?? x 2]
+## Database: sqlite 3.11.1 [:memory:]
+## 
+## # A tibble: ?? x 2
+##       id  name
+##    &lt;int&gt; &lt;chr&gt;
+##  1     1     a
+##  2     2     b
+##  3     3     c
+##  4     4     d
+##  5     5     e
+##  6     6     f
+##  7     7     g
+##  8     8     h
+##  9     9     i
+## 10    10     j
+## # ... with more rows</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">replyr_copy_to</span>(my_db,
                <span class="kw">data.frame</span>(<span class="dt">pid=</span> <span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">3</span>),
                           <span class="dt">date=</span> <span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">2</span>),
                           <span class="dt">weight=</span> <span class="kw">c</span>(<span class="dv">105</span>, <span class="dv">110</span>),
                           <span class="dt">width=</span> <span class="dv">1</span>),
                <span class="st">'meas2_train'</span>)</code></pre></div>
+<pre><code>## Source:   query [?? x 4]
+## Database: sqlite 3.11.1 [:memory:]
+## 
+## # A tibble: ?? x 4
+##     pid  date weight width
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
+## 1     2     2    105     1
+## 2     3     2    110     1</code></pre>
 <p>An important (and very neglected) step in data science tasks is documenting roles of tables, especially their key-structure (which we also call “stride” in the sense it describes how you move from row to row). <code>replyr::tableDesription()</code> is a function that builds an initial description of the tables.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># map from abstract names to realized names</span>
 tables &lt;-<span class="st"> </span><span class="kw">list</span>(<span class="st">'meas1'</span> =<span class="st"> 'meas1_train'</span>,
@@ -143,11 +178,11 @@ tDesc &lt;-<span class="st"> </span><span class="kw">bind_rows</span>(got)</code
 <p><code>tDesc</code> is essentially a slightly enriched version of the data handle concordance described in “<a href="http://www.win-vector.com/blog/2017/05/managing-spark-data-handles-in-r/">Managing Spark data handles in R</a>.” We can take a quick look at the stored simplified <a href="http://www.win-vector.com/blog/2017/05/summarizing-big-data-in-r/">summaries</a>:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(tDesc, <span class="dt">width =</span> <span class="ot">Inf</span>)</code></pre></div>
 <pre><code>## # A tibble: 3 x 7
-##   tableName        handle   columns      keys  colClass           sourceClass isEmpty
-##       &lt;chr&gt;        &lt;list&gt;    &lt;list&gt;    &lt;list&gt;    &lt;list&gt;                 &lt;chr&gt;   &lt;lgl&gt;
-## 1     meas1 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; src_dbi, src_sql, src   FALSE
-## 2     names &lt;S3: tbl_dbi&gt; &lt;chr [2]&gt; &lt;chr [2]&gt; &lt;chr [2]&gt; src_dbi, src_sql, src   FALSE
-## 3     meas2 &lt;S3: tbl_dbi&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; src_dbi, src_sql, src   FALSE</code></pre>
+##   tableName           handle   columns      keys  colClass              sourceClass isEmpty
+##       &lt;chr&gt;           &lt;list&gt;    &lt;list&gt;    &lt;list&gt;    &lt;list&gt;                    &lt;chr&gt;   &lt;lgl&gt;
+## 1     meas1 &lt;S3: tbl_sqlite&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; src_sqlite, src_sql, src   FALSE
+## 2     names &lt;S3: tbl_sqlite&gt; &lt;chr [2]&gt; &lt;chr [2]&gt; &lt;chr [2]&gt; src_sqlite, src_sql, src   FALSE
+## 3     meas2 &lt;S3: tbl_sqlite&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; &lt;chr [4]&gt; src_sqlite, src_sql, src   FALSE</code></pre>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(tDesc$columns)</code></pre></div>
 <pre><code>## [[1]]
 ## [1] &quot;id&quot;     &quot;date&quot;   &quot;weight&quot; &quot;height&quot;
@@ -279,7 +314,7 @@ tempNameGenerator &lt;-<span class="st"> </span><span class="kw">makeTempNameGen
 results &lt;-<span class="st"> </span><span class="kw">executeLeftJoinPlan</span>(tDesc, columnJoinPlan, 
                                <span class="dt">verbose=</span> <span class="ot">TRUE</span>,
                                <span class="dt">tempNameGenerator=</span> tempNameGenerator)</code></pre></div>
-<pre><code>## [1] &quot;start meas1 Mon Jun 12 14:26:24 2017&quot;
+<pre><code>## [1] &quot;start meas1 Mon Jun 12 18:25:44 2017&quot;
 ## [1] &quot; rename/restrict meas1&quot;
 ## [1] &quot;   'table_meas1_present' = 'table_meas1_present'&quot;
 ## [1] &quot;   'PatientID' = 'id'&quot;
@@ -287,22 +322,22 @@ results &lt;-<span class="st"> </span><span class="kw">executeLeftJoinPlan</span
 ## [1] &quot;   'meas1_weight' = 'weight'&quot;
 ## [1] &quot;   'height' = 'height'&quot;
 ## [1] &quot; res &lt;- meas1&quot;
-## [1] &quot;done meas1 Mon Jun 12 14:26:24 2017&quot;
-## [1] &quot;start names Mon Jun 12 14:26:24 2017&quot;
+## [1] &quot;done meas1 Mon Jun 12 18:25:44 2017&quot;
+## [1] &quot;start names Mon Jun 12 18:25:44 2017&quot;
 ## [1] &quot; rename/restrict names&quot;
 ## [1] &quot;   'table_names_present' = 'table_names_present'&quot;
 ## [1] &quot;   'PatientID' = 'id'&quot;
 ## [1] &quot;   'name' = 'name'&quot;
 ## [1] &quot; res &lt;- left_join(res, names, by = c( 'PatientID' ))&quot;
-## [1] &quot;done names Mon Jun 12 14:26:24 2017&quot;
-## [1] &quot;start meas2 Mon Jun 12 14:26:24 2017&quot;
+## [1] &quot;done names Mon Jun 12 18:25:44 2017&quot;
+## [1] &quot;start meas2 Mon Jun 12 18:25:44 2017&quot;
 ## [1] &quot; rename/restrict meas2&quot;
 ## [1] &quot;   'table_meas2_present' = 'table_meas2_present'&quot;
 ## [1] &quot;   'PatientID' = 'pid'&quot;
 ## [1] &quot;   'MeasurementDate' = 'date'&quot;
 ## [1] &quot;   'meas2_weight' = 'weight'&quot;
 ## [1] &quot; res &lt;- left_join(res, meas2, by = c( 'PatientID', 'MeasurementDate' ))&quot;
-## [1] &quot;done meas2 Mon Jun 12 14:26:24 2017&quot;</code></pre>
+## [1] &quot;done meas2 Mon Jun 12 18:25:44 2017&quot;</code></pre>
 <p><code>executeLeftJoinPlan()</code> takes both a table description table (<code>tDesc</code>, keyed by <code>tableName</code>) and the join plan (<code>columnJoinPlan</code>, keyed by <code>tableName</code> and <code>sourceColumn</code>).</p>
 <p>The separation of concerns is strong: all details about then intended left-join sequence are taken from the <code>columnJoinPlan</code>, and only the mapping from abstract table names to tables (or table references/handles) is taken from <code>tDesc</code>. This is deliberate design and makes running the same join plan on two different sets of tables (say once for model construction, and later for model application) very easy. <code>tDesc</code> is a runtime entity (as it binds names to live handles, so can’t be serialized: you must save the code steps to produce it; note only the columns <code>tableName</code> and <code>handle</code> are used so there is no point re-editing the <code>keys</code> column after running <code>tableDesription()</code> on new tables) and <code>columnJoinPlan</code> is a durable entity (has only information, not handles).</p>
 <p>Basically you:</p>
@@ -314,17 +349,17 @@ results &lt;-<span class="st"> </span><span class="kw">executeLeftJoinPlan</span
 </ul>
 <p>As always: the proof is in the pudding. We should look at results:</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">print</span>(<span class="kw">as.data.frame</span>(results))</code></pre></div>
-<pre><code>##   table_meas1_present PatientID MeasurementDate meas1_weight height
-## 1                   1         1               1          200     60
-## 2                   1         1               2          180     54
-## 3                   1         2               1           98     12
-## 4                   1         2               2          120     14
+<pre><code>##   PatientID MeasurementDate table_meas1_present meas1_weight height
+## 1         1               1                   1          200     60
+## 2         1               2                   1          180     54
+## 3         2               1                   1           98     12
+## 4         2               2                   1          120     14
 ##   table_names_present name table_meas2_present meas2_weight
 ## 1                   1    a                   0           NA
 ## 2                   1    a                   0           NA
 ## 3                   1    b                   0           NA
 ## 4                   1    b                   1          105</code></pre>
-<p>Notice the joiner add extra columns of the form <code>table_*_present</code> to show which tables had needed rows. This lets us tell different sorts of missingness apart (value <code>NA</code> as there was no row to join, versus value <code>NA</code> as a <code>NA</code> came from a row) and appropriately <code>coalesce</code> results easily. These columns are also very good for collecting statistics on data coverage, and in business settings often are very useful data quality and data provenance features which can often be directly included in machine learning models.</p>
+<p>Notice the joiner added extra columns of the form <code>table_*_present</code> to show which tables had needed rows. This lets us tell different sorts of missingness apart (value <code>NA</code> as there was no row to join, versus value <code>NA</code> as a <code>NA</code> came from a row) and appropriately <code>coalesce</code> results easily. These columns are also very good for collecting statistics on data coverage, and in business settings often are very useful data quality and data provenance features which can often be directly included in machine learning models.</p>
 <p>Also notice the join plan is very specific: every decision (such as what order to operate and how to disambiguate column names) is already explicitly set in the plan. The executor is then allowed to simply move through the tables left-joining in the order the table names first appear in the plan.</p>
 <p>Having to “join a bunch of tables to get the data into simple rows” is a common step in data science. Therefore you do not want this to be a difficult and undocumented task. By using a join controller you essentially make the documentation the executable specification for the task.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># cleanup</span>
@@ -335,8 +370,8 @@ for(ti in temps) {
 <span class="kw">rm</span>(<span class="dt">list=</span><span class="kw">ls</span>())
 <span class="kw">gc</span>(<span class="dt">verbose=</span> <span class="ot">FALSE</span>)</code></pre></div>
 <pre><code>##            used (Mb) gc trigger  (Mb) max used  (Mb)
-## Ncells  1164222 62.2    1770749  94.6  1770749  94.6
-## Vcells 10505695 80.2   27602300 210.6 26495478 202.2</code></pre>
+## Ncells  1146700 61.3    1770749  94.6  1770749  94.6
+## Vcells 10485133 80.0   27625606 210.8 26514901 202.3</code></pre>
 </div>
 
 
