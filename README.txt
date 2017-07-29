@@ -4,6 +4,7 @@
 Project sites:
 
 <ul>
+ <li><a href="https://winvector.github.io/vtreat/">vtreat</a> (<a href="https://github.com/WinVector/vtreat">source</a>).</li>
  <li><a href="https://winvector.github.io/seplyr/">seplyr</a> (<a href="https://github.com/WinVector/seplyr">source</a>).</li>
 </ul>
 
