@@ -1,3 +1,7 @@
-view at: http://winvector.github.io/
-source: https://github.com/WinVector/WinVector.github.io/
+
+<a href="https://github.com/WinVector">Win Vector LLC on Github</a>
+
+
+View at: https://winvector.github.io/
+Source: https://github.com/WinVector/WinVector.github.io/
 
