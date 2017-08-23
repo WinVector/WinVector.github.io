@@ -24,9 +24,10 @@ library('ggplot2')
 library('randomForest')
 
 
+
 # load the data as in the book
 # change this path to match your directory structure
-dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
+dir = '~/Documents/work/zmPDSwR/KDD2009/' 
 
 d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
                 header=T,sep='\t',na.strings=c('NA',''), 
@@ -62,7 +63,7 @@ yTarget = 1
 This is a fun little experiment.  We use all of the training data both for variable design and then for modeling.  This sets up the potential of a bad nested model bias.   We work around this by using a "cross frame" which is a special data frame that has been treated, but not by the returned treatment plan.  Each row is the cross frame was built by a treatment plan built from a disjoint set of rows (a lot like cross validation).  This (hopefully) makes the rows in the cross frame exchangable with future rows, as neither is directly involved in the treatment design.  The hope is this improves generalization error while allowing us to use all of our available data for training.
 
 
-```{r kdddesign, tidy=FALSE}
+```{r kddpar}
 # build data treatments
 
 set.seed(239525)
@@ -72,16 +73,46 @@ if(!debug) {
   ncore <- parallel::detectCores()
   cl <- parallel::makeCluster(ncore)
 }
+```
+
+```{r kdddesign}
+base::date()
+
+# @param v character variable name
+# @param vcol character, independent or input variable
+# @param y logical, dependent or outcome variable to predict
+# @param weights row/example weights
+# @return scored training data column
+ppCoderC <- function(v, vcol, 
+                     y, 
+                     weights) {
+  # classification case y ~ vcol
+  d <- data.frame(x = vcol,
+                  y = y,
+                  stringsAsFactors = FALSE)
+  m = lme4::glmer(y ~ (1 | x), data=d, weights=weights, family=binomial)
+  predict(m, newdata=d, type='link')
+}
+
+customCoders = list('c.poolC.center' = ppCoderC)
+codeRestriction <- c('clean', 
+                     'isBAD',
+                     'lev',
+                     'poolC')
+
 
 # build treatments on just the coding data
 crossExpmt = mkCrossFrameCExperiment(dTrain,
     vars,yName,yTarget,
     smFactor=2.0, 
+    customCoders=customCoders,
+    codeRestriction = codeRestriction,
     parallelCluster=cl)
 treatmentsC <- crossExpmt$treatments
 treatedTrain <- crossExpmt$crossFrame
 
-kddSig = 0.05
+kddSig = 1/(10*nrow(treatmentsC$scoreFrame))
+print(treatmentsC$scoreFrame)
 
 selvars <- treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<=kddSig]
 treatedTrain[[yName]] = treatedTrain[[yName]]==yTarget
@@ -93,11 +124,7 @@ treatedTest = prepare(treatmentsC,
                       parallelCluster=cl)
 treatedTest[[yName]] = treatedTest[[yName]]==yTarget
 
-
-if(!is.null(cl)) {
-    parallel::stopCluster(cl)
-    cl = NULL
-}
+base::date()
 ```
 
 
@@ -119,6 +146,8 @@ treatedTestP = treatedTest[, yName, drop=FALSE]
 GBM
 
 ```{r kddgbm}
+base::date()
+
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
 mname='gbm'
 print(date())
@@ -126,7 +155,7 @@ print(paste(mname,length(selvars)))
 modelGBMs = gbm(as.formula(formulaS),
                 data=treatedTrain,
                 distribution='bernoulli',
-                n.trees=1000,
+                n.trees=2000,
                 interaction.depth=3,
                 keep.data=FALSE,
                 cv.folds=5)
@@ -152,7 +181,8 @@ randomForest
 print(date())
 mname <- 'randomForest'
 model <- randomForest(x=treatedTrain[,selvars,drop=FALSE],
-                      y=as.factor(as.character(treatedTrain[[yName]])))
+                      y=as.factor(as.character(treatedTrain[[yName]])),
+                      ntree=2000)
 print(model)
 treatedTrainP[[mname]]  <- predict(model,newdata=treatedTrain[,selvars,drop=FALSE],
                                   type='prob')[,'TRUE',drop=TRUE]
@@ -173,3 +203,11 @@ saveRDS(list(treatedTrainP=treatedTrainP,
              treatedTestP=treatedTestP),
         file='KDD2009preds.RDS')
 ```
+
+```{r cleanup}
+if(!is.null(cl)) {
+    parallel::stopCluster(cl)
+    cl = NULL
+}
+```
+
