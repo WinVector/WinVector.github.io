@@ -9,15 +9,15 @@ library('vtreat')
 library('WVPlots')
 
 library('parallel')
-library('gbm')
 #library('class')
 library('ggplot2')
 library('glmnet')
 
+source("xgboost.R")
 
 # load the data as in the book
 # change this path to match your directory structure
-dir = '~/Documents/work/PracticalDataScienceWithR/zmPDSwR/KDD2009/' 
+dir = '../../zmPDSwR/KDD2009/' 
 
 d = read.table(paste(dir,'orange_small_train.data.gz',sep=''),
                 header=T,sep='\t',na.strings=c('NA',''), 
@@ -108,41 +108,28 @@ treatedTestP = treatedTest[, yName, drop=FALSE]
 
 
 formulaS = paste(yName,paste(selvars,collapse=' + '),sep=' ~ ')
-for(mname in c('glmPred','gbmPred')) {
+for(mname in c('glmPred','xgboost')) {
   print("*****************************")
   print(date())
   print(paste(mname,length(selvars)))
-  if(mname=='gbmPred') {
-    modelGBMs = gbm(as.formula(formulaS),
-                    data=treatedTrainM,
-                    distribution='bernoulli',
-                    n.trees=1000,
-                    interaction.depth=3,
-                    keep.data=FALSE,
-                    cv.folds=5)
-    #print(modelGBMs)
-    #print(summary(modelGBMs))
-    nTrees = gbm.perf(modelGBMs)
-   treatedTestP[[mname]] = predict(modelGBMs,
-                                    newdata=treatedTest,type='response',
-                                    n.trees=nTrees)
+  if(mname=='xgboost') {
+    m <- mkXGBoostModel(treatedTrainM, selvars, yName)
+    treatedTestP[[mname]] = m(treatedTest)
   } else {
     modelglms = cv.glmnet(x = as.matrix(treatedTrainM[,selvars,drop=FALSE]),
-                       y = treatedTrainM[[yName]],
-                    alpha=0.5,
-                    family='binomial')
+                          y = treatedTrainM[[yName]],
+                          alpha=0.5,
+                          family='binomial')
     #print(summary(modelglms))
-     treatedTestP[[mname]] = as.numeric(predict(modelglms,
-                                    newx=as.matrix(treatedTest[,selvars,drop=FALSE]),
-                                    type='response'))
+    treatedTestP[[mname]] = as.numeric(predict(modelglms,
+                                               newx=as.matrix(treatedTest[,selvars,drop=FALSE]),
+                                               type='response'))
   }
   
   t2 = paste(mname,'test data')
   print(DoubleDensityPlot(treatedTestP, mname, yName, 
                           title=t2))
   print(ROCPlot(treatedTestP, mname, yName, yTarget,
-                title=t2))
-  print(PRPlot(treatedTestP, mname, yName, yTarget,
                 title=t2))
   print(date())
   print("*****************************")
