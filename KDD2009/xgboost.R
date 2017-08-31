@@ -37,6 +37,7 @@ mkXGBoostModel <- function(trainDat, vars, outcomeCol,
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
     plotD <- gather(elog, key=errtype, value=error, train_error_mean, test_error_mean) 
+    title <- "xgboost loss"
     print(ggplot(plotD, aes(x=iter, y=error, color=errtype)) + geom_point() + geom_line() +
             scale_color_brewer(palette="Dark2") + ggtitle(title))
     ntrees <- which.min(elog$test_error_mean)
