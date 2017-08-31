@@ -36,7 +36,7 @@ mkXGBoostModel <- function(trainDat, vars, outcomeCol,
                  nthreads = nthreads)
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
-    plotD <- gather(elog, key=errtype, value=rmse, train_rmse_mean, test_rmse_mean) 
+    plotD <- gather(elog, key=errtype, value=rmse, train_error_mean, test_error_mean) 
     print(ggplot(plotD, aes(x=iter, y=rmse, color=errtype)) + geom_point() + geom_line() +
             scale_color_brewer(palette="Dark2"))
     ntrees <- which.min(elog$test_rmse_mean)
