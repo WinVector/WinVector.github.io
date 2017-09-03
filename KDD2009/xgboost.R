@@ -1,6 +1,6 @@
 
 library("xgboost")
-library("tidyr")
+library("cdata")
 library("ggplot2")
 
 # outcome should be 0/1 numeric
@@ -13,7 +13,8 @@ mkXGBoostModelC <- function(trainDat, vars, outcomeCol,
                            ntrees= 1000,
                            eta = 0.1,
                            depth = 8,
-                           nfold = 5) {
+                           nfold = 5,
+                           buildPlot = TRUE) {
   # shuffle and control size
   print(paste("start mkXGBoostModel", base::date()))
   seed <- sample.int(1000000000,1)
@@ -39,10 +40,15 @@ mkXGBoostModelC <- function(trainDat, vars, outcomeCol,
                  nthreads = nthreads)
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
-    plotD <- gather(elog, key=errtype, value=error, train_error_mean, test_error_mean) 
-    title <- "xgboost loss"
-    print(ggplot(plotD, aes(x=iter, y=error, color=errtype)) + geom_point() + geom_line() +
-            scale_color_brewer(palette="Dark2") + ggtitle(title))
+    if(buildPlot) {
+      plotD <- moveValuesToRows(elog, 
+                                nameForNewKeyColumn = 'errtype', 
+                                nameForNewValueColumn = 'error', 
+                                columnsToTakeFrom = c('train_error_mean', 'test_error_mean')) 
+      title <- "xgboost loss"
+      print(ggplot(plotD, aes(x=iter, y=error, color=errtype)) + geom_point() + geom_line() +
+              scale_color_brewer(palette="Dark2") + ggtitle(title))
+    }
     ntrees <- which.min(elog$test_error_mean)
     cv <- NULL
     elog <- NULL
@@ -81,7 +87,8 @@ mkXGBoostModelR <- function(trainDat, vars, outcomeCol,
                            ntrees= 1000,
                            eta = 0.1,
                            depth = 8,
-                           nfold = 5) {
+                           nfold = 5,
+                           buildPlot = TRUE) {
   # shuffle and control size
   print(paste("start mkXGBoostModel", base::date()))
   seed <- sample.int(1000000000,1)
@@ -106,9 +113,14 @@ mkXGBoostModelR <- function(trainDat, vars, outcomeCol,
                  nthreads = nthreads)
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
-    plotD <- gather(elog, key=errtype, value=rmse, train_rmse_mean, test_rmse_mean) 
-    print(ggplot(plotD, aes(x=iter, y=rmse, color=errtype)) + geom_point() + geom_line() +
-            scale_color_brewer(palette="Dark2") + ggtitle("xgboost cv regression"))
+    if(buildPlot) {
+      plotD <- moveValuesToRows(elog, 
+                                nameForNewKeyColumn = 'errtype', 
+                                nameForNewValueColumn = 'rmse', 
+                                columnsToTakeFrom = c('train_rmse_mean', 'test_rmse_mean')) 
+      print(ggplot(plotD, aes(x=iter, y=rmse, color=errtype)) + geom_point() + geom_line() +
+              scale_color_brewer(palette="Dark2") + ggtitle("xgboost cv regression"))
+    }
     ntrees <- which.min(elog$test_rmse_mean)
     cv <- NULL
     elog <- NULL
