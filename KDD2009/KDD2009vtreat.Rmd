@@ -65,10 +65,12 @@ if(!debug) {
 # build treatments 
 kddSig = 0.05
 
+base::date()
 trainPlan = mkCrossFrameCExperiment(dTrain,
     vars,yName,yTarget,
     smFactor=2.0, rareCount = 2, rareSig = 0.5,
     parallelCluster=cl)
+base::date()
 treatmentsC = trainPlan$treatments
 treatedTrainM = trainPlan$crossFrame
 
@@ -112,8 +114,9 @@ for(mname in c('glmPred','xgboost')) {
   print("*****************************")
   print(date())
   print(paste(mname,length(selvars)))
+  base::date()
   if(mname=='xgboost') {
-    m <- mkXGBoostModel(treatedTrainM, selvars, yName)
+    m <- mkXGBoostModelC(treatedTrainM, selvars, yName)
     treatedTestP[[mname]] = m(treatedTest)
   } else {
     modelglms = cv.glmnet(x = as.matrix(treatedTrainM[,selvars,drop=FALSE]),
@@ -125,12 +128,14 @@ for(mname in c('glmPred','xgboost')) {
                                                newx=as.matrix(treatedTest[,selvars,drop=FALSE]),
                                                type='response'))
   }
-  
+  base::date()
   t2 = paste(mname,'test data')
   print(DoubleDensityPlot(treatedTestP, mname, yName, 
                           title=t2))
   print(ROCPlot(treatedTestP, mname, yName, yTarget,
                 title=t2))
+   print(DoubleHistogramPlot(treatedTestP, mname, yName, 
+                          title=t2))
   print(date())
   print("*****************************")
 }

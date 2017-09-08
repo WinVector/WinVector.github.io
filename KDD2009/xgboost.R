@@ -147,5 +147,3 @@ mkXGBoostModelR <- function(trainDat, vars, outcomeCol,
   }
 }
 
-mkXGBoostModel <- mkXGBoostModelC
-
