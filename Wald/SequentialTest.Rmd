@@ -59,7 +59,7 @@ errorProb <- 0.05 # accept 5% chance of making wrong decision
 
 # plug into Wald parameters
 u1 <- (1+relDiff)
-u0 <- 1/(1+relDiff)
+u0 <- 1
 a <- errorProb
 b <- errorProb
 
@@ -134,37 +134,22 @@ ggplot(data=sim$d,mapping=aes(x=t,y=y)) +
 ```
 
 This becomes more legible if we replace y with y-s*t,
-rotating the frame so our decision boundaries are horizontal lines
+skewing the frame so our decision boundaries are horizontal lines
 and we are always stepping up or down as we move to the right (actually it is 
 affine transform as it includes a rescaling).
-This makes Wald's brilliant formulation of the problem as 
-a "drunkard's walk" more obvious.  We now always move 1 to the right and always move
-up 1/2 or down 1/2 (depending on which source/process wins).
 
-Consider the special form of Wald's analysis we are using.  
-We picked u,a and then wrote our control parameters (encoding desires) as:
 
- * u1 = u
- * u0 = 1/u
- * b = a
-
-This implies:
-
- * s = 1/2
- * h1 = log((1-a)/a)/(2 log(u))
- * h0 = -h1
-
-On the rotated graph we always move one to the right on (0,1) and (1,0) observations (which is now
-irrelevant as the rotated acceptance lines are horizontal) and either down 1/2 or up 1/2 depending
+On the skewed graph we always move one to the right on (0,1) and (1,0) observations (which is now
+irrelevant as the skewed acceptance lines are horizontal) and either down 1/2 or up 1/2 depending
 which process was better.  So Wald's acceptance rule becomes: whichever process is first more than 2*h1
 ahead is accepted (the 2 is because we are moving up and down in halves).  Also notice this rule does
 not require throwing out the (0,0) and (1,1) observations- as adding them in would not affect 
 vertical position.  So this special case of Wald's rule is in fact a function of the standard sufficient statistics, and doesn't need the exact details of the pairings.
 
-For our example the acceptance rule (in rotated form) is: "run until one of the options is more than 30 wins ahead of the other and then quit" (the 15 coming from 2*h1=30.9).  The record keeping doesn't even
+For our example the acceptance rule (in skewed form) is: "run until one of the options is more than k wins ahead of the other and then quit".  The record keeping doesn't even
 require a chart or throwing out pairs- just one running "net ahead" sum.
 
-```{r rotate}
+```{r skew}
 ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
   geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
              mapping=aes(x=x,y=y),size=0) +
@@ -173,7 +158,7 @@ ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
               color='blue',size=3,alpha=0.5) +
   geom_abline(slope=0,intercept=h1,
               color='green',size=3,alpha=0.5) +
-  ggtitle(paste("(rotated) inspection, steps=",sim$summary$runLength,
+  ggtitle(paste("(skewed) inspection, steps=",sim$summary$runLength,
                 ', decision=',sim$summary$decision))
 ```
 
@@ -216,7 +201,7 @@ ggplot(data=d,mapping=aes(x=t,y=y-s*t)) +
               color='blue',size=3,alpha=0.5) +
   geom_abline(slope=0,intercept=h1,
               color='green',size=3,alpha=0.5) +
-  ggtitle("(rotated) many repetitions of the experiment")
+  ggtitle("(skewed) many repetitions of the experiment")
 
 ggplot(data=sum,mapping=aes(x=runLength)) + 
   geom_density(adjust=0.2) + ggtitle('experiment run times')
