@@ -50,7 +50,7 @@ The idea is: if p1/(1-p1) is near p2/(1-p2) then the difference is both very har
 
 Here is a typical inspection plan:
 
-```{r plotplan, cache=TRUE}
+```{r plotplan}
 # User chosen parameters. 
 # We are sticking to a special simple symmetric case of Wald's system.
 # All we are saying is we value relative error and probability of mistake symmetrically.
@@ -83,7 +83,7 @@ ggplot(data=data.frame(t=c(0,300),y=c(0,150)),
 
 Here is a simulation of executing such a plan:
 
-```{r simulate, cache=TRUE}
+```{r simulate}
 set.seed(3525)
 
 # Unknown rates
@@ -164,7 +164,7 @@ vertical position.  So this special case of Wald's rule is in fact a function of
 For our example the acceptance rule (in rotated form) is: "run until one of the options is more than 30 wins ahead of the other and then quit" (the 15 coming from 2*h1=30.9).  The record keeping doesn't even
 require a chart or throwing out pairs- just one running "net ahead" sum.
 
-```{r rotate, cache=TRUE}
+```{r rotate}
 ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
   geom_point(data=data.frame(x=c(0,0),y=c(-h1,h1)),
              mapping=aes(x=x,y=y),size=0) +
@@ -179,7 +179,7 @@ ggplot(data=sim$d,mapping=aes(x=t,y=y-s*t)) +
 
 Here are many repeats of such an experiment:
 
-```{r repeat, cache=TRUE}
+```{r repeat}
 parallelCluster <- parallel::makeCluster(parallel::detectCores())
 mkWorker <- function(s,h0,h1,p1,p2,simulate) {
   force(s)
@@ -226,7 +226,7 @@ The experiment run time is the subject of random walks.  You would expect to tak
 time on the order of (1/(p1+p2-p1 p2))*(h1-h0)^2 to escape if p1=p2, and to escape much quicker if they
 are in fact different.
 
-```{r timeEst, cache=TRUE}
+```{r timeEst}
 (1/(p1+p2-p1*p2))*(h1-h0)^2
 mean(sum$runLength)
 summary(as.factor(sum$decision))
