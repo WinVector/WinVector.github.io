@@ -7,9 +7,9 @@ output: html_document
 
 Implementation of section 6.4.2 of Abraham Wald, Sequential Analysis, Dover 2004.
 
-Please our article [Wald's graphical sequential inspection procedure](http://blog.revolutionanalytics.com/2015/12/walds-graphical-sequential-inspection-procedure.html) for more details.
 
-We will phrase this as purchasing web-traffic from two source in parallel.  Each
+
+We will phrase this as purchasing web-traffic from two sources in parallel.  Each
 source (or process) either converts (a success) or does not (a failure).  Source 1 converts with
 (unknown) probability p1 and source 2 converts with (unknown) probability p2.  We
 want to buy traffic from both sources for a while and then with high probability pick
