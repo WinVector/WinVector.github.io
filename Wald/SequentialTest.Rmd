@@ -54,13 +54,14 @@ Here is a typical inspection plan:
 # User chosen parameters. 
 # We are sticking to a special simple symmetric case of Wald's system.
 # All we are saying is we value relative error and probability of mistake symmetrically.
-u <- 1.1  # measure to relative rate of 10%
-a <- 0.05 # accept 5% chance of making wrong decision
+relDiff <- 0.1  # measure to relative rate of 10%
+errorProb <- 0.05 # accept 5% chance of making wrong decision
 
 # plug into Wald parameters
-u1 <- u
-u0 <- 1/u
-b <- a
+u1 <- (1+relDiff)
+u0 <- 1/(1+relDiff)
+a <- errorProb
+b <- errorProb
 
 # Equations 6:7 and 6:8 of Section 6.4.2, page 111, Abraham Wald, Sequential Analysis, Dover 2004
 # Sequential inspection plan
