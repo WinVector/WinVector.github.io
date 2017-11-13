@@ -1,14 +1,36 @@
 ---
 title: "Fluid Data"
 author: "John Mount, Win-Vector LLC"
-date: "`r Sys.Date()`"
-output: github_document
+date: "November 11, 2017"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
 ---
+
+```{r setupa, include=FALSE}
+library(tufte)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+library("magick")
+pltImg <- function(fname) {
+  img <- image_read(fname)
+  plot(img)
+}
+```
+
 
 # Introduction
 
 The [`cdata`](https://github.com/WinVector/cdata) [R](https://www.r-project.org) package
-provides a powerful extension of the "fluid data" (or "coordinatized data") concept (please see [here](https://github.com/WinVector/cdata/blob/master/extras/RowsAndColumns.md) for some notes
+provides a powerful extension of the "fluid data" (or "coordinatized data") concept (please see [here]http://winvector.github.io/FluidData/RowsAndColumns.html) for some notes
 ) that goes way beyond the concepts of pivot/un-pivot.
 
 The fluid data concept is:
@@ -44,7 +66,7 @@ tng <- cdata::makeTempNameGenerator('fdexample')
 controlTable <- dplyr::tribble(~group, ~col1, ~col2,
                                'aa',  'c1',  'c2',
                                'bb',  'c3',  'c4')
-print(controlTable)
+knitr::kable(controlTable)
 ```
 
 Control tables partially specify a change of data shape or change of data cell coordinates.
@@ -59,7 +81,7 @@ dat1 <- dplyr::tribble(
   'id1', 'val_id1_c1', 'val_id1_c2', 'val_id1_c3', 'val_id1_c4',
   'id2', 'val_id2_c1', 'val_id2_c2', 'val_id2_c3', 'val_id2_c4',
   'id3', 'val_id3_c1', 'val_id3_c2', 'val_id3_c3', 'val_id3_c4' )
-print(dat1)
+knitr::kable(dat1)
 ```
 
 Then each data cell in `dat1` (excluding the key-columns, in this case "`ID`") is named by the row-id (stored in the `ID` column) plus the column-name ("`c1`", "`c2`", "`c3`", and "`c4`").  Knowing `ID` plus the column name unique identifies the data-caring cell in table `dat1`.
@@ -108,7 +130,7 @@ dat2 <- cdata::moveValuesToRowsN(wideTable = 'dat1db',
                                  tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .) %>%
   arrange(ID, group)
-print(dat2)
+knitr::kable(dat2)
 ```
 
 For `dat2` the composite row-key `(ID, group)` plus the column name 
@@ -152,7 +174,8 @@ cdata::moveValuesToRowsN(wideTable = wideTableName,
                          columnsToCopy = columnsToCopy,
                          tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .) %>%
-  arrange(ID, group)
+  arrange(ID, group) %>%
+  knitr::kable()
 ```
 
 
@@ -181,7 +204,8 @@ cdata::moveValuesToColumnsN(tallTable = tallTableName,
                             my_db = my_db,
                             tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .) %>%
-  arrange(ID)
+  arrange(ID) %>%
+  knitr::kable()
 ```
 
 
@@ -200,7 +224,7 @@ d <- data.frame(
   meastype = c('meas1','meas1','meas1','meas2','meas2','meas2'),
   meas = c('m1_1', 'm1_2', 'm1_3', 'm2_1', 'm2_2', 'm2_3'),
   stringsAsFactors = FALSE)
-print(d)
+knitr::kable(d)
 
 # the cdata::pivotValuesToColumns version
 # equivalent to tidyr::spread(d, 'meastype', 'meas')
@@ -209,7 +233,8 @@ cdata::pivotValuesToColumns(d,
                            columnToTakeValuesFrom = 'meas',
                            rowKeyColumns= 'index',
                            sep= '_') %>%
-  arrange(index)
+  arrange(index) %>%
+  knitr::kable()
 
 # the cdata::moveValuesToColumns*() version
 dtall <- dplyr::copy_to(my_db, d, "dtall")
@@ -218,7 +243,7 @@ controlTable <- cdata::buildPivotControlTableN(tableName = "dtall",
                                                columnToTakeValuesFrom = 'meas',
                                                my_db = my_db,
                                                sep = "_")
-print(controlTable)
+knitr::kable(controlTable)
 
 moveValuesToColumnsN(tallTable = "dtall",
                      controlTable = controlTable,
@@ -226,7 +251,8 @@ moveValuesToColumnsN(tallTable = "dtall",
                      my_db = my_db,
                      tempNameGenerator = tng) %>% 
   dplyr::tbl(my_db, .) %>%
-  arrange(index)
+  arrange(index) %>%
+  knitr::kable()
 ```
 
 
@@ -239,7 +265,7 @@ d <- data.frame(
   meas1 = c('m1_1', 'm1_2', 'm1_3'),
   meas2 = c('2.1', '2.2', '2.3'),
   stringsAsFactors = FALSE)
-print(d)
+knitr::kable(d)
 
 # the cdata::unpivotValuesToRows() version
 # equivalent to tidyr::gather(d, 'meastype', 'meas', c('meas1','meas2'))
@@ -247,14 +273,15 @@ cdata::unpivotValuesToRows(d,
                         nameForNewKeyColumn= 'meastype',
                         nameForNewValueColumn= 'meas',
                         columnsToTakeFrom= c('meas1','meas2')) %>%
-  arrange(index, info)
+  arrange(index, info) %>%
+  knitr::kable()
 
 # the cdata::cdata::unpivotValuesToRows() version
 dwide <- dplyr::copy_to(my_db, d, "dwide")
 controlTable <- buildUnPivotControlTable(nameForNewKeyColumn= 'meastype',
                                          nameForNewValueColumn= 'meas',
                                          columnsToTakeFrom= c('meas1','meas2'))
-print(controlTable)
+knitr::kable(controlTable)
 
 keyColumns = c('index', 'info')
 moveValuesToRowsN(wideTable = "dwide",
@@ -263,7 +290,8 @@ moveValuesToRowsN(wideTable = "dwide",
                   columnsToCopy = keyColumns,
                   tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .) %>%
-  arrange(index, info)
+  arrange(index, info) %>%
+  knitr::kable()
 ```
 
 # Additional Interesting Applications
@@ -286,7 +314,7 @@ purchaseDat <- dplyr::copy_to(my_db, dplyr::tribble(
     1,           20,           10,          5,          3,
     2,            5,            6,         10,         12),
   'purchaseDat')
-print(purchaseDat)
+knitr::kable(purchaseDat)
 ```
 
 Common tasks might include totaling columns and computing rates between columns.
@@ -299,26 +327,26 @@ controlTable <- dplyr::tribble(
   ~group, ~purchases,    ~rebates,
   "Q1",   "Q1purchases", "Q1rebates",
   "Q2",   "Q2purchases", "Q2rebates")
-print(controlTable)
+knitr::kable(controlTable)
 purchasesTall <- moveValuesToRowsN(wideTable = "purchaseDat",
                                    columnsToCopy = "ID", 
                                    controlTable = controlTable, 
                                    my_db = my_db,
                                    tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .)
-print(purchasesTall)
+knitr::kable(purchasesTall)
 
 # perform the calculation in one easy step
 calc <- purchasesTall %>% 
   mutate(purchasesPerRebate = purchases/rebates) %>%
   compute(name = "purchasesTallC")
-print(calc)
+knitr::kable(calc)
 
 # move what we want back
 controlTable <- controlTable %>%
   mutate(purchasesPerRebate = 
            paste0(group, "purchasesPerRebate"))
-print(controlTable)
+knitr::kable(controlTable)
 
 # notice the step back is not a single
 # pivot or un-pivot
@@ -330,7 +358,7 @@ result <- moveValuesToColumnsN(tallTable = "purchasesTallC",
                                my_db = my_db,
                                tempNameGenerator = tng) %>%
   dplyr::tbl(my_db, .)
-print(result)
+knitr::kable(result)
 ```
 
 The point is: the above can work on a large number of rows and columns (especially
@@ -368,7 +396,7 @@ wideTableName <- moveValuesToColumnsN(tallTable = tallTableName,
                            keyColumns = keyColumns,
                            my_db = my_db) 
 dw <- dplyr::tbl(my_db, wideTableName)
-print(dw)
+knitr::kable(dw)
 ```
 
 The transformed table is essentially an example row of the wide-form.
@@ -386,7 +414,8 @@ moveValuesToRowsN(wideTable = wideTableName,
                   controlTable = controlTable,
                   my_db = my_db) %>%
   dplyr::tbl(my_db, .) %>%
-  arrange(group)
+  arrange(group) %>%
+  knitr::kable()
 ```
 
 
