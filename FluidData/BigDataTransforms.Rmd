@@ -2,8 +2,30 @@
 title: "Big Data Transforms"
 author: "John Mount, Win-Vector LLC"
 date: "11/11/2017"
-output: github_document
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
 ---
+
+```{r setupa, include=FALSE}
+library(tufte)
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+library("magick")
+pltImg <- function(fname) {
+  img <- image_read(fname)
+  plot(img)
+}
+```
+
 
 As part of our consulting practice [Win-Vector LLC](http://www.win-vector.com/) has been helping
 a few clients stand-up advanced analytics and machine learning stacks  using [`R`](https://www.r-project.org/) and 
@@ -39,23 +61,23 @@ library("RPostgreSQL")
 suppressPackageStartupMessages(library("dplyr"))
 isSpark <- FALSE
 
-# Can work with PostgreSQL
-my_db <- DBI::dbConnect(dbDriver("PostgreSQL"),
-                        host = 'localhost',
-                        port = 5432,
-                        user = 'postgres',
-                        password = 'pg')
+# # Can work with PostgreSQL
+# my_db <- DBI::dbConnect(dbDriver("PostgreSQL"),
+#                         host = 'localhost',
+#                         port = 5432,
+#                         user = 'postgres',
+#                         password = 'pg')
  
-# # Can work with Sparklyr
-# my_db <-  sparklyr::spark_connect(version='2.2.0', 
-#                                   master = "local")
-# isSpark <- TRUE
+# Can work with Sparklyr
+my_db <-  sparklyr::spark_connect(version='2.2.0',
+                                  master = "local")
+isSpark <- TRUE
 
 d <- dplyr::copy_to(my_db, data.frame(x =  c(1,5), 
                                       group = c('g1', 'g2'),
                                       stringsAsFactors = FALSE), 
                     'd')
-print(d)
+knitr::kable(d)
 ```
 
 ```{r dbd1, error=TRUE}
@@ -76,7 +98,7 @@ packageVersion("replyr")
 
 # binding rows
 dB <- replyr_bind_rows(list(d, d))
-print(dB)
+knitr::kable(dB)
 
 # splitting frames
 replyr_split(dB, 'group')
@@ -94,7 +116,7 @@ dWname <-
                               tallTable = 'd',
                               my_db = my_db, strict = FALSE) 
 dW <- dplyr::tbl(my_db, dWname)
-print(dW)
+knitr::kable(dW)
                      
 
 # un-pivoting
@@ -107,7 +129,7 @@ dXname <-
                            wideTable = dWname,
                            my_db = my_db)
 dX <- dplyr::tbl(my_db, dXname)
-print(dX)
+knitr::kable(dX)
 ```
 
 The point is: using the `replyr` package you *can* design in terms of higher-order data transforms, even 
@@ -117,8 +139,8 @@ be succinct, powerful, performant, and maintainable.
 To master the terms `moveValuesToRows` and `moveValuesToColumns` I suggest trying the following
 two articles:
 
-  * [Theory of coordinatized data](https://github.com/WinVector/cdata/blob/master/extras/RowsAndColumns.md).
-  * [Fluid data transforms](https://github.com/WinVector/cdata/blob/master/extras/FluidData.md).
+  * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html).
+  * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html).
 
 ```{r cleanup}
 if(isSpark) {
