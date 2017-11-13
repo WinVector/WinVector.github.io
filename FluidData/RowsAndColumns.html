@@ -713,10 +713,35 @@ knitr::kable(row)</code></pre>
                  nameForNewValueColumn= 'value',
                  columnsToTakeFrom = c('AUC', 'pR2')) %&gt;%
   select(model, depth, testset, measurement, value) %&gt;%
-  arrange(model, testset, measurement)</code></pre>
-<pre><code>##   model depth testset measurement value
-## 1     b     3       x         AUC  0.50
-## 2     b     3       x         pR2  0.25</code></pre>
+  arrange(model, testset, measurement) %&gt;%
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">model</th>
+<th align="right">depth</th>
+<th align="left">testset</th>
+<th align="left">measurement</th>
+<th align="right">value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">b</td>
+<td align="right">3</td>
+<td align="left">x</td>
+<td align="left">AUC</td>
+<td align="right">0.50</td>
+</tr>
+<tr class="even">
+<td align="left">b</td>
+<td align="right">3</td>
+<td align="left">x</td>
+<td align="left">pR2</td>
+<td align="right">0.25</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="moving-from-rows-to-columns-widening-data" class="section level3">
 <h3>Moving From Rows to Columns (“Widening data”)</h3>

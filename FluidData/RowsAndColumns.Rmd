@@ -339,7 +339,8 @@ unpivotValuesToRows(data=row,
                  nameForNewValueColumn= 'value',
                  columnsToTakeFrom = c('AUC', 'pR2')) %>%
   select(model, depth, testset, measurement, value) %>%
-  arrange(model, testset, measurement)
+  arrange(model, testset, measurement) %>%
+  knitr::kable()
 ```
 
 
