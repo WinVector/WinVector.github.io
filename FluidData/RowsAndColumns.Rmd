@@ -173,7 +173,7 @@ The above operation is a bit exotic and it (and its inverse) already go under nu
   * `cast` / `melt` (`reshape`, `reshape2`)
   * `spread` / `gather` (`tidyr`)
   * "widen" / "narrow"  (colloquial)
-  * [`pivotValuesToColumns()`](https://winvector.github.io/cdata/reference/pivotValuesToColumns.html) and [`unpivotValuesToRows()`](https://winvector.github.io/cdata/reference/unpivotValuesToRows.html) (this writeup, basic ["coordinatized data"](https://github.com/WinVector/cdata/blob/master/extras/RowsAndColumns.md)^[original [here](https://github.com/WinVector/cdata/blob/master/extras/RowsAndColumns.md)])
+  * [`pivotValuesToColumns()`](https://winvector.github.io/cdata/reference/pivotValuesToColumns.html) and [`unpivotValuesToRows()`](https://winvector.github.io/cdata/reference/unpivotValuesToRows.html) (this writeup, basic ["coordinatized data"](http://winvector.github.io/FluidData/RowsAndColumns.html)^[original [here](https://github.com/WinVector/cdata/blob/master/extras/RowsAndColumns.md)])
   * [`moveValuesToColums*()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html) and [`moveValuesToRows*()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html) (the more genaral ["fluid data"](https://github.com/WinVector/cdata/blob/master/extras/FluidData.md) operators)
 
 And we are certainly neglecting other namings of the concept.  We find none of these particularly evocative (though [cheatsheets help](https://www.rstudio.com/wp-content/uploads/2015/02/data-wrangling-cheatsheet.pdf)), so one purpose of this note will be to teach these concepts in terms of the deliberately verbose ad-hoc terms: `pivotValuesToColumns()` and `unpivotValuesToRows()`.
