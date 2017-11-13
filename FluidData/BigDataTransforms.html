@@ -142,7 +142,7 @@ knitr::kable(dB)</code></pre>
 <pre class="r"><code># splitting frames
 replyr_split(dB, 'group')</code></pre>
 <pre><code>## $g2
-## # Source:   table&lt;replyr_gapply_qhev1k9jlpe322a8wtoj_0000000001&gt; [?? x 2]
+## # Source:   table&lt;replyr_gapply_oyiaadctxx50eoptynbk_0000000001&gt; [?? x 2]
 ## # Database: spark_connection
 ##       x group
 ##   &lt;dbl&gt; &lt;chr&gt;
@@ -150,7 +150,7 @@ replyr_split(dB, 'group')</code></pre>
 ## 2     5    g2
 ## 
 ## $g1
-## # Source:   table&lt;replyr_gapply_qhev1k9jlpe322a8wtoj_0000000003&gt; [?? x 2]
+## # Source:   table&lt;replyr_gapply_oyiaadctxx50eoptynbk_0000000003&gt; [?? x 2]
 ## # Database: spark_connection
 ##       x group
 ##   &lt;dbl&gt; &lt;chr&gt;
@@ -213,7 +213,7 @@ knitr::kable(dX)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>The point is: using the <code>replyr</code> and <code>cata</code> packages you <em>can</em> design in terms of higher-order data transforms, even when working with big data in <code>R</code>. Designs in terms of these operators tend to be succinct, powerful, performant, and maintainable.</p>
+<p>The point is: using the <code>replyr</code> and <code>cdata</code> packages you <em>can</em> design in terms of higher-order data transforms, even when working with big data in <code>R</code>. Designs in terms of these operators tend to be succinct, powerful, performant, and maintainable.</p>
 <p>To master the terms <code>moveValuesToRows</code> and <code>moveValuesToColumns</code> I suggest trying the following two articles:</p>
 <ul>
 <li><a href="http://winvector.github.io/FluidData/RowsAndColumns.html">Theory of coordinatized data</a>.</li>
