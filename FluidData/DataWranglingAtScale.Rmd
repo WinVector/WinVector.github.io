@@ -1,6 +1,6 @@
 ---
 title: "Data Wrangling at Scale"
-author: "John Mount, Win-Vector LLC"
+author: "John Mount, [Win-Vector LLC](http://www.win-vector.com/)"
 date: "`r Sys.Date()`"
 output: tint::tintHtml
 # bibliography: skeleton.bib
