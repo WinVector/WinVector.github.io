@@ -68,7 +68,7 @@ dT %.>%
 ```
 
 The important thing: is the data stays remote^[`class(dT)`: `r class(dT)`], all operations are performed
-on the remote big data system, possibly in parallel.^[Note: the [`tidyr` package](https://CRAN.R-project.org/package=tidyr) does not currently (`r packageVersion("tidyr")`) work with remote data: `tidyr::gather(d, key=measurment, value=value, mass, height)` `r tryCatch(tidyr::gather(d, key=measurment, value=value, mass, height), error=function(e) {as.character(e)})`.]
+on the remote big data system, possibly in parallel.^[Note: the [`tidyr` package](https://CRAN.R-project.org/package=tidyr) does not currently (`r packageVersion("tidyr")`) work with remote data: `tidyr::gather(d, key=measurement, value=value, mass, height)` `r tryCatch(tidyr::gather(d, key=measurement, value=value, mass, height), error=function(e) {as.character(e)})`.]
 
 The reverse operation (often called pivoting) is also easy (and in
 fact shares the same control structures).
@@ -88,7 +88,7 @@ dL %.>%
 ```
 
 The `cdata` arguments are deliberately verbose.  This is because at some point you
-may have to read your own code, and it best to be reminded about the role of each
+may have to read your own code, and it is best to be reminded about the role of each
 function argument at that time.^[`cdata` is itself is based on `SQL` aggregations,
 using the [`DBI` package](https://CRAN.R-project.org/package=DBI).
 This is why "BB8"'s `NA`
