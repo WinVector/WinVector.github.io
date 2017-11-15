@@ -1,5 +1,5 @@
 ---
-title: "Unpivot at Scale"
+title: "Data Wrangling at Scale"
 author: "John Mount, Win-Vector LLC"
 date: "`r Sys.Date()`"
 output: tint::tintHtml
@@ -27,7 +27,7 @@ d <- dplyr::starwars %.>%
 
 One great example of this is: the [`sparklyr` package](https://cran.rstudio.com/web/packages/sparklyr/index.html), that allows
 `R` to work with big data.  In the following example the table we are working with
-is remote, for all we know it could be distributed on a large remote data center.
+is remote. For all we know it could be distributed on a large remote data center.
 
 ```{r data}
 library("seplyr")
@@ -37,17 +37,18 @@ d <- dplyr::tbl(sc, "starwars") %.>%
 print(d)
 ```
 
-Suppose we needed to un-pivot this data into a row oriented representation? 
+Suppose we needed to un-pivot this data into a row oriented representation.
 Often big data transform steps can achieve a much higher degree of parallelization
-with "tall data" (many rows, fewer columns).  With the [`cata` package](https://winvector.github.io/cdata/) this
+with "tall data"^[many rows, fewer columns].  With the [`cata` package](https://winvector.github.io/cdata/) this
 transform is easy and performant, as we show below.
 
 ```{r unpivot}
 library("cdata")
 
-cT <- buildUnPivotControlTable(nameForNewKeyColumn = "measurement",
-                               nameForNewValueColumn = "value",
-                               columnsToTakeFrom = c('height', 'mass'))
+cT <- buildUnPivotControlTable(
+  nameForNewKeyColumn = "measurement",
+  nameForNewValueColumn = "value",
+  columnsToTakeFrom = c('height', 'mass') )
 dTName <-  moveValuesToRowsN("starwars", 
                         controlTable = cT, 
                         my_db = sc, 
@@ -60,14 +61,18 @@ dT %.>%
   knitr::kable(.)
 ```
 
-And the reverse operation (often called pivoting) is also easy (and in
+The important thing: is the data stays remote, all operations are performed
+on the remote big data system, possibly in parallel.^[`class(dT)`: `r class(dT)`]
+
+The reverse operation (often called pivoting) is also easy (and in
 fact shares the same control structures).
 
 ```{r pivot}
-dL <- moveValuesToColumnsN(dTName,
-                           keyColumns = "name",
-                           controlTable = cT,
-                           my_db = sc) %.>%
+dL <- moveValuesToColumnsN(
+  dTName,
+  keyColumns = "name",
+  controlTable = cT,
+  my_db = sc ) %.>%
   dplyr::tbl(sc, .)
 
 dL %.>%
@@ -78,15 +83,15 @@ dL %.>%
 
 The `cdata` arguments are deliberately verbose.  This is because at some point you
 may have to read your own code, and it best to be reminded about the role of each
-function argument at that time.
-
-`cdata` is itself is based on `SQL` aggregations using the `DBI` package, which is why "BB8"'s `NA`
-(likely represented on the remote system as a `NULL`) gets changed to a `NaN`.
+function argument at that time.^[`cdata` is itself is based on `SQL` aggregations using the `DBI` package.
+This is why "BB8"'s `NA`
+(likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
 More on these sort of transforms can be found in the folling notes:
 
  * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html)
- * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html).
+ * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html)
+
  
 
 
