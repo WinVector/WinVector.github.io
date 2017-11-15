@@ -71,7 +71,7 @@ print(d)</code></pre>
 ##  9      Ben Quadinaros    163    65
 ## 10  Beru Whitesun lars    165    75
 ## # ... with more rows</code></pre>
-<p>Suppose we needed to un-pivot this data into a row oriented representation. Often big data transform steps can achieve a much higher degree of parallelization with “tall data”<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> many rows, fewer columns</span>. With the <a href="https://winvector.github.io/cdata/"><code>cata</code> package</a> this transform is easy and performant, as we show below.</p>
+<p>Suppose we needed to un-pivot this data into a row oriented representation. Often big data transform steps can achieve a much higher degree of parallelization with “tall data”<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> many rows, fewer columns</span>. With the <a href="https://winvector.github.io/cdata/"><code>cdata</code> package</a> this transform is easy and performant, as we show below.</p>
 <pre class="r"><code>library(&quot;cdata&quot;)
 
 cT &lt;- buildUnPivotControlTable(

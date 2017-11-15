@@ -45,7 +45,7 @@ print(d)
 
 Suppose we needed to un-pivot this data into a row oriented representation.
 Often big data transform steps can achieve a much higher degree of parallelization
-with "tall data"^[many rows, fewer columns].  With the [`cata` package](https://winvector.github.io/cdata/) this
+with "tall data"^[many rows, fewer columns].  With the [`cdata` package](https://winvector.github.io/cdata/) this
 transform is easy and performant, as we show below.
 
 ```{r unpivot}
