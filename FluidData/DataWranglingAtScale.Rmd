@@ -31,7 +31,7 @@ d <- dplyr::starwars %.>%
 
 > "[`R`](https://www.r-project.org) is its packages."
 
-One great example of this is: the [`sparklyr` package](https://cran.rstudio.com/web/packages/sparklyr/index.html), that allows
+One great example of this is: the [`sparklyr` package](https://CRAN.R-project.org/package=sparklyr), that allows
 `R` to work with big data.  In the following example the table we are working with
 is remote. For all we know it could be distributed on a large remote data center.^[Working with remote data tools can be like working with a [Waldo system](https://en.wikipedia.org/wiki/Remote_manipulator): powerful, but a touch awkward. ![](Waldo.jpg)]
 
@@ -89,7 +89,8 @@ dL %.>%
 
 The `cdata` arguments are deliberately verbose.  This is because at some point you
 may have to read your own code, and it best to be reminded about the role of each
-function argument at that time.^[`cdata` is itself is based on `SQL` aggregations using the `DBI` package.
+function argument at that time.^[`cdata` is itself is based on `SQL` aggregations,
+using the [`DBI` package](https://CRAN.R-project.org/package=DBI).
 This is why "BB8"'s `NA`
 (likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
