@@ -13,6 +13,12 @@ library(tint)
 knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tint'))
 options(htmltools.dir.version = FALSE)
 
+library("magick")
+pltImg <- function(fname) {
+  img <- image_read(fname)
+  plot(img)
+}
+
 library("cdata")
 library("seplyr")
 sc <- sparklyr::spark_connect(version='2.2.0', 
@@ -27,7 +33,7 @@ d <- dplyr::starwars %.>%
 
 One great example of this is: the [`sparklyr` package](https://cran.rstudio.com/web/packages/sparklyr/index.html), that allows
 `R` to work with big data.  In the following example the table we are working with
-is remote. For all we know it could be distributed on a large remote data center.
+is remote. For all we know it could be distributed on a large remote data center.^[Working with remote data tools can be like working with a [Waldo system](https://en.wikipedia.org/wiki/Remote_manipulator): powerful, but a touch awkward. ![](Waldo.jpg)]
 
 ```{r data}
 library("seplyr")
@@ -87,7 +93,7 @@ function argument at that time.^[`cdata` is itself is based on `SQL` aggregation
 This is why "BB8"'s `NA`
 (likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
-More on these sort of transforms can be found in the folling notes:
+More on these sort of transforms can be found in the following notes:
 
  * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html)
  * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html)
