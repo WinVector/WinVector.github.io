@@ -67,8 +67,8 @@ dT %.>%
   knitr::kable(.)
 ```
 
-The important thing: is the data stays remote, all operations are performed
-on the remote big data system, possibly in parallel.^[`class(dT)`: `r class(dT)`]
+The important thing: is the data stays remote^[`class(dT)`: `r class(dT)`], all operations are performed
+on the remote big data system, possibly in parallel.^[Note: the [`tidyr` package](https://CRAN.R-project.org/package=tidyr) does not currently (`r packageVersion("tidyr")`) work with remote data: `tidyr::gather(d, key=measurment, value=value, mass, height)` `r tryCatch(tidyr::gather(d, key=measurment, value=value, mass, height), error=function(e) {as.character(e)})`.]
 
 The reverse operation (often called pivoting) is also easy (and in
 fact shares the same control structures).
