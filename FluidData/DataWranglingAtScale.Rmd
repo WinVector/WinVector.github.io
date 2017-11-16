@@ -50,6 +50,8 @@ dTName <-  moveValuesToRowsN("starwars",
                         my_db = sc, 
                         columnsToCopy = "name")
 
+print(dTName)
+
 qlook(sc, dTName)
 ```
 

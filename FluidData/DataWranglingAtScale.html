@@ -83,8 +83,10 @@ dTName &lt;-  moveValuesToRowsN(&quot;starwars&quot;,
                         my_db = sc, 
                         columnsToCopy = &quot;name&quot;)
 
-qlook(sc, dTName)</code></pre>
-<pre><code>## table `mvtrq_bp2nmgrbbdxgzupux9fd_0000000001` spark_connection spark_shell_connection DBIConnection 
+print(dTName)</code></pre>
+<pre><code>## [1] &quot;mvtrq_q4jsbxpcftisnqahnh89_0000000001&quot;</code></pre>
+<pre class="r"><code>qlook(sc, dTName)</code></pre>
+<pre><code>## table `mvtrq_q4jsbxpcftisnqahnh89_0000000001` spark_connection spark_shell_connection DBIConnection 
 ##  nrow: 174 
 ##  NOTE: &quot;obs&quot; below is count of sample, not number of rows of data.
 ## 'data.frame':    10 obs. of  3 variables:
