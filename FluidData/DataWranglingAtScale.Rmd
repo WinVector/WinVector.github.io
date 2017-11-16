@@ -107,7 +107,7 @@ dL %.>%
 ```
 
 
-More on these sort of transforms can be found in the following notes:
+More^[The source code that produced this article can be [downloaded from here](http://winvector.github.io/FluidData/DataWranglingAtScale.Rmd).] on these sort of transforms can be found in the following notes:
 
  * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html)
  * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html)
