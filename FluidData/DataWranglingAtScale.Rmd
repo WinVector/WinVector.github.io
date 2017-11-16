@@ -3,23 +3,14 @@ title: "Data Wrangling at Scale"
 author: "John Mount, [Win-Vector LLC](http://www.win-vector.com/)"
 date: "`r Sys.Date()`"
 output: tint::tintHtml
-# bibliography: skeleton.bib
 link-citations: yes
 ---
 
 ```{r setup, include=FALSE}
 library(tint)
-# invalidate cache when the package version changes
-knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tint'))
+knitr::opts_chunk$set(tidy = FALSE)
 options(htmltools.dir.version = FALSE)
 
-library("magick")
-pltImg <- function(fname) {
-  img <- image_read(fname)
-  plot(img)
-}
-
-library("cdata")
 library("seplyr")
 sc <- sparklyr::spark_connect(version='2.2.0', 
    master = "local")
@@ -30,7 +21,7 @@ d <- dplyr::starwars %.>%
 
 > "[`R`](https://www.r-project.org) is its packages."
 
-One great example of this is: the [`sparklyr` package](https://CRAN.R-project.org/package=sparklyr), that allows
+One great example of this is: the [`sparklyr` package](https://CRAN.R-project.org/package=sparklyr), which allows
 `R` to work with big data.  In the following example the table we are working with
 is remote. For all we know it could be distributed on a large remote data center.^[Working with remote data tools can be like working with a [Waldo system](https://en.wikipedia.org/wiki/Remote_manipulator): powerful, but a touch awkward. ![](Waldo.jpg)]
 
