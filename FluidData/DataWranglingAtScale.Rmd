@@ -51,7 +51,7 @@ dTName <- moveValuesToRowsN(
   my_db = sc, 
   columnsToCopy = "name")
 
-print(dTName)
+str(dTName)
 
 qlook(sc, dTName)
 ```
