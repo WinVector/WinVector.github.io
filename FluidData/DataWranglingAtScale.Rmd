@@ -25,7 +25,6 @@ sc <- sparklyr::spark_connect(version='2.2.0',
    master = "local")
 d <- dplyr::starwars %.>%
   select_se(., c("name", "height", "mass")) %.>%
-  # dplyr::mutate(., height = as.character(height), mass = as.character(mass)) %.>%
   dplyr::copy_to(sc, ., "starwars")
 ```
 
@@ -59,6 +58,13 @@ dTName <-  moveValuesToRowsN("starwars",
                         controlTable = cT, 
                         my_db = sc, 
                         columnsToCopy = "name")
+
+qlook(sc, dTName)
+```
+
+`cdata` can work fluidly with [`dplyr`](https://CRAN.R-project.org/package=dplyr).^[However, `cdata` does not require `dplyr`.]
+
+```{r p1}
 dT <- dplyr::tbl(sc, dTName)
 
 dT %.>%
@@ -69,6 +75,19 @@ dT %.>%
 
 The important thing is: the data stays remote^[`class(dT)`: `r class(dT)`], all operations are performed
 on the remote big data system, possibly in parallel.^[Note: the [`tidyr` package](https://CRAN.R-project.org/package=tidyr) does not currently (`r packageVersion("tidyr")`) work with remote data: `tidyr::gather(d, key=measurement, value=value, mass, height)` `r tryCatch(tidyr::gather(d, key=measurement, value=value, mass, height), error=function(e) {as.character(e)})`.]
+
+The `cdata` arguments are deliberately verbose.  This is because at some point you
+may have to read your own code, and it is best to be reminded about the role of each
+function argument at that time.
+
+Notice `cdata` takes *names* of tables as arguments and also returns *names*
+of tables (not values or `dplyr::tbl()` handles).  This is why we show the explicit
+use of `dplyr::tbl()` to produce remote data handles in this example.^[Basing storage on names
+instead of handles means: for production code you need tools to help manage table 
+lifetime. `cdata::makeTempNameGenerator()` is supplied for that purpose.  As
+in-memory data doesn't have representation names in the same sense remote data does,
+`cdata` supplies in-memory value to value functions: `moveValuesToRowsD()`, `buildPivotControlTableD()`,
+and `moveValuesToColumnsD()`.]
 
 The reverse operation (often called pivoting) is also easy (and in
 fact shares the same control structures).
@@ -87,11 +106,8 @@ dL %.>%
   knitr::kable(.)
 ```
 
-The `cdata` arguments are deliberately verbose.  This is because at some point you
-may have to read your own code, and it is best to be reminded about the role of each
-function argument at that time.^[`cdata` is itself is based on `SQL` aggregations,
-using the [`DBI` package](https://CRAN.R-project.org/package=DBI).
-This is why "BB8"'s `NA`
+`cdata` is itself is based on `SQL` aggregations,
+using the [`DBI` package](https://CRAN.R-project.org/package=DBI).^[This is why "BB8"'s `NA`
 (likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
 More on these sort of transforms can be found in the following notes:

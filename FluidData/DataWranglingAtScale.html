@@ -12,7 +12,7 @@
 
 <meta name="author" content="John Mount, Win-Vector LLC" />
 
-<meta name="date" content="2017-11-15" />
+<meta name="date" content="2017-11-16" />
 
 <title>Data Wrangling at Scale</title>
 
@@ -42,7 +42,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <h1 class="title toc-ignore">Data Wrangling at Scale</h1>
 <h4 class="author">John Mount, <a href="http://www.win-vector.com/">Win-Vector LLC</a></h4>
-<h4 class="date">2017-11-15</h4>
+<h4 class="date">2017-11-16</h4>
 
 
 
@@ -82,7 +82,17 @@ dTName &lt;-  moveValuesToRowsN(&quot;starwars&quot;,
                         controlTable = cT, 
                         my_db = sc, 
                         columnsToCopy = &quot;name&quot;)
-dT &lt;- dplyr::tbl(sc, dTName)
+
+qlook(sc, dTName)</code></pre>
+<pre><code>## table `mvtrq_fbpvydjhowuqqpdnefbn_0000000001` spark_connection spark_shell_connection DBIConnection 
+##  nrow: 174 
+##  NOTE: &quot;obs&quot; below is count of sample, not number of rows of data.
+## 'data.frame':    10 obs. of  3 variables:
+##  $ name       : chr  &quot;Luke Skywalker&quot; &quot;Luke Skywalker&quot; &quot;C-3PO&quot; &quot;C-3PO&quot; ...
+##  $ measurement: chr  &quot;height&quot; &quot;mass&quot; &quot;height&quot; &quot;mass&quot; ...
+##  $ value      : num  172 77 167 75 96 32 202 136 150 49</code></pre>
+<p><code>cdata</code> can work fluidly with <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> However, <code>cdata</code> does not require <code>dplyr</code>.</span></p>
+<pre class="r"><code>dT &lt;- dplyr::tbl(sc, dTName)
 
 dT %.&gt;%
   arrange_se(., c(&quot;name&quot;, &quot;measurement&quot;)) %.&gt;%
@@ -129,7 +139,9 @@ dT %.&gt;%
 </tr>
 </tbody>
 </table>
-<p>The important thing is: the data stays remote<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> <code>class(dT)</code>: tbl_spark, tbl_sql, tbl_lazy, tbl</span>, all operations are performed on the remote big data system, possibly in parallel.<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> Note: the <a href="https://CRAN.R-project.org/package=tidyr"><code>tidyr</code> package</a> does not currently (0.7.2) work with remote data: <code>tidyr::gather(d, key=measurement, value=value, mass, height)</code> Error in gather.default(d, key = measurement, value = value, mass, height): object ‘height’ not found .</span></p>
+<p>The important thing is: the data stays remote<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> <code>class(dT)</code>: tbl_spark, tbl_sql, tbl_lazy, tbl</span>, all operations are performed on the remote big data system, possibly in parallel.<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> Note: the <a href="https://CRAN.R-project.org/package=tidyr"><code>tidyr</code> package</a> does not currently (0.7.2) work with remote data: <code>tidyr::gather(d, key=measurement, value=value, mass, height)</code> Error in gather.default(d, key = measurement, value = value, mass, height): object ‘height’ not found .</span></p>
+<p>The <code>cdata</code> arguments are deliberately verbose. This is because at some point you may have to read your own code, and it is best to be reminded about the role of each function argument at that time.</p>
+<p>Notice <code>cdata</code> takes <em>names</em> of tables as arguments and also returns <em>names</em> of tables (not values or <code>dplyr::tbl()</code> handles). This is why we show the explicit use of <code>dplyr::tbl()</code> to produce remote data handles in this example.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> Basing storage on names instead of handles means: for production code you need tools to help manage table lifetime. <code>cdata::makeTempNameGenerator()</code> is supplied for that purpose. As in-memory data doesn’t have representation names in the same sense remote data does, <code>cdata</code> supplies in-memory value to value functions: <code>moveValuesToRowsD()</code>, <code>buildPivotControlTableD()</code>, and <code>moveValuesToColumnsD()</code>.</span></p>
 <p>The reverse operation (often called pivoting) is also easy (and in fact shares the same control structures).</p>
 <pre class="r"><code>dL &lt;- moveValuesToColumnsN(
   dTName,
@@ -183,7 +195,7 @@ dL %.&gt;%
 </tr>
 </tbody>
 </table>
-<p>The <code>cdata</code> arguments are deliberately verbose. This is because at some point you may have to read your own code, and it is best to be reminded about the role of each function argument at that time.<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> <code>cdata</code> is itself is based on <code>SQL</code> aggregations, using the <a href="https://CRAN.R-project.org/package=DBI"><code>DBI</code> package</a>. This is why “BB8”’s <code>NA</code> (likely represented on the remote system as a <code>NULL</code>) gets changed to a <code>NaN</code>.</span></p>
+<p><code>cdata</code> is itself is based on <code>SQL</code> aggregations, using the <a href="https://CRAN.R-project.org/package=DBI"><code>DBI</code> package</a>.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> This is why “BB8”’s <code>NA</code> (likely represented on the remote system as a <code>NULL</code>) gets changed to a <code>NaN</code>.</span></p>
 <p>More on these sort of transforms can be found in the following notes:</p>
 <ul>
 <li><a href="http://winvector.github.io/FluidData/RowsAndColumns.html">Theory of coordinatized data</a></li>
