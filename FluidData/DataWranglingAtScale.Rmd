@@ -45,10 +45,11 @@ cT <- buildUnPivotControlTable(
   nameForNewKeyColumn = "measurement",
   nameForNewValueColumn = "value",
   columnsToTakeFrom = c('height', 'mass') )
-dTName <-  moveValuesToRowsN("starwars", 
-                        controlTable = cT, 
-                        my_db = sc, 
-                        columnsToCopy = "name")
+dTName <- moveValuesToRowsN(
+  "starwars", 
+  controlTable = cT, 
+  my_db = sc, 
+  columnsToCopy = "name")
 
 print(dTName)
 
@@ -62,9 +63,13 @@ dT <- dplyr::tbl(sc, dTName)
 
 dT %.>%
   arrange_se(., c("name", "measurement")) %.>%
-  head(.) %.>%
+  head(., n = 12) %.>%
   knitr::kable(.)
 ```
+
+`cdata` is itself is based on `SQL` aggregations,
+using the [`DBI` package](https://CRAN.R-project.org/package=DBI).^[This is why "BB8"'s `NA`
+(likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
 The important thing is: the data stays remote^[`class(dT)`: `r class(dT)`], all operations are performed
 on the remote big data system, possibly in parallel.^[Note: the [`tidyr` package](https://CRAN.R-project.org/package=tidyr) does not currently (`r packageVersion("tidyr")`) work with remote data: `tidyr::gather(d, key=measurement, value=value, mass, height)` `r tryCatch(tidyr::gather(d, key=measurement, value=value, mass, height), error=function(e) {as.character(e)})`.]
@@ -95,13 +100,10 @@ dL <- moveValuesToColumnsN(
 
 dL %.>%
   arrange_se(., "name") %.>%
-  head(.) %.>%
+  head(., n = 6) %.>%
   knitr::kable(.)
 ```
 
-`cdata` is itself is based on `SQL` aggregations,
-using the [`DBI` package](https://CRAN.R-project.org/package=DBI).^[This is why "BB8"'s `NA`
-(likely represented on the remote system as a `NULL`) gets changed to a `NaN`.]
 
 More on these sort of transforms can be found in the following notes:
 
