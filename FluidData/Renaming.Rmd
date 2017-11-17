@@ -31,7 +31,7 @@ d <- dplyr::starwars %.>%
 ```
 
 This is our (new)^["New" is why we need the dev-versions
-of [`wrapr`](https://winvector.github.io/wrapr/) and [`seplyr`](https://winvector.github.io/seplyr/).] favorite way to bulk rename variables in [`R`](https://www.r-project.org),
+of [`wrapr`](https://winvector.github.io/wrapr/) and [`seplyr`](https://winvector.github.io/seplyr/).] favorite way to bulk rename columns in [`R`](https://www.r-project.org),
 especially when using [`sparklyr`](https://spark.rstudio.com) to work with big data. 
 
 There are, of course, many other ways to do this.
