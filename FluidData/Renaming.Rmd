@@ -50,11 +50,15 @@ Notice this data is a remote `Spark` data handle (not an in-memory `data.frame`)
 
 Suppose (for no reason at all) we want all columns with under-bars to be in upper case.
 
-This is easy to achieve:^[People have asked, so I will again discuss it.
-A lot of the other popular methods for renaming columns
-to not appear to work with the current CRAN versions of `dplyr` (0.7.4) and `sparklyr` (0.6.4).  Both `rlang::set_names(d, toupper)`,
+This is easy to achieve:^[People have asked, so I will discuss it (again).
+A lot of the other methods for renaming columns
+do not work with `Spark` data. For example, using the current CRAN versions of 
+`rlang` (`r packageVersion("rlang")`),
+`dplyr` (`r packageVersion("dplyr")`),
+`dbplyr` (`r packageVersion("dbplyr")`),
+`sparklyr`  (`r packageVersion("sparklyr")`), both `rlang::set_names(d, toupper)`,
 and `dplyr::rename(d, HAIR_COLOR=hair_color, SKIN_COLOR=skin_color)` currently throw
-when given `Spark` data handles.  It is a topic of some discussion: 
+when given `Spark` data handles.  This is a topic of some discussion: 
 [1](https://github.com/rstudio/sparklyr/issues/678),
 [2](https://github.com/rstudio/sparklyr/issues/900),
 [3](https://github.com/tidyverse/dplyr/issues/2776),
