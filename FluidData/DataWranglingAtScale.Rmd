@@ -113,5 +113,7 @@ More^[The source code that produced this article can be [downloaded from here](h
  * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html)
 
  
-
+```{r cleanup, include=FALSE}
+sparklyr::spark_disconnect(sc)
+```
 
