@@ -46,33 +46,112 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 
 
-<p>This is my (new)<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> “New” is why we need the dev-versions of <a href="https://winvector.github.io/wrapr/"><code>wrapr</code></a> and <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a>.</span> favorite way to bulk rename columns in <a href="https://www.r-project.org"><code>R</code></a>, especially when using <a href="https://spark.rstudio.com"><code>sparklyr</code></a> to work with big data.</p>
+<p>This is my (new)<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> “New” also meaning we need the latest versions of <a href="https://winvector.github.io/wrapr/"><code>wrapr</code></a> and <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a>.</span> favorite way to bulk rename columns in <a href="https://www.r-project.org"><code>R</code></a>, especially when using <a href="https://spark.rstudio.com"><code>sparklyr</code></a> to work with big data.</p>
 <p>There are, of course, many other ways to do this.</p>
 <p>Consider the following data:<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> Source code for this note can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/Renaming.Rmd">here</a>.</span></p>
-<pre class="r"><code>print(d)</code></pre>
-<pre><code>## # Source:   table&lt;starwars&gt; [?? x 10]
-## # Database: spark_connection
-##                  name height  mass    hair_color  skin_color eye_color
-##                 &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;         &lt;chr&gt;       &lt;chr&gt;     &lt;chr&gt;
-##  1     Luke Skywalker    172    77         blond        fair      blue
-##  2              C-3PO    167    75          &lt;NA&gt;        gold    yellow
-##  3              R2-D2     96    32          &lt;NA&gt; white, blue       red
-##  4        Darth Vader    202   136          none       white    yellow
-##  5        Leia Organa    150    49         brown       light     brown
-##  6          Owen Lars    178   120   brown, grey       light      blue
-##  7 Beru Whitesun lars    165    75         brown       light      blue
-##  8              R5-D4     97    32          &lt;NA&gt;  white, red       red
-##  9  Biggs Darklighter    183    84         black       light     brown
-## 10     Obi-Wan Kenobi    182    77 auburn, white        fair blue-gray
-## # ... with more rows, and 4 more variables: birth_year &lt;dbl&gt;,
-## #   gender &lt;chr&gt;, homeworld &lt;chr&gt;, species &lt;chr&gt;</code></pre>
+<pre class="r"><code>class(d)</code></pre>
+<pre><code>## [1] &quot;tbl_spark&quot; &quot;tbl_sql&quot;   &quot;tbl_lazy&quot;  &quot;tbl&quot;</code></pre>
+<pre class="r"><code>d %.&gt;%
+  head(.) %.&gt;%
+  knitr::kable(.)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">name</th>
+<th align="right">height</th>
+<th align="right">mass</th>
+<th align="left">hair_color</th>
+<th align="left">skin_color</th>
+<th align="left">eye_color</th>
+<th align="right">birth_year</th>
+<th align="left">gender</th>
+<th align="left">homeworld</th>
+<th align="left">species</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Luke Skywalker</td>
+<td align="right">172</td>
+<td align="right">77</td>
+<td align="left">blond</td>
+<td align="left">fair</td>
+<td align="left">blue</td>
+<td align="right">19.0</td>
+<td align="left">male</td>
+<td align="left">Tatooine</td>
+<td align="left">Human</td>
+</tr>
+<tr class="even">
+<td align="left">C-3PO</td>
+<td align="right">167</td>
+<td align="right">75</td>
+<td align="left">NA</td>
+<td align="left">gold</td>
+<td align="left">yellow</td>
+<td align="right">112.0</td>
+<td align="left">NA</td>
+<td align="left">Tatooine</td>
+<td align="left">Droid</td>
+</tr>
+<tr class="odd">
+<td align="left">R2-D2</td>
+<td align="right">96</td>
+<td align="right">32</td>
+<td align="left">NA</td>
+<td align="left">white, blue</td>
+<td align="left">red</td>
+<td align="right">33.0</td>
+<td align="left">NA</td>
+<td align="left">Naboo</td>
+<td align="left">Droid</td>
+</tr>
+<tr class="even">
+<td align="left">Darth Vader</td>
+<td align="right">202</td>
+<td align="right">136</td>
+<td align="left">none</td>
+<td align="left">white</td>
+<td align="left">yellow</td>
+<td align="right">41.9</td>
+<td align="left">male</td>
+<td align="left">Tatooine</td>
+<td align="left">Human</td>
+</tr>
+<tr class="odd">
+<td align="left">Leia Organa</td>
+<td align="right">150</td>
+<td align="right">49</td>
+<td align="left">brown</td>
+<td align="left">light</td>
+<td align="left">brown</td>
+<td align="right">19.0</td>
+<td align="left">female</td>
+<td align="left">Alderaan</td>
+<td align="left">Human</td>
+</tr>
+<tr class="even">
+<td align="left">Owen Lars</td>
+<td align="right">178</td>
+<td align="right">120</td>
+<td align="left">brown, grey</td>
+<td align="left">light</td>
+<td align="left">blue</td>
+<td align="right">52.0</td>
+<td align="left">male</td>
+<td align="left">Tatooine</td>
+<td align="left">Human</td>
+</tr>
+</tbody>
+</table>
+<p>Notice this data is a remote <code>Spark</code> data handle (not an in-memory <code>data.frame</code>).</p>
 <p>Suppose (for no reason at all) we want all columns with under-bars to be in upper case.</p>
-<p>This is easy to achieve:</p>
+<p>This is easy to achieve:<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> People have asked, so I will again discuss it. A lot of the other popular methods for renaming columns to not appear to work with the current CRAN versions of <code>dplyr</code> (0.7.4) and <code>sparklyr</code> (0.6.4). Both <code>rlang::set_names(d, toupper)</code>, and <code>dplyr::rename(d, HAIR_COLOR=hair_color, SKIN_COLOR=skin_color)</code> currently throw when given <code>Spark</code> data handles. It is a topic of some discussion: <a href="https://github.com/rstudio/sparklyr/issues/678">1</a>, <a href="https://github.com/rstudio/sparklyr/issues/900">2</a>, <a href="https://github.com/tidyverse/dplyr/issues/2776">3</a>, <a href="https://github.com/tidyverse/dplyr/issues/2860">4</a>, and <a href="https://stackoverflow.com/questions/45622262/sparklyr-change-all-column-names-spark-dataframe">5</a>.</span></p>
 <pre class="r"><code>library(&quot;seplyr&quot;)
-# requires dev-version at least 1.0.1
+# requires version at least 1.0.1
 packageVersion(&quot;wrapr&quot;) </code></pre>
 <pre><code>## [1] '1.0.1'</code></pre>
-<pre class="r"><code># requires dev-version at least 0.1.6
+<pre class="r"><code># requires version at least 0.1.6
 packageVersion(&quot;seplyr&quot;) </code></pre>
 <pre><code>## [1] '0.1.6'</code></pre>
 <pre class="r"><code># find columns matching our condition

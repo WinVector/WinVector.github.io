@@ -30,7 +30,7 @@ d <- dplyr::starwars %.>%
   dplyr::copy_to(sc, ., "starwars")
 ```
 
-This is my (new)^["New" is why we need the dev-versions
+This is my (new)^["New" also meaning we need the latest versions 
 of [`wrapr`](https://winvector.github.io/wrapr/) and [`seplyr`](https://winvector.github.io/seplyr/).] favorite way to bulk rename columns in [`R`](https://www.r-project.org),
 especially when using [`sparklyr`](https://spark.rstudio.com) to work with big data. 
 
@@ -39,18 +39,34 @@ There are, of course, many other ways to do this.
 Consider the following data:^[Source code for this note can be found [here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/Renaming.Rmd).]
 
 ```{r show1}
-print(d)
+class(d)
+
+d %.>%
+  head(.) %.>%
+  knitr::kable(.)
 ```
+
+Notice this data is a remote `Spark` data handle (not an in-memory `data.frame`).
 
 Suppose (for no reason at all) we want all columns with under-bars to be in upper case.
 
-This is easy to achieve:
+This is easy to achieve:^[People have asked, so I will again discuss it.
+A lot of the other popular methods for renaming columns
+to not appear to work with the current CRAN versions of `dplyr` (0.7.4) and `sparklyr` (0.6.4).  Both `rlang::set_names(d, toupper)`,
+and `dplyr::rename(d, HAIR_COLOR=hair_color, SKIN_COLOR=skin_color)` currently throw
+when given `Spark` data handles.  It is a topic of some discussion: 
+[1](https://github.com/rstudio/sparklyr/issues/678),
+[2](https://github.com/rstudio/sparklyr/issues/900),
+[3](https://github.com/tidyverse/dplyr/issues/2776),
+[4](https://github.com/tidyverse/dplyr/issues/2860),
+and [5](https://stackoverflow.com/questions/45622262/sparklyr-change-all-column-names-spark-dataframe).]
+
 
 ```{r rename1}
 library("seplyr")
-# requires dev-version at least 1.0.1
+# requires version at least 1.0.1
 packageVersion("wrapr") 
-# requires dev-version at least 0.1.6
+# requires version at least 0.1.6
 packageVersion("seplyr") 
 
 # find columns matching our condition
