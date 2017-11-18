@@ -56,8 +56,8 @@ do not work with `Spark` data. For example, using the current CRAN versions of
 `rlang` (`r packageVersion("rlang")`),
 `dplyr` (`r packageVersion("dplyr")`),
 `dbplyr` (`r packageVersion("dbplyr")`),
-`sparklyr`  (`r packageVersion("sparklyr")`), both `rlang::set_names(d, toupper)`,
-and `dplyr::rename(d, HAIR_COLOR=hair_color, SKIN_COLOR=skin_color)` currently throw
+`sparklyr`  (`r packageVersion("sparklyr")`): both `rlang::set_names(d, toupper)`,
+and `dplyr::rename(d, HAIR_COLOR=hair_color, SKIN_COLOR=skin_color)` throw
 when given `Spark` data handles.  This is a topic of some discussion: 
 [1](https://github.com/rstudio/sparklyr/issues/678),
 [2](https://github.com/rstudio/sparklyr/issues/900),
