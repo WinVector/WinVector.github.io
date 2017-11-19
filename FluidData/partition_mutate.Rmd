@@ -34,7 +34,7 @@ using [`sparklyr`](https://spark.rstudio.com) the following considerations are c
 The point is: you can't always expect code that is not adapted to the environment 
 run well.
 
-Let's set up a working example.
+Let's set up a working example.^[The source code for this article can be found [here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate.Rmd).]
 
 ```{r sed}
 library("seplyr")
