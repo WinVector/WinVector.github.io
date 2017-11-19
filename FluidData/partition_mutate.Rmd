@@ -165,7 +165,11 @@ done together in one step (as they do not depend on each other) and then
 all the statements that depend on their consequences can also be executed in
 another large step.
 
-`seplyr::partition_mutate_nse()` supplies exactly this partitioning service.
+`seplyr::partition_mutate_nse()` supplies exactly the needed 
+partitioning service.^[We could try to re-order the statements by hand- but then we would 
+break up all of the simulated code blocks and produce hard to read
+and maintain code.  It is better to keep the code in a meaningful arrangement
+and have a procedure to re-optimize the code to minimize nesting.]
 
 ```{r pex1}
 plan <- partition_mutate_nse(
@@ -183,7 +187,7 @@ print(plan)
 
 res <- d
 for(stepi in plan) {
-  res <- mutate_se(res, stepi)
+  res <- mutate_se(res, stepi, splitTerms = FALSE)
 }
 res %.>% 
   head(.) %.>% 

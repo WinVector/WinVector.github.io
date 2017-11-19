@@ -156,7 +156,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `iiqhyonkow`) `fvktpqyasy`</code></pre>
+## FROM `starwars`) `lqssiveygx`) `ylrbonyhwo`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
@@ -210,7 +210,7 @@ class(d)</code></pre>
 </blockquote>
 <p>This can be a problem. We have routinely seen blocks where there are 50 or more such variables re-used. This is when the dependence depth is only 2 or 3 (meaning the expressions could be re-ordered efficiently).</p>
 <p>The thing we are missing is: all of the condition calculations could be done together in one step (as they do not depend on each other) and then all the statements that depend on their consequences can also be executed in another large step.</p>
-<p><code>seplyr::partition_mutate_nse()</code> supplies exactly this partitioning service.</p>
+<p><code>seplyr::partition_mutate_nse()</code> supplies exactly the needed partitioning service.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> We could try to re-order the statements by hand- but then we would break up all of the simulated code blocks and produce hard to read and maintain code. It is better to keep the code in a meaningful arrangement and have a procedure to re-optimize the code to minimize nesting.</span></p>
 <pre class="r"><code>plan &lt;- partition_mutate_nse(
   condition1 := height&gt;=150,
      mass := ifelse(condition1, 
@@ -238,7 +238,7 @@ print(plan)</code></pre>
 ##   &quot;ifelse(condition2, tolower(name), name)&quot;</code></pre>
 <pre class="r"><code>res &lt;- d
 for(stepi in plan) {
-  res &lt;- mutate_se(res, stepi)
+  res &lt;- mutate_se(res, stepi, splitTerms = FALSE)
 }
 res %.&gt;% 
   head(.) %.&gt;% 
@@ -249,80 +249,80 @@ res %.&gt;%
 <thead>
 <tr class="header">
 <th align="right">height</th>
-<th align="right">mass</th>
-<th align="left">hair_color</th>
-<th align="left">eye_color</th>
 <th align="right">birth_year</th>
 <th align="left">condition1</th>
 <th align="left">condition2</th>
+<th align="right">mass</th>
+<th align="left">hair_color</th>
+<th align="left">eye_color</th>
 <th align="left">name</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="right">172</td>
-<td align="right">87</td>
-<td align="left">brown</td>
-<td align="left">blue</td>
 <td align="right">19.0</td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
+<td align="right">87</td>
+<td align="left">brown</td>
+<td align="left">blue</td>
 <td align="left">luke skywalker</td>
 </tr>
 <tr class="even">
 <td align="right">167</td>
-<td align="right">85</td>
-<td align="left">brown</td>
-<td align="left">yellow</td>
 <td align="right">112.0</td>
 <td align="left">TRUE</td>
 <td align="left">FALSE</td>
+<td align="right">85</td>
+<td align="left">brown</td>
+<td align="left">yellow</td>
 <td align="left">C-3PO</td>
 </tr>
 <tr class="odd">
 <td align="right">96</td>
-<td align="right">32</td>
-<td align="left">NA</td>
-<td align="left">blue</td>
 <td align="right">33.0</td>
 <td align="left">FALSE</td>
 <td align="left">TRUE</td>
+<td align="right">32</td>
+<td align="left">NA</td>
+<td align="left">blue</td>
 <td align="left">r2-d2</td>
 </tr>
 <tr class="even">
 <td align="right">202</td>
-<td align="right">146</td>
-<td align="left">brown</td>
-<td align="left">blue</td>
 <td align="right">41.9</td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
+<td align="right">146</td>
+<td align="left">brown</td>
+<td align="left">blue</td>
 <td align="left">darth vader</td>
 </tr>
 <tr class="odd">
 <td align="right">150</td>
-<td align="right">59</td>
-<td align="left">brown</td>
-<td align="left">blue</td>
 <td align="right">19.0</td>
 <td align="left">TRUE</td>
 <td align="left">TRUE</td>
+<td align="right">59</td>
+<td align="left">brown</td>
+<td align="left">blue</td>
 <td align="left">leia organa</td>
 </tr>
 <tr class="even">
 <td align="right">178</td>
-<td align="right">130</td>
-<td align="left">brown</td>
-<td align="left">blue</td>
 <td align="right">52.0</td>
 <td align="left">TRUE</td>
 <td align="left">FALSE</td>
+<td align="right">130</td>
+<td align="left">brown</td>
+<td align="left">blue</td>
 <td align="left">Owen Lars</td>
 </tr>
 </tbody>
 </table>
 <p>The idea is: no matter how many statements are present <code>seplyr::partition_mutate_nse()</code> breaks the <code>mutate()</code> statement into a sequence of length proportional only the the value dependency depth (in this case: 2), and <em>not</em> proportional to the number of introduced values (which can be as long as the number of conditions introduced).</p>
-<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> And in particular want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
+<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> And in particular want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
 <pre class="r"><code>sparklyr::spark_disconnect(sc)</code></pre>
 
 
