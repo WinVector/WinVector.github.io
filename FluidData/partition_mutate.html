@@ -156,7 +156,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `lqssiveygx`) `ylrbonyhwo`</code></pre>
+## FROM `starwars`) `gvlqweuujl`) `uvfvcmhakg`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
@@ -240,7 +240,14 @@ print(plan)</code></pre>
 for(stepi in plan) {
   res &lt;- mutate_se(res, stepi, splitTerms = FALSE)
 }
-res %.&gt;% 
+
+res  %.&gt;% 
+  dplyr::show_query(.)</code></pre>
+<pre><code>## &lt;SQL&gt;
+## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
+## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
+## FROM `starwars`) `ecnsioyggc`</code></pre>
+<pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
   dplyr::collect(.)  %.&gt;% 

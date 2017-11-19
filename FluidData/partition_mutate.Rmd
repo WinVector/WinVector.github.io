@@ -189,6 +189,10 @@ res <- d
 for(stepi in plan) {
   res <- mutate_se(res, stepi, splitTerms = FALSE)
 }
+
+res  %.>% 
+  dplyr::show_query(.)
+
 res %.>% 
   head(.) %.>% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
