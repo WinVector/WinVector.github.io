@@ -51,11 +51,11 @@ if (window.hljs) {
 <p>When using <a href="https://www.r-project.org"><code>R</code></a> to work with a big-data data service such as <a href="https://spark.apache.org"><code>Apache Spark</code></a> using <a href="https://spark.rstudio.com"><code>sparklyr</code></a> the following considerations are critical.</p>
 <ul>
 <li>You must cache and partition at points.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> However, you must limit how often you do this and free unneeded caches.</span></li>
-<li>You must try to limit the set of columns you are working on (so that you are working on small cache-able projections of your large data).</li>
-<li>You must try to limit the number of sequential steps you specify as they are <em>actualy implemented by nesting of queries</em>.<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> The nesting gets expensive and eventually fails. A classic example of a <a href="https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/">leaky abstraction</a>.</span></li>
+<li>You must try to limit the set of columns you are working on (so that you are working on small cache-able projections of your large data).<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> The query optimizer may not be able to skip over producing columns that you are not actually using, but are in fact specified in intermediate queries.</span></li>
+<li>You must try to limit the number of sequential steps you specify as they are <em>actualy implemented by nesting of queries</em>.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The nesting gets expensive and eventually fails. A classic example of a <a href="https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/">leaky abstraction</a>.</span></li>
 </ul>
 <p>The point is: you can’t always expect code that is not adapted to the environment run well.</p>
-<p>Let’s set up a working example.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The source code for this article can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate.Rmd">here</a>.</span></p>
+<p>Let’s set up a working example.<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> The source code for this article can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate.Rmd">here</a>.</span></p>
 <pre class="r"><code>library(&quot;seplyr&quot;)</code></pre>
 <pre><code>## Loading required package: wrapr</code></pre>
 <pre class="r"><code>packageVersion(&quot;seplyr&quot;)</code></pre>
@@ -156,7 +156,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `gvlqweuujl`) `uvfvcmhakg`</code></pre>
+## FROM `starwars`) `agqkjslcvw`) `vyfukioiar`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
@@ -164,18 +164,18 @@ class(d)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`, 2.0 AS `b`, 3.0 AS `c`
 ## FROM `starwars`</code></pre>
-<p>However: it is <a href="http://www.win-vector.com/blog/2017/09/my-advice-on-dplyrmutate/">hard to give the advice “put everything into one mutate”</a> as the exact availability and semantics of derived columns has never really been specified in <code>dplyr</code><label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> It is more often a bit if “it works in memory, and it may or may not work against big data sources.” <a href="https://github.com/rstudio/sparklyr/issues/1015"><code>sparklyr</code> issue 1015</a>, <a href="https://github.com/tidyverse/dplyr/issues/2481"><code>dplyr</code> issue 2481</a>, and <a href="https://github.com/tidyverse/dplyr/issues/3095"><code>dplyr</code> issue 3095</a>.</span></p>
+<p>However: it is <a href="http://www.win-vector.com/blog/2017/09/my-advice-on-dplyrmutate/">hard to give the advice “put everything into one mutate”</a> as the exact availability and semantics of derived columns has never really been specified in <code>dplyr</code><label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> It is more often a bit if “it works in memory, and it may or may not work against big data sources.” <a href="https://github.com/rstudio/sparklyr/issues/1015"><code>sparklyr</code> issue 1015</a>, <a href="https://github.com/tidyverse/dplyr/issues/2481"><code>dplyr</code> issue 2481</a>, and <a href="https://github.com/tidyverse/dplyr/issues/3095"><code>dplyr</code> issue 3095</a>.</span></p>
 <p>The additional confounding issue is code like the following currently throws:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := a, c := b)
 # Quitting from lines 87-92 (partition_mutate.Rmd) 
 # Error: org.apache.spark.sql.AnalysisException: cannot resolve '`b`' ...</code></pre>
-<p>It appears there is a <code>dplyr</code> fix in the works.<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091"><code>dplyr</code> commit “Improve subquery splitting in mutate”</a></span></p>
+<p>It appears there is a <code>dplyr</code> fix in the works.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091"><code>dplyr</code> commit “Improve subquery splitting in mutate”</a></span></p>
 <p>If the included descriptive comment:</p>
 <pre class="r"><code> # For each expression, check if it uses any newly created variables.
  # If so, nest the mutate()</code></pre>
 <p>correctly describes the calculation sequence (possibly nest once per expression), then the mutate would introduce a new stage at each first use of a derived column.</p>
-<p>That would mean a sequence such as the following would in fact be broken into a sequence of mutates, with a new mutate introduced at least after each condition.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> This code is simulating a sequence of blocks of conditional column assignments. Such code is quite common in production <code>Spark</code> projects, especially those involving the translation of legacy imperative code such as <code>SAS</code>.</span></p>
+<p>That would mean a sequence such as the following would in fact be broken into a sequence of mutates, with a new mutate introduced at least after each condition.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> This code is simulating a sequence of blocks of conditional column assignments. Such code is quite common in production <code>Spark</code> projects, especially those involving the translation of legacy imperative code such as <code>SAS</code>.</span></p>
 <p>That is the following would get translated from this:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., 
@@ -210,7 +210,7 @@ class(d)</code></pre>
 </blockquote>
 <p>This can be a problem. We have routinely seen blocks where there are 50 or more such variables re-used. This is when the dependence depth is only 2 or 3 (meaning the expressions could be re-ordered efficiently).</p>
 <p>The thing we are missing is: all of the condition calculations could be done together in one step (as they do not depend on each other) and then all the statements that depend on their consequences can also be executed in another large step.</p>
-<p><code>seplyr::partition_mutate_nse()</code> supplies exactly the needed partitioning service.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> We could try to re-order the statements by hand- but then we would break up all of the simulated code blocks and produce hard to read and maintain code. It is better to keep the code in a meaningful arrangement and have a procedure to re-optimize the code to minimize nesting.</span></p>
+<p><code>seplyr::partition_mutate_nse()</code> supplies exactly the needed partitioning service.<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> We could try to re-order the statements by hand- but then we would break up all of the simulated code blocks and produce hard to read and maintain code. It is better to keep the code in a meaningful arrangement and have a procedure to re-optimize the code to minimize nesting.</span></p>
 <pre class="r"><code>plan &lt;- partition_mutate_nse(
   condition1 := height&gt;=150,
      mass := ifelse(condition1, 
@@ -246,7 +246,7 @@ res  %.&gt;%
 <pre><code>## &lt;SQL&gt;
 ## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
-## FROM `starwars`) `ecnsioyggc`</code></pre>
+## FROM `starwars`) `nligtlunzw`</code></pre>
 <pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
@@ -329,7 +329,7 @@ res  %.&gt;%
 </tbody>
 </table>
 <p>The idea is: no matter how many statements are present <code>seplyr::partition_mutate_nse()</code> breaks the <code>mutate()</code> statement into a sequence of length proportional only the the value dependency depth (in this case: 2), and <em>not</em> proportional to the number of introduced values (which can be as long as the number of conditions introduced).</p>
-<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> And in particular want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
+<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> And in particular want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
 <pre class="r"><code>sparklyr::spark_disconnect(sc)</code></pre>
 
 
