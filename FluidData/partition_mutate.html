@@ -156,7 +156,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `ccyhdkwnqh`) `anuuodbipw`</code></pre>
+## FROM `starwars`) `iiqhyonkow`) `fvktpqyasy`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
@@ -242,6 +242,7 @@ for(stepi in plan) {
 }
 res %.&gt;% 
   head(.) %.&gt;% 
+  # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
   dplyr::collect(.)  %.&gt;% 
   knitr::kable(.)</code></pre>
 <table>

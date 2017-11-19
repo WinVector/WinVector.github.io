@@ -187,6 +187,7 @@ for(stepi in plan) {
 }
 res %.>% 
   head(.) %.>% 
+  # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
   dplyr::collect(.)  %.>% 
   knitr::kable(.)
 ```
