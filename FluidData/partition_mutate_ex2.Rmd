@@ -1,7 +1,7 @@
 ---
 title: "Partitioning Mutate, Example 2"
 author: "John Mount, Win-Vector LLC"
-date: "2017-11-19"
+date: "2017-11-20"
 output:
   tufte::tufte_html: default
   tufte::tufte_handout:
@@ -31,10 +31,12 @@ packageVersion("dplyr")
 library("seplyr")
 packageVersion("seplyr")
 
-sc <- sparklyr::spark_connect(version = '2.2.0', 
-                              master = "local")
+sc <- 
+  sparklyr::spark_connect(version = '2.2.0', 
+                          master = "local")
 dL <- data.frame(rowNum = 1:5)
-d <- dplyr::copy_to(sc, dL, name = 'd',
+d <- dplyr::copy_to(sc, dL, 
+                    name = 'd',
                     overwrite = TRUE,
                     temporary = TRUE)
 
@@ -67,8 +69,12 @@ dL %.>%
  dplyr::mutate(., 
   rand_a := runif(nrow),
    choice_a := rand_a>=0.5,
-    a_1 := ifelse(choice_a, 'treatment', 'contol'),
-    a_2 := ifelse(choice_a, 'control', 'treatment')
+    a_1 := ifelse(choice_a, 
+                  'treatment', 
+                  'contol'),
+    a_2 := ifelse(choice_a, 
+                  'control', 
+                  'treatment')
   ) %.>%
   dplyr::glimpse(.)
 ```
@@ -83,8 +89,12 @@ d %.>%
  dplyr::mutate(., 
   rand_a := rand(),
    choice_a := rand_a>=0.5,
-    a_1 := ifelse(choice_a, 'treatment', 'contol'),
-    a_2 := ifelse(choice_a, 'control', 'treatment')
+    a_1 := ifelse(choice_a, 
+                  'treatment', 
+                  'contol'),
+    a_2 := ifelse(choice_a, 
+                  'control', 
+                  'treatment')
   )
 # Error: org.apache.spark.sql.AnalysisException: cannot resolve '`choice_a`' ...
 ```
@@ -106,7 +116,7 @@ d %.>%
   dplyr::show_query(.)
 ```
 
-[`seplyr::partition_mutate_qt()`] is designed to fix this in a performant manner.^[
+[`seplyr::partition_mutate_qt()`](https://github.com/WinVector/seplyr) is designed to fix this in a performant manner.^[
 And as we discussed [before](http://winvector.github.io/FluidData/partition_mutate.html)
 we have reason to believe the [upcoming `dplyr` fix](https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091)
 will be simple in-order `mutate()` splitting, which can not be performant on `Sparklyr`
@@ -119,8 +129,12 @@ plan <-
  partition_mutate_qt(
   rand_a := rand(),
   choice_a := rand_a>=0.5,
-   a_1 := ifelse(choice_a, 'treatment', 'contol'),
-   a_2 := ifelse(choice_a, 'control', 'treatment')
+   a_1 := ifelse(choice_a, 
+                 'treatment', 
+                 'contol'),
+   a_2 := ifelse(choice_a, 
+                 'control', 
+                 'treatment')
   )
 print(plan)
 
@@ -143,30 +157,52 @@ plan <-
  partition_mutate_qt(
   rand_a := rand(),
    choice_a := rand_a>=0.5,
-    a_1 := ifelse(choice_a, 'treatment', 'contol'),
-    a_2 := ifelse(choice_a, 'control', 'treatment'),
+    a_1 := ifelse(choice_a, 
+                  'treatment', 
+                  'contol'),
+    a_2 := ifelse(choice_a, 
+                  'control', 
+                  'treatment'),
   rand_b := rand(),
    choice_b := rand_b>=0.5,
-    b_1 := ifelse(choice_b, 'treatment', 'contol'),
-    b_2 := ifelse(choice_b, 'control', 'treatment'),
+    b_1 := ifelse(choice_b, 
+                  'treatment', 
+                  'contol'),
+    b_2 := ifelse(choice_b, 
+                  'control', 
+                  'treatment'),
   rand_c := rand(),
    choice_c := rand_c>=0.5,
-    c_1 := ifelse(choice_c, 'treatment', 'contol'),
-    c_2 := ifelse(choice_c, 'control', 'treatment'),
+    c_1 := ifelse(choice_c, 
+                  'treatment', 
+                  'contol'),
+    c_2 := ifelse(choice_c, 
+                  'control', 
+                  'treatment'),
   rand_d := rand(),
    choice_d := rand_d>=0.5,
-    d_1 := ifelse(choice_d, 'treatment', 'contol'),
-    d_2 := ifelse(choice_d, 'control', 'treatment'),
+    d_1 := ifelse(choice_d, 
+                  'treatment', 
+                  'contol'),
+    d_2 := ifelse(choice_d, 
+                  'control', 
+                  'treatment'),
   rand_e := rand(),
    choice_e := rand_e>=0.5,
-    e_1 := ifelse(choice_e, 'treatment', 'contol'),
-    e_2 := ifelse(choice_e, 'control', 'treatment')
+    e_1 := ifelse(choice_e, 
+                  'treatment', 
+                  'contol'),
+    e_2 := ifelse(choice_e, 
+                  'control', 
+                  'treatment')
   )
 print(plan)
 
 res <- d
 for(stepi in plan) {
-  res <- mutate_se(res, stepi, splitTerms = FALSE)
+  res <- mutate_se(res, 
+                   stepi, 
+                   splitTerms = FALSE)
 }
 dplyr::glimpse(res)
 

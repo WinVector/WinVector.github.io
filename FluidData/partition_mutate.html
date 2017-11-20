@@ -70,12 +70,15 @@ if (window.hljs) {
 <pre><code>## [1] '0.1.4'</code></pre>
 <pre class="r"><code>packageVersion(&quot;tidyselect&quot;)</code></pre>
 <pre><code>## [1] '0.2.3'</code></pre>
-<pre class="r"><code>sc &lt;- sparklyr::spark_connect(version = '2.2.0', 
-                              master = &quot;local&quot;)
+<pre class="r"><code>sc &lt;- 
+  sparklyr::spark_connect(version = '2.2.0', 
+                          master = &quot;local&quot;)
 d &lt;- dplyr::starwars %.&gt;% 
-  select_se(., qc(name, height, mass, 
+  select_se(., qc(name, 
+                  height, mass, 
                   hair_color, 
-                  eye_color, birth_year)) %.&gt;% 
+                  eye_color, 
+                  birth_year)) %.&gt;% 
   dplyr::copy_to(sc, ., name = 'starwars')
 
 class(d)</code></pre>
@@ -156,10 +159,13 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `wfhwpbikmi`) `csjswihgun`</code></pre>
+## FROM `starwars`) `enihtotbpv`) `ruzodbjpse`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
-  dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
+  dplyr::mutate(., 
+                a := 1, 
+                b := 2, 
+                c := 3) %.&gt;% 
   dplyr::show_query(.)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`, 2.0 AS `b`, 3.0 AS `c`
@@ -167,7 +173,10 @@ class(d)</code></pre>
 <p>However: it is <a href="http://www.win-vector.com/blog/2017/09/my-advice-on-dplyrmutate/">hard to give the advice “put everything into one mutate”</a> as the exact availability and semantics of derived columns has never really been specified in <code>dplyr</code><label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> It is more often a bit if “it works in memory, and it may or may not work against big data sources.” <a href="https://github.com/rstudio/sparklyr/issues/1015"><code>sparklyr</code> issue 1015</a>, <a href="https://github.com/tidyverse/dplyr/issues/2481"><code>dplyr</code> issue 2481</a>, and <a href="https://github.com/tidyverse/dplyr/issues/3095"><code>dplyr</code> issue 3095</a>.</span></p>
 <p>The additional confounding issue is code like the following currently throws:</p>
 <pre class="r"><code>d %.&gt;% 
-  dplyr::mutate(., a := 1, b := a, c := b)
+  dplyr::mutate(., 
+                a := 1, 
+                b := a, 
+                c := b)
 # Quitting from lines 87-92 (partition_mutate.Rmd) 
 # Error: org.apache.spark.sql.AnalysisException: cannot resolve '`b`' ...</code></pre>
 <p>It appears there is a <code>dplyr</code> fix in the works.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091"><code>dplyr</code> commit “Improve subquery splitting in mutate”</a></span></p>
@@ -181,29 +190,37 @@ class(d)</code></pre>
   dplyr::mutate(., 
                 condition1 := height&gt;=150,
                   mass := ifelse(condition1, 
-                                mass + 10, mass),
+                                mass + 10,
+                                mass),
                   hair_color := ifelse(condition1, 
-                                      'brown', hair_color),
+                                      'brown', 
+                                      hair_color),
                 condition2 := birth_year&lt;50,
                   eye_color := ifelse(condition2, 
-                                    'blue', eye_color),
+                                    'blue', 
+                                    eye_color),
                   name := ifelse(condition2, 
-                                tolower(name), name)) </code></pre>
+                                tolower(name), 
+                                name)) </code></pre>
 <p>To something like this:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(.,
                 condition1 := height&gt;=150)  %.&gt;% 
      dplyr::mutate(., 
                    mass := ifelse(condition1, 
-                                 mass + 10, mass),
+                                 mass + 10, 
+                                 mass),
                    hair_color := ifelse(condition1, 
-                                       'brown', hair_color),
+                                       'brown', 
+                                       hair_color),
                 condition2 := birth_year&lt;50)  %.&gt;% 
      dplyr::mutate(.,
                    eye_color := ifelse(condition2, 
-                                      'blue', eye_color),
+                                      'blue', 
+                                      eye_color),
                    name := ifelse(condition2, 
-                                 tolower(name), name))</code></pre>
+                                 tolower(name), 
+                                 name))</code></pre>
 <p>Now it might be the case it takes 3 or more levels of dependence to trigger the issue, but the issue remains:</p>
 <blockquote>
 <p>The <code>mutate</code> gets broken into a number of sub-<code>mutate</code>s proportional to the number of derived columns used later, and not proportional to the (usually much smaller) dependency depth of re-uses.</p>
@@ -238,7 +255,9 @@ print(plan)</code></pre>
 ##   &quot;ifelse(condition2, tolower(name), name)&quot;</code></pre>
 <pre class="r"><code>res &lt;- d
 for(stepi in plan) {
-  res &lt;- mutate_se(res, stepi, splitTerms = FALSE)
+  res &lt;- mutate_se(res, 
+                   stepi, 
+                   splitTerms = FALSE)
 }
 
 res  %.&gt;% 
@@ -246,7 +265,7 @@ res  %.&gt;%
 <pre><code>## &lt;SQL&gt;
 ## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
-## FROM `starwars`) `dmuyhyermi`</code></pre>
+## FROM `starwars`) `folijsciph`</code></pre>
 <pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134

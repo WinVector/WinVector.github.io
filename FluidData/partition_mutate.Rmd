@@ -45,12 +45,15 @@ packageVersion("sparklyr")
 packageVersion("rlang")
 packageVersion("tidyselect")
 
-sc <- sparklyr::spark_connect(version = '2.2.0', 
-                              master = "local")
+sc <- 
+  sparklyr::spark_connect(version = '2.2.0', 
+                          master = "local")
 d <- dplyr::starwars %.>% 
-  select_se(., qc(name, height, mass, 
+  select_se(., qc(name, 
+                  height, mass, 
                   hair_color, 
-                  eye_color, birth_year)) %.>% 
+                  eye_color, 
+                  birth_year)) %.>% 
   dplyr::copy_to(sc, ., name = 'starwars')
 
 class(d)
@@ -75,7 +78,10 @@ The seemingly equivalent pipeline can be much more performant:
 
 ```{r ex2}
 d %.>% 
-  dplyr::mutate(., a := 1, b := 2, c := 3) %.>% 
+  dplyr::mutate(., 
+                a := 1, 
+                b := 2, 
+                c := 3) %.>% 
   dplyr::show_query(.)
 ```
 
@@ -91,7 +97,10 @@ The additional confounding issue is code like the following currently throws:
 
 ```r
 d %.>% 
-  dplyr::mutate(., a := 1, b := a, c := b)
+  dplyr::mutate(., 
+                a := 1, 
+                b := a, 
+                c := b)
 # Quitting from lines 87-92 (partition_mutate.Rmd) 
 # Error: org.apache.spark.sql.AnalysisException: cannot resolve '`b`' ...
 ```
@@ -120,14 +129,18 @@ d %.>%
   dplyr::mutate(., 
                 condition1 := height>=150,
                   mass := ifelse(condition1, 
-                                mass + 10, mass),
+                                mass + 10,
+                                mass),
                   hair_color := ifelse(condition1, 
-                                      'brown', hair_color),
+                                      'brown', 
+                                      hair_color),
                 condition2 := birth_year<50,
                   eye_color := ifelse(condition2, 
-                                    'blue', eye_color),
+                                    'blue', 
+                                    eye_color),
                   name := ifelse(condition2, 
-                                tolower(name), name)) 
+                                tolower(name), 
+                                name)) 
 ```
 
 To something like this:
@@ -138,15 +151,19 @@ d %.>%
                 condition1 := height>=150)  %.>% 
      dplyr::mutate(., 
                    mass := ifelse(condition1, 
-                                 mass + 10, mass),
+                                 mass + 10, 
+                                 mass),
                    hair_color := ifelse(condition1, 
-                                       'brown', hair_color),
+                                       'brown', 
+                                       hair_color),
                 condition2 := birth_year<50)  %.>% 
      dplyr::mutate(.,
                    eye_color := ifelse(condition2, 
-                                      'blue', eye_color),
+                                      'blue', 
+                                      eye_color),
                    name := ifelse(condition2, 
-                                 tolower(name), name))
+                                 tolower(name), 
+                                 name))
 ```
 
 Now it might be the case it takes 3 or more levels of dependence to trigger
@@ -187,7 +204,9 @@ print(plan)
 
 res <- d
 for(stepi in plan) {
-  res <- mutate_se(res, stepi, splitTerms = FALSE)
+  res <- mutate_se(res, 
+                   stepi, 
+                   splitTerms = FALSE)
 }
 
 res  %.>% 
