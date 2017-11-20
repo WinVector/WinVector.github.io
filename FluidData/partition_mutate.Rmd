@@ -165,14 +165,14 @@ done together in one step (as they do not depend on each other) and then
 all the statements that depend on their consequences can also be executed in
 another large step.
 
-`seplyr::partition_mutate_nse()` supplies exactly the needed 
+`seplyr::partition_mutate_qt()` supplies exactly the needed 
 partitioning service.^[We could try to re-order the statements by hand- but then we would 
 break up all of the simulated code blocks and produce hard to read
 and maintain code.  It is better to keep the code in a meaningful arrangement
 and have a procedure to re-optimize the code to minimize nesting.]
 
 ```{r pex1}
-plan <- partition_mutate_nse(
+plan <- partition_mutate_qt(
   condition1 := height>=150,
      mass := ifelse(condition1, 
                  mass + 10, mass),
@@ -201,7 +201,7 @@ res %.>%
 ```
 
 The idea is: no matter how many statements are 
-present `seplyr::partition_mutate_nse()` breaks the `mutate()` statement
+present `seplyr::partition_mutate_qt()` breaks the `mutate()` statement
 into a sequence of length proportional only the the value dependency depth (in 
 this case: 2), and *not* proportional to the number of introduced values (which
 can be as long as the number of conditions introduced).
@@ -211,7 +211,7 @@ to support actual production use-cases.^[And in particular want to support
 porting working code from other systems, meaning a complete re-design is not
 on the table.]
 
-Note: the function `seplyr::partition_mutate_nse()` is new code and under
+Note: the function `seplyr::partition_mutate_qt()` is new code and under
 development in version `0.1.7` 
 of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
 in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).
