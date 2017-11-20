@@ -69,7 +69,7 @@ class(d)</code></pre>
 ## Variables: 1
 ## $ rowNum &lt;int&gt; 1, 2, 3, 4, 5</code></pre>
 <p>It is often necessary to simulate block commands with <code>ifelse()</code> style functionality. For example if we want to assign complimentary pairs of users into treatment and control for many groups we might use code such as the following.<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> A better overall design would be to use <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsN.html"><code>cdata::moveValuesToRowsN()</code></a>, then perform a single bulk operation on rows, and then pivot/transpose back with <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html"><code>cdata::moveValuesToColumnsN()</code></a>. But let’s see how we simply work with a problem at hand.</span></p>
-<p>Suppose we wish to assign each of the <code>*_1</code> and <code>*_2</code> columns in a complementary to treatment and assignment<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> Abraham Wald designed some sequential analysis procedures in this way as Nina Zumel <a href="https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience">remarked</a>.</span> And further suppose we want to keep the random variables driving our decisions around for diagnosis and debugging.</p>
+<p>Suppose we wish to assign each of the <code>*_1</code> and <code>*_2</code> columns in a complementary to treatment and assignment<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> Abraham Wald designed some sequential analysis procedures in this way as Nina Zumel <a href="https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience">remarked</a>. Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.</span> And further suppose we want to keep the random variables driving our decisions around for diagnosis and debugging.</p>
 <p>To write such a procedure in pure <code>dplyr</code> we might simulate block with code such as the following<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> Only showing work on the <code>a</code> group right now. We are assuming we want to perform this task on all the grouped letter columns.</span></p>
 <pre class="r"><code>nrow &lt;- nrow(dL)
 dL %.&gt;% 
@@ -83,7 +83,7 @@ dL %.&gt;%
 <pre><code>## Observations: 5
 ## Variables: 5
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.806389684, 0.389409192, 0.001104622, 0.124270040, 0...
+## $ rand_a   &lt;dbl&gt; 0.57035494, 0.38774283, 0.07796305, 0.18608353, 0.309...
 ## $ choice_a &lt;lgl&gt; TRUE, FALSE, FALSE, FALSE, FALSE
 ## $ a_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;
 ## $ a_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;tr...</code></pre>
@@ -113,7 +113,7 @@ dL %.&gt;%
 ## FROM (SELECT `rowNum`, `rand_a`, `choice_a`, CASE WHEN (`choice_a`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `a_1`
 ## FROM (SELECT `rowNum`, `rand_a`, `rand_a` &gt;= 0.5 AS `choice_a`
 ## FROM (SELECT `rowNum`, RAND() AS `rand_a`
-## FROM `d`) `ubbmxtwbsk`) `hutzseqkfn`) `mtgnjtdaxx`</code></pre>
+## FROM `d`) `pglrdooaja`) `ddymiphhqa`) `jrerrumlep`</code></pre>
 <p>[<code>seplyr::partition_mutate_qt()</code>] is designed to fix this in a performant manner.<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> And as we discussed <a href="http://winvector.github.io/FluidData/partition_mutate.html">before</a> we have reason to believe the <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091">upcoming <code>dplyr</code> fix</a> will be simple in-order <code>mutate()</code> splitting, which can not be performant on <code>Sparklyr</code> due to sequential statement nesting, again <a href="https://github.com/rstudio/sparklyr/issues/1026">please see our earlier note</a>.</span></p>
 <p>Let’s try this query again:</p>
 <pre class="r"><code>plan &lt;- 
@@ -145,7 +145,7 @@ dplyr::glimpse(res)</code></pre>
 <pre><code>## Observations: 5
 ## Variables: 5
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.1328748, 0.4981249, 0.4157853, 0.5714955, 0.6656442
+## $ rand_a   &lt;dbl&gt; 0.1498590, 0.1592076, 0.4817346, 0.5534900, 0.9204507
 ## $ choice_a &lt;lgl&gt; FALSE, FALSE, FALSE, TRUE, TRUE
 ## $ a_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;
 ## $ a_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;co...</code></pre>
@@ -213,32 +213,32 @@ dplyr::glimpse(res)</code></pre>
 <pre><code>## Observations: 5
 ## Variables: 21
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.85697378, 0.60593196, 0.72547355, 0.72617266, 0.016...
-## $ rand_b   &lt;dbl&gt; 0.4697848, 0.2028292, 0.2681265, 0.4624252, 0.9992297
-## $ rand_c   &lt;dbl&gt; 0.90637475, 0.14615589, 0.65081912, 0.06483812, 0.600...
-## $ rand_d   &lt;dbl&gt; 0.27076522, 0.09517499, 0.70000469, 0.30844051, 0.474...
-## $ rand_e   &lt;dbl&gt; 0.71577187, 0.04087599, 0.89670876, 0.92663053, 0.092...
-## $ choice_a &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, FALSE
-## $ choice_b &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, TRUE
-## $ choice_c &lt;lgl&gt; TRUE, FALSE, TRUE, FALSE, TRUE
-## $ choice_d &lt;lgl&gt; FALSE, FALSE, TRUE, FALSE, FALSE
-## $ choice_e &lt;lgl&gt; TRUE, FALSE, TRUE, TRUE, FALSE
-## $ a_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;...
-## $ a_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;
-## $ b_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;
-## $ b_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;...
-## $ c_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatm...
-## $ c_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;cont...
-## $ d_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;contol&quot;
-## $ d_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;tr...
-## $ e_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;con...
-## $ e_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;, &quot;treatm...</code></pre>
+## $ rand_a   &lt;dbl&gt; 0.6410959, 0.1402516, 0.5051761, 0.2526700, 0.1660873
+## $ rand_b   &lt;dbl&gt; 0.6508169, 0.9252349, 0.2484033, 0.4631652, 0.2491075
+## $ rand_c   &lt;dbl&gt; 0.5956704, 0.7187332, 0.9553462, 0.8036948, 0.4326225
+## $ rand_d   &lt;dbl&gt; 0.6130963, 0.5449898, 0.3729972, 0.9185155, 0.6775820
+## $ rand_e   &lt;dbl&gt; 0.348029525, 0.793315061, 0.004600045, 0.506205905, 0...
+## $ choice_a &lt;lgl&gt; TRUE, FALSE, TRUE, FALSE, FALSE
+## $ choice_b &lt;lgl&gt; TRUE, TRUE, FALSE, FALSE, FALSE
+## $ choice_c &lt;lgl&gt; TRUE, TRUE, TRUE, TRUE, FALSE
+## $ choice_d &lt;lgl&gt; TRUE, TRUE, FALSE, TRUE, TRUE
+## $ choice_e &lt;lgl&gt; FALSE, TRUE, FALSE, TRUE, TRUE
+## $ a_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;contol&quot;
+## $ a_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;trea...
+## $ b_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;
+## $ b_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;trea...
+## $ c_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;...
+## $ c_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;
+## $ d_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;tre...
+## $ d_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;
+## $ e_1      &lt;chr&gt; &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatm...
+## $ e_2      &lt;chr&gt; &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;cont...</code></pre>
 <pre class="r"><code>dplyr::show_query(res)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `rowNum`, `rand_a`, `rand_b`, `rand_c`, `rand_d`, `rand_e`, `choice_a`, `choice_b`, `choice_c`, `choice_d`, `choice_e`, CASE WHEN (`choice_a`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `a_1`, CASE WHEN (`choice_a`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `a_2`, CASE WHEN (`choice_b`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `b_1`, CASE WHEN (`choice_b`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `b_2`, CASE WHEN (`choice_c`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `c_1`, CASE WHEN (`choice_c`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `c_2`, CASE WHEN (`choice_d`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `d_1`, CASE WHEN (`choice_d`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `d_2`, CASE WHEN (`choice_e`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `e_1`, CASE WHEN (`choice_e`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `e_2`
 ## FROM (SELECT `rowNum`, `rand_a`, `rand_b`, `rand_c`, `rand_d`, `rand_e`, `rand_a` &gt;= 0.5 AS `choice_a`, `rand_b` &gt;= 0.5 AS `choice_b`, `rand_c` &gt;= 0.5 AS `choice_c`, `rand_d` &gt;= 0.5 AS `choice_d`, `rand_e` &gt;= 0.5 AS `choice_e`
 ## FROM (SELECT `rowNum`, RAND() AS `rand_a`, RAND() AS `rand_b`, RAND() AS `rand_c`, RAND() AS `rand_d`, RAND() AS `rand_e`
-## FROM `d`) `tbxxxsyqzd`) `rpnwtwfpye`</code></pre>
+## FROM `d`) `nkcfdupzxf`) `begvckvzgx`</code></pre>
 <p>Notice the above still only broke the query into three blocks <em>independent of the number of blocks we are trying to simulate in the mutate</em>. Further notice that in turn the depth of derived <code>SQL</code> query nesting was only the number of blocks (again 3).</p>
 <p>The number of blocks is the dependency depth of the system of assignments, which can be <em>much</em> smaller than the number of new-values used (the number of blocks a non-reordering split may use, probably already around 10 blocks even in this example; and growing as the number of blocks grow).</p>
 <p><code>seplyr::partition_mutate_qt()</code> type capability is essential for executing non-trivial code at scale in <code>Sparklyr</code>.</p>

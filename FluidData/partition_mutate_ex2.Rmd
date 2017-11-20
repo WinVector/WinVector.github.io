@@ -53,7 +53,7 @@ But let's see how we simply work with a problem at hand.]
 
 Suppose we wish to assign each of the `*_1` and `*_2` columns in a complementary
 to treatment and assignment^[Abraham Wald designed some sequential analysis procedures
-in this way as Nina Zumel [remarked](https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience).]
+in this way as Nina Zumel [remarked](https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience). Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.]
 And further suppose we want to keep the random variables driving our decisions
 around for diagnosis and debugging.
 
