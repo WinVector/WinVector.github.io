@@ -216,6 +216,19 @@ development in version `0.1.7`
 of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
 in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).
 
+For an example bringing out more of these issues please see [here](http://winvector.github.io/FluidData/partition_mutate_ex2.html).
+
+[Win-Vector LLC](http://www.win-vector.com/) supplies a number of open-source
+[`R`](https://www.r-project.org) packages for working effectively with big data.
+These include:
+
+  * [wrapr](https://winvector.github.io/wrapr/) supplies code re-writing tools that make coding *over* `dplyr` much easier.
+  * [cdata](https://winvector.github.io/cdata/) supplies pivot/un-pivot functionality at big data scale.
+  * [seplyr](https://winvector.github.io/seplyr/) supplies improved interfaces for many data manipulation tasks.
+  * [replyr](https://winvector.github.io/replyr/) supplies tools and patches for using `dplyr` on big data.
+
+And issues such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
+
 ```{r cleanup, echo=FALSE}
 sparklyr::spark_disconnect(sc)
 ```

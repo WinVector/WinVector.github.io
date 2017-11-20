@@ -1,0 +1,202 @@
+---
+title: "Partitioning Mutate, Example 2"
+author: "John Mount, Win-Vector LLC"
+date: "2017-11-19"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
+---
+
+```{r setupa, include=FALSE}
+library("tufte")
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+```
+
+This is a follow-on example of the use of `seplyr::partition_mutate_qt()`
+showing a larger block sequence based on swaps.^[The source code for this article can be found [here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate_ex2.Rmd).]  For motivation and context please see
+[the first article](http://winvector.github.io/FluidData/partition_mutate.html).
+
+
+```{r sed}
+packageVersion("dplyr")
+library("seplyr")
+packageVersion("seplyr")
+
+sc <- sparklyr::spark_connect(version = '2.2.0', 
+                              master = "local")
+dL <- data.frame(rowNum = 1:5)
+d <- dplyr::copy_to(sc, dL, name = 'd',
+                    overwrite = TRUE,
+                    temporary = TRUE)
+
+class(d)
+dplyr::glimpse(d)
+```
+
+It is often necessary to simulate block commands with `ifelse()`
+style functionality.  For example if we want to assign complimentary pairs
+of users into treatment and control for many groups we might use code such as
+the following.^[A better overall design would be to use 
+[`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html),
+then perform a single bulk operation on rows, and then pivot/transpose back
+with [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html).
+But let's see how we simply work with a problem at hand.]
+
+Suppose we wish to assign each of the `*_1` and `*_2` columns in a complementary
+to treatment and assignment^[Abraham Wald designed some sequential analysis procedures
+in this way as Nina Zumel [remarked](https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience).]
+And further suppose we want to keep the random variables driving our decisions
+around for diagnosis and debugging.
+
+To write such a procedure in pure `dplyr` we might simulate block with code such
+as the following^[Only showing work on the `a` group right now. We are assuming
+we want to perform this task on all the grouped letter columns.]
+
+```{r dL}
+nrow <- nrow(dL)
+dL %.>% 
+ dplyr::mutate(., 
+  rand_a := runif(nrow),
+   choice_a := rand_a>=0.5,
+    a_1 := ifelse(choice_a, 'treatment', 'contol'),
+    a_2 := ifelse(choice_a, 'control', 'treatment')
+  ) %.>%
+  dplyr::glimpse(.)
+```
+
+Above we are using the indent notation to indicate the code-blocks we are simulating
+with the `ifelse(,,)` notation.
+
+With big data in `Spark` we could try something like the following:
+
+```r
+d %.>% 
+ dplyr::mutate(., 
+  rand_a := rand(),
+   choice_a := rand_a>=0.5,
+    a_1 := ifelse(choice_a, 'treatment', 'contol'),
+    a_2 := ifelse(choice_a, 'control', 'treatment')
+  )
+# Error: org.apache.spark.sql.AnalysisException: cannot resolve '`choice_a`' ...
+```
+
+This currently fails due to the chain of dependence between `rand_a`, `choice_a` and `a_1.
+However we want to write the transform in as few `mutate()` statements as practical because:
+sequencing mutates is implemented through nesting queries (which eventually fail).
+
+```{r seqm}
+d %.>% 
+ dplyr::mutate(., rand_a := rand()) %.>%
+  dplyr::mutate(., choice_a := rand_a>=0.5) %.>%
+   dplyr::mutate(., a_1 := ifelse(choice_a, 
+                                  'treatment', 
+                                  'contol')) %.>%
+   dplyr::mutate(., a_2 := ifelse(choice_a, 
+                                  'control', 
+                                  'treatment')) %.>%
+  dplyr::show_query(.)
+```
+
+[`seplyr::partition_mutate_qt()`] is designed to fix this in a performant manner.^[
+And as we discussed [before](http://winvector.github.io/FluidData/partition_mutate.html)
+we have reason to believe the [upcoming `dplyr` fix](https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091)
+will be simple in-order `mutate()` splitting, which can not be performant on `Sparklyr`
+due to sequential statement nesting, again [please see our earlier note](https://github.com/rstudio/sparklyr/issues/1026).]
+
+Let's try this query again:
+
+```{r partition1}
+plan <- 
+ partition_mutate_qt(
+  rand_a := rand(),
+  choice_a := rand_a>=0.5,
+   a_1 := ifelse(choice_a, 'treatment', 'contol'),
+   a_2 := ifelse(choice_a, 'control', 'treatment')
+  )
+print(plan)
+
+res <- d
+for(stepi in plan) {
+  res <- mutate_se(res, stepi, splitTerms = FALSE)
+}
+dplyr::glimpse(res)
+```
+
+That worked!  The point of this note is: this will also work with a much longer
+sequence.^[Please keep in mind: we are using a very simple and regular sequence only
+for purposes of illustration.  There are better ways to perform this particular
+vary regular assignment.  That is not going to be the case with non-trivial
+`Sparklyr` applications, in particular those that are ports of large existing
+systems.]
+
+```{r partition2}
+plan <- 
+ partition_mutate_qt(
+  rand_a := rand(),
+   choice_a := rand_a>=0.5,
+    a_1 := ifelse(choice_a, 'treatment', 'contol'),
+    a_2 := ifelse(choice_a, 'control', 'treatment'),
+  rand_b := rand(),
+   choice_b := rand_b>=0.5,
+    b_1 := ifelse(choice_b, 'treatment', 'contol'),
+    b_2 := ifelse(choice_b, 'control', 'treatment'),
+  rand_c := rand(),
+   choice_c := rand_c>=0.5,
+    c_1 := ifelse(choice_c, 'treatment', 'contol'),
+    c_2 := ifelse(choice_c, 'control', 'treatment'),
+  rand_d := rand(),
+   choice_d := rand_d>=0.5,
+    d_1 := ifelse(choice_d, 'treatment', 'contol'),
+    d_2 := ifelse(choice_d, 'control', 'treatment'),
+  rand_e := rand(),
+   choice_e := rand_e>=0.5,
+    e_1 := ifelse(choice_e, 'treatment', 'contol'),
+    e_2 := ifelse(choice_e, 'control', 'treatment')
+  )
+print(plan)
+
+res <- d
+for(stepi in plan) {
+  res <- mutate_se(res, stepi, splitTerms = FALSE)
+}
+dplyr::glimpse(res)
+
+dplyr::show_query(res)
+```
+
+Notice the above still only broke the query into three blocks *independent of
+the number of blocks we are trying to simulate in the mutate*. Further notice that
+in turn the depth of derived `SQL` query nesting was only the number of blocks (again 3).
+
+The number of
+blocks is the dependency depth of the system of assignments, which can be 
+*much* smaller than the number of new-values used (the number of blocks a 
+non-reordering split may use, probably already around 10 blocks even in this example; 
+and growing as the number of blocks grow).
+
+`seplyr::partition_mutate_qt()` type capability is
+essential for executing non-trivial code at scale in `Sparklyr`.
+
+[Win-Vector LLC](http://www.win-vector.com/) supplies a number of open-source
+[`R`](https://www.r-project.org) packages for working effectively with big data.
+These include:
+
+  * [wrapr](https://winvector.github.io/wrapr/) supplies code re-writing tools that make coding *over* `dplyr` much easier.
+  * [cdata](https://winvector.github.io/cdata/) supplies pivot/un-pivot functionality at big data scale.
+  * [seplyr](https://winvector.github.io/seplyr/) supplies improved interfaces for many data manipulation tasks.
+  * [replyr](https://winvector.github.io/replyr/) supplies tools and patches for using `dplyr` on big data.
+
+And issues such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
+
+```{r cleanup, echo=FALSE}
+sparklyr::spark_disconnect(sc)
+```
