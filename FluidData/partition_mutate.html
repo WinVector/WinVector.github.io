@@ -52,7 +52,7 @@ if (window.hljs) {
 <ul>
 <li>You must cache and partition at points.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> However, you must limit how often you do this and free unneeded caches.</span></li>
 <li>You must try to limit the set of columns you are working on (so that you are working on small cache-able projections of your large data).<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> The query optimizer may not be able to skip over producing columns that you are not actually using, but are in fact specified in intermediate queries.</span></li>
-<li>You must try to limit the number of sequential steps you specify as they are <em>actualy implemented by nesting of queries</em>.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The nesting gets expensive and eventually fails. A classic example of a <a href="https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/">leaky abstraction</a>.</span></li>
+<li>You must try to limit the number of sequential steps you specify as they are <em>actualy implemented by nesting of queries</em>.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The nesting gets expensive and eventually fails. A classic example of a <a href="https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/">leaky abstraction</a>. We have simple examples of <a href="https://github.com/rstudio/sparklyr/issues/1026">too many sequenced <code>mutates()</code> exhausting <code>Sparklyr</code></a>.</span></li>
 </ul>
 <p>The point is: you can’t always expect code that is not adapted to the environment run well.</p>
 <p>Let’s set up a working example.<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> The source code for this article can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate.Rmd">here</a>.</span></p>
@@ -156,7 +156,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `zoboitxvuy`) `vagqrxopdv`</code></pre>
+## FROM `starwars`) `joyeaukczc`) `cnxzheljqx`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., a := 1, b := 2, c := 3) %.&gt;% 
@@ -246,7 +246,7 @@ res  %.&gt;%
 <pre><code>## &lt;SQL&gt;
 ## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
-## FROM `starwars`) `tndjgwwrpi`</code></pre>
+## FROM `starwars`) `yddhrbfvwh`</code></pre>
 <pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134

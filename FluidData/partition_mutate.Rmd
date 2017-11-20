@@ -29,7 +29,7 @@ using [`sparklyr`](https://spark.rstudio.com) the following considerations are c
 
   * You must cache and partition at points.^[However, you must limit how often you do this and free unneeded caches.]
   * You must try to limit the set of columns you are working on (so that you are working on small cache-able projections of your large data).^[The query optimizer may not be able to skip over producing columns that you are not actually using, but are in fact specified in intermediate queries.]
-  * You must try to limit the number of sequential steps you specify as they are *actualy implemented by nesting of queries*.^[The nesting gets expensive and eventually fails. A classic example of a [leaky abstraction](https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/).]
+  * You must try to limit the number of sequential steps you specify as they are *actualy implemented by nesting of queries*.^[The nesting gets expensive and eventually fails. A classic example of a [leaky abstraction](https://www.joelonsoftware.com/2002/11/11/the-law-of-leaky-abstractions/). We have simple examples of [too many sequenced `mutates()` exhausting `Sparklyr`](https://github.com/rstudio/sparklyr/issues/1026).]
   
 The point is: you can't always expect code that is not adapted to the environment 
 run well.
