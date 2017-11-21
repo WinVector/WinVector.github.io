@@ -159,7 +159,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `enihtotbpv`) `ruzodbjpse`</code></pre>
+## FROM `starwars`) `dwhplyrazw`) `fbtgwpdvna`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., 
@@ -184,7 +184,7 @@ class(d)</code></pre>
 <pre class="r"><code> # For each expression, check if it uses any newly created variables.
  # If so, nest the mutate()</code></pre>
 <p>correctly describes the calculation sequence (possibly nest once per expression), then the mutate would introduce a new stage at each first use of a derived column.</p>
-<p>That would mean a sequence such as the following would in fact be broken into a sequence of mutates, with a new mutate introduced at least after each condition.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> This code is simulating a sequence of blocks of conditional column assignments. Such code is quite common in production <code>Spark</code> projects, especially those involving the translation of legacy imperative code such as <code>SAS</code>.</span></p>
+<p>That would mean a sequence such as the following would in fact be broken into a sequence of mutates, with a new mutate introduced at least after each condition.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> This code is simulating a sequence of blocks of conditional column assignments. Such code is quite common in production <code>Spark</code> projects, especially those involving the translation of legacy imperative code such as <code>SAS</code>. The issue is we don’t have a control structure that chooses which column to assign to to match the <code>ifelse(,,)</code> control structure that chooses which value to use</span></p>
 <p>That is the following would get translated from this:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., 
@@ -265,7 +265,7 @@ res  %.&gt;%
 <pre><code>## &lt;SQL&gt;
 ## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
-## FROM `starwars`) `folijsciph`</code></pre>
+## FROM `starwars`) `wdertziomo`</code></pre>
 <pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
@@ -353,10 +353,10 @@ res  %.&gt;%
 <p>For an example bringing out more of these issues please see <a href="http://winvector.github.io/FluidData/partition_mutate_ex2.html">here</a>.</p>
 <p><a href="http://www.win-vector.com/">Win-Vector LLC</a> supplies a number of open-source <a href="https://www.r-project.org"><code>R</code></a> packages for working effectively with big data. These include:</p>
 <ul>
-<li><a href="https://winvector.github.io/wrapr/">wrapr</a> supplies code re-writing tools that make coding <em>over</em> <code>dplyr</code> much easier.</li>
-<li><a href="https://winvector.github.io/cdata/">cdata</a> supplies pivot/un-pivot functionality at big data scale.</li>
-<li><a href="https://winvector.github.io/seplyr/">seplyr</a> supplies improved interfaces for many data manipulation tasks.</li>
-<li><a href="https://winvector.github.io/replyr/">replyr</a> supplies tools and patches for using <code>dplyr</code> on big data.</li>
+<li><strong><a href="https://winvector.github.io/wrapr/">wrapr</a></strong>: supplies code re-writing tools that make coding <em>over</em> <code>dplyr</code> much easier.</li>
+<li><strong><a href="https://winvector.github.io/cdata/">cdata</a></strong>: supplies pivot/un-pivot functionality at big data scale.</li>
+<li><strong><a href="https://winvector.github.io/seplyr/">seplyr</a></strong>: supplies improved interfaces for many data manipulation tasks.</li>
+<li><strong><a href="https://winvector.github.io/replyr/">replyr</a></strong>: supplies tools and patches for using <code>dplyr</code> on big data.</li>
 </ul>
 <p>And issues such as the above are often discussed on the <a href="http://www.win-vector.com/blog/">Win-Vector blog</a>.</p>
 

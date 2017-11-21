@@ -3,10 +3,10 @@ title: "Partitioning Mutate, Example 2"
 author: "John Mount, Win-Vector LLC"
 date: "2017-11-20"
 output:
-  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
+  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -53,8 +53,8 @@ then perform a single bulk operation on rows, and then pivot/transpose back
 with [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html).
 But let's see how we simply work with a problem at hand.]
 
-Suppose we wish to assign each of the `*_1` and `*_2` columns in a complementary
-to treatment and assignment^[Abraham Wald designed some sequential analysis procedures
+Suppose we wish to assign  columns in a complementary
+to treatment and control design^[Abraham Wald designed some sequential analysis procedures
 in this way as Nina Zumel [remarked](https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience). Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.]
 And further suppose we want to keep the random variables driving our decisions
 around for diagnosis and debugging.
@@ -80,7 +80,9 @@ dL %.>%
 ```
 
 Above we are using the indent notation to indicate the code-blocks we are simulating
-with the `ifelse(,,)` notation.
+with the `ifelse()` notation.^[What we are working around is the lack of an operator that
+allows us to select per-row where assignments go, which would complement `ifelse()`'s ability
+to select per-row where values come from.]
 
 With big data in `Spark` we could try something like the following:
 
@@ -226,10 +228,10 @@ essential for executing non-trivial code at scale in `Sparklyr`.
 [`R`](https://www.r-project.org) packages for working effectively with big data.
 These include:
 
-  * [wrapr](https://winvector.github.io/wrapr/) supplies code re-writing tools that make coding *over* `dplyr` much easier.
-  * [cdata](https://winvector.github.io/cdata/) supplies pivot/un-pivot functionality at big data scale.
-  * [seplyr](https://winvector.github.io/seplyr/) supplies improved interfaces for many data manipulation tasks.
-  * [replyr](https://winvector.github.io/replyr/) supplies tools and patches for using `dplyr` on big data.
+  * **[wrapr](https://winvector.github.io/wrapr/)**: supplies code re-writing tools that make coding *over* `dplyr` much easier.
+  * **[cdata](https://winvector.github.io/cdata/)**: supplies pivot/un-pivot functionality at big data scale.
+  * **[seplyr](https://winvector.github.io/seplyr/)**: supplies improved interfaces for many data manipulation tasks.
+  * **[replyr](https://winvector.github.io/replyr/)**: supplies tools and patches for using `dplyr` on big data.
 
 And issues such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
 
