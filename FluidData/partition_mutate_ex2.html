@@ -89,10 +89,10 @@ dL %.&gt;%
 <pre><code>## Observations: 5
 ## Variables: 5
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.5960896, 0.3346285, 0.9540128, 0.1937749, 0.5807066
-## $ choice_a &lt;lgl&gt; TRUE, FALSE, TRUE, FALSE, TRUE
-## $ a_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatm...
-## $ a_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;cont...</code></pre>
+## $ rand_a   &lt;dbl&gt; 0.2501281, 0.1179696, 0.2754401, 0.3468472, 0.4941689
+## $ choice_a &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE
+## $ a_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;
+## $ a_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;...</code></pre>
 <p>Above we are using the indent notation to indicate the code-blocks we are simulating with the <code>ifelse()</code> notation.<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> What we are working around is the lack of an operator that allows us to select per-row where assignments go, which would complement <code>ifelse()</code>’s ability to select per-row where values come from.</span></p>
 <p>With big data in <code>Spark</code> we could try something like the following:</p>
 <pre class="r"><code>d %.&gt;% 
@@ -123,8 +123,8 @@ dL %.&gt;%
 ## FROM (SELECT `rowNum`, `rand_a`, `choice_a`, CASE WHEN (`choice_a`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `a_1`
 ## FROM (SELECT `rowNum`, `rand_a`, `rand_a` &gt;= 0.5 AS `choice_a`
 ## FROM (SELECT `rowNum`, RAND() AS `rand_a`
-## FROM `d`) `ewzesqsctu`) `zdadvxgfov`) `httapnwkck`</code></pre>
-<p><a href="https://github.com/WinVector/seplyr"><code>seplyr::partition_mutate_qt()</code></a> is designed to fix this in a performant manner.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> And as we discussed <a href="http://winvector.github.io/FluidData/partition_mutate.html">before</a> we have reason to believe the <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091">upcoming <code>dplyr</code> fix</a> will be simple in-order <code>mutate()</code> splitting, which can not be performant on <code>Sparklyr</code> due to sequential statement nesting, again <a href="https://github.com/rstudio/sparklyr/issues/1026">please see our earlier note</a>.</span></p>
+## FROM `d`) `bohmksdsih`) `snhtltcstb`) `stddczhyve`</code></pre>
+<p><a href="https://github.com/WinVector/seplyr"><code>seplyr::partition_mutate_qt()</code></a> is designed to fix this in a performant manner.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> And as we discussed <a href="http://winvector.github.io/FluidData/partition_mutate.html">before</a> we have reason to believe the <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091">upcoming <code>dplyr</code> fix</a> will be simple in-order <code>mutate()</code> splitting, which can not be performant on <code>Sparklyr</code> due to sequential statement nesting, again <a href="https://github.com/rstudio/sparklyr/issues/1026">please see our earlier note</a>. Also note: the function <code>seplyr::partition_mutate_qt()</code> is new code and under development in version <code>0.1.7</code> of <a href="https://github.com/WinVector/seplyr"><code>seplyr</code></a> (and not yet available in the <a href="https://CRAN.R-project.org/package=seplyr">CRAN release version</a>).</span></p>
 <p>Let’s try this query again:</p>
 <pre class="r"><code>plan &lt;- 
  partition_mutate_qt(
@@ -159,10 +159,10 @@ dplyr::glimpse(res)</code></pre>
 <pre><code>## Observations: 5
 ## Variables: 5
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.03712319, 0.90251742, 0.14656920, 0.67895430, 0.399...
-## $ choice_a &lt;lgl&gt; FALSE, TRUE, FALSE, TRUE, FALSE
-## $ a_1      &lt;chr&gt; &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;
-## $ a_2      &lt;chr&gt; &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;trea...</code></pre>
+## $ rand_a   &lt;dbl&gt; 0.4719350, 0.6799395, 0.5257497, 0.9620506, 0.1561311
+## $ choice_a &lt;lgl&gt; FALSE, TRUE, TRUE, TRUE, FALSE
+## $ a_1      &lt;chr&gt; &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;con...
+## $ a_2      &lt;chr&gt; &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;treatm...</code></pre>
 <p>That worked! The point of this note is: this will also work with a much longer sequence.<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> Please keep in mind: we are using a very simple and regular sequence only for purposes of illustration. There are better ways to perform this particular vary regular assignment. That is not going to be the case with non-trivial <code>Sparklyr</code> applications, in particular those that are ports of large existing systems.</span></p>
 <pre class="r"><code>plan &lt;- 
  partition_mutate_qt(
@@ -249,32 +249,32 @@ dplyr::glimpse(res)</code></pre>
 <pre><code>## Observations: 5
 ## Variables: 21
 ## $ rowNum   &lt;int&gt; 1, 2, 3, 4, 5
-## $ rand_a   &lt;dbl&gt; 0.62718416, 0.08488166, 0.24289219, 0.55213980, 0.685...
-## $ rand_b   &lt;dbl&gt; 0.4852605, 0.9085938, 0.8666473, 0.9890330, 0.4982136
-## $ rand_c   &lt;dbl&gt; 0.4258842, 0.4289333, 0.2142411, 0.9344766, 0.6986537
-## $ rand_d   &lt;dbl&gt; 0.9477082, 0.5387663, 0.2154607, 0.6672821, 0.6652819
-## $ rand_e   &lt;dbl&gt; 0.49352233, 0.67357279, 0.02162053, 0.68730169, 0.935...
-## $ choice_a &lt;lgl&gt; TRUE, FALSE, FALSE, TRUE, TRUE
-## $ choice_b &lt;lgl&gt; FALSE, TRUE, TRUE, TRUE, FALSE
-## $ choice_c &lt;lgl&gt; FALSE, FALSE, FALSE, TRUE, TRUE
-## $ choice_d &lt;lgl&gt; TRUE, TRUE, FALSE, TRUE, TRUE
-## $ choice_e &lt;lgl&gt; FALSE, TRUE, FALSE, TRUE, TRUE
-## $ a_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatm...
-## $ a_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;cont...
-## $ b_1      &lt;chr&gt; &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;con...
-## $ b_2      &lt;chr&gt; &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;, &quot;control&quot;, &quot;treatm...
-## $ c_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;
-## $ c_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;co...
-## $ d_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;tre...
-## $ d_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;
-## $ e_1      &lt;chr&gt; &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatm...
-## $ e_2      &lt;chr&gt; &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;cont...</code></pre>
+## $ rand_a   &lt;dbl&gt; 0.3267923, 0.0269713, 0.3830414, 0.7144771, 0.5967089
+## $ rand_b   &lt;dbl&gt; 0.1568024, 0.2990590, 0.3700566, 0.8377880, 0.9172845
+## $ rand_c   &lt;dbl&gt; 0.6236358, 0.3010682, 0.8417338, 0.4122140, 0.9328616
+## $ rand_d   &lt;dbl&gt; 0.339132613, 0.459215742, 0.004456096, 0.149621538, 0...
+## $ rand_e   &lt;dbl&gt; 0.6738206, 0.8267245, 0.1764309, 0.8534110, 0.7508150
+## $ choice_a &lt;lgl&gt; FALSE, FALSE, FALSE, TRUE, TRUE
+## $ choice_b &lt;lgl&gt; FALSE, FALSE, FALSE, TRUE, TRUE
+## $ choice_c &lt;lgl&gt; TRUE, FALSE, TRUE, FALSE, TRUE
+## $ choice_d &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, TRUE
+## $ choice_e &lt;lgl&gt; TRUE, TRUE, FALSE, TRUE, TRUE
+## $ a_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;
+## $ a_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;co...
+## $ b_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;treatment&quot;
+## $ b_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;co...
+## $ c_1      &lt;chr&gt; &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatm...
+## $ c_2      &lt;chr&gt; &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;cont...
+## $ d_1      &lt;chr&gt; &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;contol&quot;, &quot;treatment&quot;
+## $ d_2      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;treatment&quot;, &quot;...
+## $ e_1      &lt;chr&gt; &quot;treatment&quot;, &quot;treatment&quot;, &quot;contol&quot;, &quot;treatment&quot;, &quot;tre...
+## $ e_2      &lt;chr&gt; &quot;control&quot;, &quot;control&quot;, &quot;treatment&quot;, &quot;control&quot;, &quot;control&quot;</code></pre>
 <pre class="r"><code>dplyr::show_query(res)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `rowNum`, `rand_a`, `rand_b`, `rand_c`, `rand_d`, `rand_e`, `choice_a`, `choice_b`, `choice_c`, `choice_d`, `choice_e`, CASE WHEN (`choice_a`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `a_1`, CASE WHEN (`choice_a`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `a_2`, CASE WHEN (`choice_b`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `b_1`, CASE WHEN (`choice_b`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `b_2`, CASE WHEN (`choice_c`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `c_1`, CASE WHEN (`choice_c`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `c_2`, CASE WHEN (`choice_d`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `d_1`, CASE WHEN (`choice_d`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `d_2`, CASE WHEN (`choice_e`) THEN (&quot;treatment&quot;) ELSE (&quot;contol&quot;) END AS `e_1`, CASE WHEN (`choice_e`) THEN (&quot;control&quot;) ELSE (&quot;treatment&quot;) END AS `e_2`
 ## FROM (SELECT `rowNum`, `rand_a`, `rand_b`, `rand_c`, `rand_d`, `rand_e`, `rand_a` &gt;= 0.5 AS `choice_a`, `rand_b` &gt;= 0.5 AS `choice_b`, `rand_c` &gt;= 0.5 AS `choice_c`, `rand_d` &gt;= 0.5 AS `choice_d`, `rand_e` &gt;= 0.5 AS `choice_e`
 ## FROM (SELECT `rowNum`, RAND() AS `rand_a`, RAND() AS `rand_b`, RAND() AS `rand_c`, RAND() AS `rand_d`, RAND() AS `rand_e`
-## FROM `d`) `eilqinpupl`) `joguctemdm`</code></pre>
+## FROM `d`) `uyfclwrfvy`) `cqjvoyxmix`</code></pre>
 <p>Notice the above still only broke the query into three blocks <em>independent of the number of blocks we are trying to simulate in the mutate</em>. Further notice that in turn the depth of derived <code>SQL</code> query nesting was only the number of blocks (again 3).</p>
 <p>The number of blocks is the dependency depth of the system of assignments, which can be <em>much</em> smaller than the number of new-values used (the number of blocks a non-reordering split may use, probably already around 10 blocks even in this example; and growing as the number of blocks grow).</p>
 <p><code>seplyr::partition_mutate_qt()</code> type capability is essential for executing non-trivial code at scale in <code>Sparklyr</code>.</p>

@@ -40,10 +40,6 @@ Let's set up a working example.^[The source code for this article can be found [
 library("seplyr")
 packageVersion("seplyr")
 packageVersion("dplyr")
-packageVersion("dbplyr")
-packageVersion("sparklyr")
-packageVersion("rlang")
-packageVersion("tidyselect")
 
 sc <- 
   sparklyr::spark_connect(version = '2.2.0', 
@@ -228,7 +224,7 @@ this case: 2), and *not* proportional to the number of introduced values (which
 can be as long as the number of conditions introduced).
 
 The above situation is admittedly ugly, but not something you can wish away if you want
-to support actual production use-cases.^[And in particular want to support
+to support actual production use-cases.^[And if you want to support
 porting working code from other systems, meaning a complete re-design is not
 on the table.]
 

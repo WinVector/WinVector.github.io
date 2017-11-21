@@ -62,14 +62,6 @@ if (window.hljs) {
 <pre><code>## [1] '0.1.7'</code></pre>
 <pre class="r"><code>packageVersion(&quot;dplyr&quot;)</code></pre>
 <pre><code>## [1] '0.7.4'</code></pre>
-<pre class="r"><code>packageVersion(&quot;dbplyr&quot;)</code></pre>
-<pre><code>## [1] '1.1.0'</code></pre>
-<pre class="r"><code>packageVersion(&quot;sparklyr&quot;)</code></pre>
-<pre><code>## [1] '0.6.4'</code></pre>
-<pre class="r"><code>packageVersion(&quot;rlang&quot;)</code></pre>
-<pre><code>## [1] '0.1.4'</code></pre>
-<pre class="r"><code>packageVersion(&quot;tidyselect&quot;)</code></pre>
-<pre><code>## [1] '0.2.3'</code></pre>
 <pre class="r"><code>sc &lt;- 
   sparklyr::spark_connect(version = '2.2.0', 
                           master = &quot;local&quot;)
@@ -159,7 +151,7 @@ class(d)</code></pre>
 ## SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, `b`, 3.0 AS `c`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `a`, 2.0 AS `b`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, 1.0 AS `a`
-## FROM `starwars`) `dwhplyrazw`) `fbtgwpdvna`</code></pre>
+## FROM `starwars`) `xosrnmdnjr`) `cubhtjsedq`</code></pre>
 <p>The seemingly equivalent pipeline can be much more performant:</p>
 <pre class="r"><code>d %.&gt;% 
   dplyr::mutate(., 
@@ -265,7 +257,7 @@ res  %.&gt;%
 <pre><code>## &lt;SQL&gt;
 ## SELECT `height`, `birth_year`, `condition1`, `condition2`, CASE WHEN (`condition1`) THEN (`mass` + 10.0) ELSE (`mass`) END AS `mass`, CASE WHEN (`condition1`) THEN (&quot;brown&quot;) ELSE (`hair_color`) END AS `hair_color`, CASE WHEN (`condition2`) THEN (&quot;blue&quot;) ELSE (`eye_color`) END AS `eye_color`, CASE WHEN (`condition2`) THEN (LOWER(`name`)) ELSE (`name`) END AS `name`
 ## FROM (SELECT `name`, `height`, `mass`, `hair_color`, `eye_color`, `birth_year`, `height` &gt;= 150.0 AS `condition1`, `birth_year` &lt; 50.0 AS `condition2`
-## FROM `starwars`) `wdertziomo`</code></pre>
+## FROM `starwars`) `qozhjfhdoo`</code></pre>
 <pre class="r"><code>res %.&gt;% 
   head(.) %.&gt;% 
   # collect to avoid https://github.com/rstudio/sparklyr/issues/1134
@@ -348,7 +340,7 @@ res  %.&gt;%
 </tbody>
 </table>
 <p>The idea is: no matter how many statements are present <code>seplyr::partition_mutate_qt()</code> breaks the <code>mutate()</code> statement into a sequence of length proportional only the the value dependency depth (in this case: 2), and <em>not</em> proportional to the number of introduced values (which can be as long as the number of conditions introduced).</p>
-<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> And in particular want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
+<p>The above situation is admittedly ugly, but not something you can wish away if you want to support actual production use-cases.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> And if you want to support porting working code from other systems, meaning a complete re-design is not on the table.</span></p>
 <p>Note: the function <code>seplyr::partition_mutate_qt()</code> is new code and under development in version <code>0.1.7</code> of <a href="https://github.com/WinVector/seplyr"><code>seplyr</code></a> (and not yet available in the <a href="https://CRAN.R-project.org/package=seplyr">CRAN release version</a>).</p>
 <p>For an example bringing out more of these issues please see <a href="http://winvector.github.io/FluidData/partition_mutate_ex2.html">here</a>.</p>
 <p><a href="http://www.win-vector.com/">Win-Vector LLC</a> supplies a number of open-source <a href="https://www.r-project.org"><code>R</code></a> packages for working effectively with big data. These include:</p>

@@ -3,10 +3,10 @@ title: "Partitioning Mutate, Example 2"
 author: "John Mount, Win-Vector LLC"
 date: "2017-11-20"
 output:
+  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
-  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -122,7 +122,11 @@ d %.>%
 And as we discussed [before](http://winvector.github.io/FluidData/partition_mutate.html)
 we have reason to believe the [upcoming `dplyr` fix](https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091)
 will be simple in-order `mutate()` splitting, which can not be performant on `Sparklyr`
-due to sequential statement nesting, again [please see our earlier note](https://github.com/rstudio/sparklyr/issues/1026).]
+due to sequential statement nesting, again [please see our earlier note](https://github.com/rstudio/sparklyr/issues/1026).
+Also note: the function `seplyr::partition_mutate_qt()` is new code and under
+development in version `0.1.7` 
+of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
+in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).]
 
 Let's try this query again:
 
