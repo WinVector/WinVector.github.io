@@ -2,7 +2,7 @@
 title: "Arbitrary Data Transforms Using cdata"
 author: "John Mount, Win-Vector LLC"
 date: "11/22/2017"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -27,12 +27,12 @@ What I want to do now is "write a bit more, so I finally feel concise."
 The [`cdata`](https://winvector.github.io/cdata/) [`R`](https://www.r-project.org) package supplies
  general data transform operators.
 
- * The whole system is based on two primitives or operators [`cdata::moveValuesToRowsD()`](https://winvector.github.io/cdata/reference/moveValuesToRowsD.html) and [`cdata::moveValuesToColumnsD()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html) (for big data we use the
- [`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html) and [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html) variants).
+ * The whole system is based on two primitives or operators [`cdata::moveValuesToRowsD()`](https://winvector.github.io/cdata/reference/moveValuesToRowsD.html) and [`cdata::moveValuesToColumnsD()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html).
  * These operators have pivot, un-pivot, one-hot encode, transpose, moving multiple rows and columns, and many other
 transforms as simple special cases.  
  * It is easy to write many different operations in terms of the `cdata` primitives.
- * These operators can work-in memory or at big data scale (with databases and Apache Spark).
+ * These operators can work-in memory or at big data scale (with databases and Apache Spark; for big data we use the
+ [`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html) and [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html) variants).
  * The transforms are controlled by a control table that itself is a diagram of or picture of the transform.
  
 We will end with a quick example.
@@ -130,7 +130,7 @@ the correct rows.
 
 It can be hard to figure out how to specify such a transformation 
 in terms of pivots and un-pivots.  However, as we have said: by drawing control tables
-one can design fairly arbitrary data transform sequences (often stepping through
-either a denormalized intermediate where all values are in a single row, or a 
+one can easily design and manage fairly arbitrary data transform sequences (often stepping through
+either a denormalized intermediate where all values per-instance are in a single row, or a 
 thin intermediate like the triple-like structure we just moved into).  
 
