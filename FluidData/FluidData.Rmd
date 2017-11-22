@@ -3,10 +3,10 @@ title: "Fluid Data"
 author: "John Mount, Win-Vector LLC"
 date: "November 11, 2017"
 output:
-  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
+  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -30,7 +30,7 @@ pltImg <- function(fname) {
 # Introduction
 
 The [`cdata`](https://github.com/WinVector/cdata) [R](https://www.r-project.org) package
-provides a powerful extension of the "fluid data" (or "coordinatized data") concept (please see [here]http://winvector.github.io/FluidData/RowsAndColumns.html) for some notes
+provides a powerful extension of the "fluid data" (or "coordinatized data") concept (please see [here](http://winvector.github.io/FluidData/RowsAndColumns.html) for some notes
 ) that goes way beyond the concepts of pivot/un-pivot.
 
 The fluid data concept is:
@@ -372,6 +372,12 @@ is built up in pieces by appending data (so only the pivot style step is require
 Adding indicators or dummy variables (by one-hot encoding, or other methods) are
 essentially special cases of the pivot flavor of `cdata::moveValuesToColumns*()`.
 
+## Transpose
+
+Transpose is a special case of these operators.  In fact the key-columns
+behave like group specifiers, meaning we can transpose many similarly structured
+tables at once.
+
 ## group_by/aggregate
 
 Many operations that look like a complicated pivot in column format are in fact a simple
@@ -405,9 +411,11 @@ And we can, of course, map back.
 
 This "everything maps to a row" form means the control table is essentially a 
 graphical representation of the desired data transform. It also helps make clear
-that just about any even more general
+that just about *any* even more general
 shape to shape transform can be achieved by a `moveValuesToColumnsN()` followed
-by a `moveValuesToRowsN()`.
+by a `moveValuesToRowsN()`.^[Or by the a `moveValuesToRowsN()` followed
+by a `moveValuesToColumnsN()`.  One direction is storing all intermediate values in
+a single denormalized column, the other is storing in many RDF-triple like rows.]
 
 ```{r tcr}
 moveValuesToRowsN(wideTable = wideTableName,
