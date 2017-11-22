@@ -22,7 +22,7 @@ We have been writing a lot on higher-order data transforms lately:
  * [Fluid Data](http://winvector.github.io/FluidData/FluidData.html)
  * [Big Data Transforms](http://www.win-vector.com/blog/2017/10/big-data-transforms/).
 
-What I want to do now is "write a bit more, so I finally feel concise."
+What I want to do now is "write a bit more, so I finally feel I have been concise."
 
 The [`cdata`](https://winvector.github.io/cdata/) [`R`](https://www.r-project.org) package supplies
  general data transform operators.
