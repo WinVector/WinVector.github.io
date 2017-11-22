@@ -20,7 +20,7 @@ The [`cdata`](https://winvector.github.io/cdata/) [`R`](https://www.r-project.or
 -   These operators can work-in memory or at big data scale (with databases and Apache Spark; for big data we use the [`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html) and [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html) variants).
 -   The transforms are controlled by a control table that itself is a diagram of or picture of the transform.
 
-We will end with a quick example.
+We will end with a quick example, centered on pivoting/un-pivoting values to/from more than one column at the same time.
 
 Suppose we had some sales data supplied as the following table:
 
