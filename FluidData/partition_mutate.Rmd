@@ -244,8 +244,8 @@ These include:
   * **[seplyr](https://winvector.github.io/seplyr/)**: supplies improved interfaces for many data manipulation tasks.
   * **[replyr](https://winvector.github.io/replyr/)**: supplies tools and patches for using `dplyr` on big data.
 
-And issues such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
+Topics such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
 
-```{r cleanup, echo=FALSE}
+```{r cleanup, include=FALSE}
 sparklyr::spark_disconnect(sc)
 ```
