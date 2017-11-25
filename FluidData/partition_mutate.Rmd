@@ -3,10 +3,10 @@ title: "Partitioning Mutate"
 author: "John Mount, Win-Vector LLC"
 date: "2017-11-19"
 output:
+  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
-  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -200,12 +200,7 @@ plan <- partition_mutate_qt(
                  tolower(name), name))
 print(plan)
 
-res <- d
-for(stepi in plan) {
-  res <- mutate_se(res, 
-                   stepi, 
-                   splitTerms = FALSE)
-}
+res <- mutate_seb(d, plan)
 
 res  %.>% 
   dplyr::show_query(.)
@@ -229,7 +224,7 @@ porting working code from other systems, meaning a complete re-design is not
 on the table.]
 
 Note: the function `seplyr::partition_mutate_qt()` is new code and under
-development in version `0.1.7` 
+development in version `0.5.0` 
 of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
 in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).
 

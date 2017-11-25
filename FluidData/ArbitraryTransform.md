@@ -101,7 +101,8 @@ d  %.>%
                     columnsToCopy = c('SalesPerson', 
                                       'Year', 
                                       'Quarter')) %.>% 
-  arrange_se(., c('SalesPerson', 'Year', 'Quarter', 'Region'))  %.>% 
+  arrange_se(., c('SalesPerson', 'Year', 
+                  'Quarter', 'Region'))  %.>% 
   knitr::kable(.)  
 ```
 

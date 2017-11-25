@@ -3,10 +3,10 @@ title: "Partitioning Mutate, Example 2"
 author: "John Mount, Win-Vector LLC"
 date: "2017-11-24"
 output:
+  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
-  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -176,14 +176,14 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))
 
 Notice above the many `NA` columns, which are errors.^[Note: no mere re-ordering of the statements would give this result.]
 
+```{r sq}
+dplyr::show_query(ex)
+```
+
 Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):^[Likely 
 the `dplyr` `SQL` generator does not perform a correct live-value analysis and therefor gets fooled into thinking a statement can
 safely be eliminated (when it can not). `seplyr::partition_mutate_qt()` performs a correct live value calculation and make sure
 `dplyr::mutate()` is only seeing trivial blocks (blocks where no value depends on any calculation in the same block).]
-
-```{r sq}
-dplyr::show_query(ex)
-```
 
 Conclusion
 ----------

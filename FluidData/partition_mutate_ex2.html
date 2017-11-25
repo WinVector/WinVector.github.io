@@ -193,8 +193,8 @@ d %.&gt;%
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -206,8 +206,8 @@ d %.&gt;%
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -219,8 +219,8 @@ d %.&gt;%
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -232,8 +232,8 @@ d %.&gt;%
 </tr>
 <tr class="odd">
 <td align="right">5</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -286,8 +286,8 @@ d %.&gt;%
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
@@ -305,8 +305,8 @@ d %.&gt;%
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 </tr>
@@ -325,23 +325,23 @@ d %.&gt;%
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">control</td>
@@ -395,19 +395,19 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 <td align="left">treatment</td>
 </tr>
 <tr class="odd">
-<td align="left">NA</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 </tbody>
 </table>
 <p>Notice above the many <code>NA</code> columns, which are errors.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> Note: no mere re-ordering of the statements would give this result.</span></p>
-<p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> Likely the <code>dplyr</code> <code>SQL</code> generator does not perform a correct live-value analysis and therefor gets fooled into thinking a statement can safely be eliminated (when it can not). <code>seplyr::partition_mutate_qt()</code> performs a correct live value calculation and make sure <code>dplyr::mutate()</code> is only seeing trivial blocks (blocks where no value depends on any calculation in the same block).</span></p>
 <pre class="r"><code>dplyr::show_query(ex)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `rowNum`, `a_1`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;treatment&quot;) ELSE (`a_2`) END AS `a_2`
 ## FROM (SELECT `rowNum`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (`condition_tmp`) THEN (&quot;control&quot;) ELSE (`a_2`) END AS `a_2`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;control&quot;) ELSE (`a_1`) END AS `a_1`
 ## FROM (SELECT `rowNum`, `a_1`, `a_2`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, RAND() &gt;= 0.5 AS `condition_tmp`
-## FROM `d`) `wygvehmkmf`) `alwuzbxwsg`</code></pre>
+## FROM `d`) `enxncjtait`) `qboitguqvm`</code></pre>
+<p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> Likely the <code>dplyr</code> <code>SQL</code> generator does not perform a correct live-value analysis and therefor gets fooled into thinking a statement can safely be eliminated (when it can not). <code>seplyr::partition_mutate_qt()</code> performs a correct live value calculation and make sure <code>dplyr::mutate()</code> is only seeing trivial blocks (blocks where no value depends on any calculation in the same block).</span></p>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
 <p><code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_qt()</code> type capability is essential for executing non-trivial code at scale in <code>Sparklyr</code>.</p>
