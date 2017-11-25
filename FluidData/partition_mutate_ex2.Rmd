@@ -21,17 +21,18 @@ knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
 options(htmltools.dir.version = FALSE)
 ```
 
-`Sparklyr` with its `dplyr` translations allows `R` to perform the heavy lifting that has traditionally been the exclusive domain of proprietary systems like `SAS`.
+[`Sparklyr`](https://spark.rstudio.com), with its [`dplyr`](https://CRAN.R-project.org/package=dplyr) translations allows [`R`](https://www.r-project.org), to perform the heavy lifting that has traditionally been the exclusive domain of proprietary systems such as `SAS`.
 In general, `dplyr` is good at handling intermediate variables in the mutate function so users don't need to think about it.
 However, some of that breaks down when the processing is done on the `Apache Spark` side. [Win-Vector LLC](http://win-vector.com)
-developed the [`seplyr`](https://winvector.github.io/seplyr/) package to use with clients to mitigate some of these situations.^[And we distribute the package as open-source to give back to the `R` community.]
-In this article we will demonstrate we `seplyr` functions: `if_else_device()` and ``partition_mutate_qt()`.^[Note: these functions are new code and under development in version `0.5.0` 
+developed the [`seplyr`](https://winvector.github.io/seplyr/) package to use with 
+consulting clients to mitigate some of these situations.^[And we distribute the package as open-source to give back to the `R` community.]
+In this article we will demonstrate we `seplyr` functions: `if_else_device()` and `partition_mutate_qt()`.^[Note: these functions are new code and under development in version `0.5.0` 
 of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
 in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).]
 
 
-This is a follow-on example building on our ["Partitioning Mutate" article](http://winvector.github.io/FluidData/partition_mutate.html).
-showing a larger block sequence based on swaps.^[The source code for this article can be found [here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate_ex2.Rmd).]  For motivation and context please see
+This is a follow-on example building on our ["Partitioning Mutate" article](http://winvector.github.io/FluidData/partition_mutate.html),
+showing a larger block sequence based on swaps.^[The source code for this article can be found [here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate_ex2.Rmd).]  For more motivation and context please see
 [the first article](http://winvector.github.io/FluidData/partition_mutate.html).
 
 Please consider the following example data (on a remote `Spark` cluster).
@@ -64,18 +65,17 @@ d <- dplyr::copy_to(sc, dL,
 ```{r p1}
 class(d)
 d %.>% 
-  dplyr::collect(.) %.>%  # https://github.com/tidyverse/dplyr/issues/3216
+  # avoid https://github.com/tidyverse/dplyr/issues/3216
+  dplyr::collect(.) %.>% 
   knitr::kable(.)
 ```
 
-It is often necessary to simulate block commands with `ifelse()`
-style functionality.  
+We find in non-trivial projects it is often necessary to simulate block-`if(){}else{}`
+structures in `dplyr` pipelines.
 
 For our example: suppose we wish to assign columns in a complementary
 to treatment and control design^[Abraham Wald designed some sequential analysis procedures
 in this way as Nina Zumel [remarked](https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience). Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.]
-And further suppose we want to keep the random variables driving our decisions
-around for diagnosis and debugging.
 
 To write such a procedure in pure `dplyr` we might simulate block with code such
 as the following^[Only showing work on the `a` group right now. We are assuming
@@ -83,17 +83,32 @@ we want to perform this task on all the grouped letter columns.]
 
 ```{r dL}
 library("seplyr")
+packageVersion("seplyr")
 
 plan <- if_else_device(
-  "rand()>=0.5",
-  thenexprs = c(
-    "a_1" := "'treatment'",
-    "a_2" := "'control'"),
-  elseexprs =  c(
-    "a_1" := "'control'",
-    "a_2" := "'treatment'"))  %.>% 
+  testexpr =
+    "rand()>=0.5",
+     thenexprs = c(
+       "a_1" := "'treatment'",
+       "a_2" := "'control'"),
+     elseexprs =  c(
+       "a_1" := "'control'",
+       "a_2" := "'treatment'"))  %.>% 
   partition_mutate_se(.)
+```
 
+We are using the indent notation to indicate the code-blocks we are simulating
+with row-wise `if(){}else{}` blocks.^[For more on this concept, please see: [the `if_else_device` reference](https://winvector.github.io/seplyr/reference/if_else_device.html).] The `if_else_device` is also using quoted expressions (or value-oriented standard notation).^[One can over-worry about this, but in the end all a 
+[non-standard evaluation](http://adv-r.had.co.nz/Computing-on-the-language.html) scheme saves
+you is a few quote marks (at the cost of transparency, and a lot of down-stream headaches).  
+Our advice is to compose the expressions using your smart `R`-code
+editor of choice and then throw on the additional quote marks after you have the statements 
+as you want them.]
+
+In the end we can examine and execute the mutate plan:
+
+```{r dLex}
+print(plan)
 
 d %.>% 
   mutate_seb(., plan) %.>% 
@@ -102,10 +117,8 @@ d %.>%
   knitr::kable(.)
 ```
 
-Above we are using the indent notation to indicate the code-blocks we are simulating
-with row-wise `if(){}else{}` blocks.^[For more on this concept, please see: [https://winvector.github.io/seplyr/reference/if_else_device.html](https://winvector.github.io/seplyr/reference/if_else_device.html).]
 
-Now our goal was to perform this same operation on each of the 5 letter groups.
+Our larger goal was to perform this same operation on each of the 5 letter groups.
 
 We do this easily as follows:^[A better overall design would be to use 
 [`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html),
@@ -189,13 +202,18 @@ Conclusion
 ----------
 
 `seplyr::if_else_device()` and `seplyr::partition_mutate_qt()` type capability is
-essential for executing non-trivial code at scale in `Sparklyr`.
+essential for executing non-trivial code at scale in `Sparklyr`.  For more on the `if_else_device`
+we suggest reading up on the [function reference example](https://winvector.github.io/seplyr/reference/if_else_device.html), and for a review
+on the `partition_mutate` variations we suggest the ["Partitioning Mutate" article](http://winvector.github.io/FluidData/partition_mutate.html).
+
+Links
+-----
 
 [Win-Vector LLC](http://www.win-vector.com/) supplies a number of open-source
 [`R`](https://www.r-project.org) packages for working effectively with big data.
 These include:
 
-  * **[wrapr](https://winvector.github.io/wrapr/)**: supplies code re-writing tools that make coding *over* `dplyr` much easier.
+  * **[wrapr](https://winvector.github.io/wrapr/)**: supplies code re-writing tools that make coding *over* ["non standard evaluation"](http://adv-r.had.co.nz/Computing-on-the-language.html) interfaces (such as `dplyr`) *much* easier.
   * **[cdata](https://winvector.github.io/cdata/)**: supplies pivot/un-pivot functionality at big data scale.
   * **[seplyr](https://winvector.github.io/seplyr/)**: supplies improved interfaces for many data manipulation tasks.
   * **[replyr](https://winvector.github.io/replyr/)**: supplies tools and patches for using `dplyr` on big data.

@@ -48,13 +48,14 @@ if (window.hljs) {
 
 
 
-<p><code>Sparklyr</code> with its <code>dplyr</code> translations allows <code>R</code> to perform the heavy lifting that has traditionally been the exclusive domain of proprietary systems like <code>SAS</code>. In general, <code>dplyr</code> is good at handling intermediate variables in the mutate function so users don’t need to think about it. However, some of that breaks down when the processing is done on the <code>Apache Spark</code> side. <a href="http://win-vector.com">Win-Vector LLC</a> developed the <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> package to use with clients to mitigate some of these situations.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> And we distribute the package as open-source to give back to the <code>R</code> community.</span> In this article we will demonstrate we <code>seplyr</code> functions: <code>if_else_device()</code> and `<code>partition_mutate_qt()</code>.<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> Note: these functions are new code and under development in version <code>0.5.0</code> of <a href="https://github.com/WinVector/seplyr"><code>seplyr</code></a> (and not yet available in the <a href="https://CRAN.R-project.org/package=seplyr">CRAN release version</a>).</span></p>
-<p>This is a follow-on example building on our <a href="http://winvector.github.io/FluidData/partition_mutate.html">“Partitioning Mutate” article</a>. showing a larger block sequence based on swaps.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The source code for this article can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate_ex2.Rmd">here</a>.</span> For motivation and context please see <a href="http://winvector.github.io/FluidData/partition_mutate.html">the first article</a>.</p>
+<p><a href="https://spark.rstudio.com"><code>Sparklyr</code></a>, with its <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a> translations allows <a href="https://www.r-project.org"><code>R</code></a>, to perform the heavy lifting that has traditionally been the exclusive domain of proprietary systems such as <code>SAS</code>. In general, <code>dplyr</code> is good at handling intermediate variables in the mutate function so users don’t need to think about it. However, some of that breaks down when the processing is done on the <code>Apache Spark</code> side. <a href="http://win-vector.com">Win-Vector LLC</a> developed the <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> package to use with consulting clients to mitigate some of these situations.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> And we distribute the package as open-source to give back to the <code>R</code> community.</span> In this article we will demonstrate we <code>seplyr</code> functions: <code>if_else_device()</code> and <code>partition_mutate_qt()</code>.<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> Note: these functions are new code and under development in version <code>0.5.0</code> of <a href="https://github.com/WinVector/seplyr"><code>seplyr</code></a> (and not yet available in the <a href="https://CRAN.R-project.org/package=seplyr">CRAN release version</a>).</span></p>
+<p>This is a follow-on example building on our <a href="http://winvector.github.io/FluidData/partition_mutate.html">“Partitioning Mutate” article</a>, showing a larger block sequence based on swaps.<label for="tufte-sn-3" class="margin-toggle sidenote-number">3</label><input type="checkbox" id="tufte-sn-3" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">3</span> The source code for this article can be found <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/partition_mutate_ex2.Rmd">here</a>.</span> For more motivation and context please see <a href="http://winvector.github.io/FluidData/partition_mutate.html">the first article</a>.</p>
 <p>Please consider the following example data (on a remote <code>Spark</code> cluster).</p>
 <pre class="r"><code>class(d)</code></pre>
 <pre><code>## [1] &quot;tbl_spark&quot; &quot;tbl_sql&quot;   &quot;tbl_lazy&quot;  &quot;tbl&quot;</code></pre>
 <pre class="r"><code>d %.&gt;% 
-  dplyr::collect(.) %.&gt;%  # https://github.com/tidyverse/dplyr/issues/3216
+  # avoid https://github.com/tidyverse/dplyr/issues/3216
+  dplyr::collect(.) %.&gt;% 
   knitr::kable(.)</code></pre>
 <table>
 <thead>
@@ -140,23 +141,41 @@ if (window.hljs) {
 </tr>
 </tbody>
 </table>
-<p>It is often necessary to simulate block commands with <code>ifelse()</code> style functionality.</p>
-<p>For our example: suppose we wish to assign columns in a complementary to treatment and control design<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> Abraham Wald designed some sequential analysis procedures in this way as Nina Zumel <a href="https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience">remarked</a>. Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.</span> And further suppose we want to keep the random variables driving our decisions around for diagnosis and debugging.</p>
+<p>We find in non-trivial projects it is often necessary to simulate block-<code>if(){}else{}</code> structures in <code>dplyr</code> pipelines.</p>
+<p>For our example: suppose we wish to assign columns in a complementary to treatment and control design<label for="tufte-sn-4" class="margin-toggle sidenote-number">4</label><input type="checkbox" id="tufte-sn-4" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">4</span> Abraham Wald designed some sequential analysis procedures in this way as Nina Zumel <a href="https://github.com/WinVector/ODSCWest2017/tree/master/MythsOfDataScience">remarked</a>. Another string example is conditionals where you are trying to vary on a per-row basis which column is assigned to, instead of varying what value is assigned from.</span></p>
 <p>To write such a procedure in pure <code>dplyr</code> we might simulate block with code such as the following<label for="tufte-sn-5" class="margin-toggle sidenote-number">5</label><input type="checkbox" id="tufte-sn-5" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">5</span> Only showing work on the <code>a</code> group right now. We are assuming we want to perform this task on all the grouped letter columns.</span></p>
 <pre class="r"><code>library(&quot;seplyr&quot;)
-
-plan &lt;- if_else_device(
-  &quot;rand()&gt;=0.5&quot;,
-  thenexprs = c(
-    &quot;a_1&quot; := &quot;'treatment'&quot;,
-    &quot;a_2&quot; := &quot;'control'&quot;),
-  elseexprs =  c(
-    &quot;a_1&quot; := &quot;'control'&quot;,
-    &quot;a_2&quot; := &quot;'treatment'&quot;))  %.&gt;% 
-  partition_mutate_se(.)
-
-
-d %.&gt;% 
+packageVersion(&quot;seplyr&quot;)</code></pre>
+<pre><code>## [1] '0.5.0'</code></pre>
+<pre class="r"><code>plan &lt;- if_else_device(
+  testexpr =
+    &quot;rand()&gt;=0.5&quot;,
+     thenexprs = c(
+       &quot;a_1&quot; := &quot;'treatment'&quot;,
+       &quot;a_2&quot; := &quot;'control'&quot;),
+     elseexprs =  c(
+       &quot;a_1&quot; := &quot;'control'&quot;,
+       &quot;a_2&quot; := &quot;'treatment'&quot;))  %.&gt;% 
+  partition_mutate_se(.)</code></pre>
+<p>We are using the indent notation to indicate the code-blocks we are simulating with row-wise <code>if(){}else{}</code> blocks.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> For more on this concept, please see: <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">the <code>if_else_device</code> reference</a>.</span> The <code>if_else_device</code> is also using quoted expressions (or value-oriented standard notation).<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> A better overall design would be to use <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsN.html"><code>cdata::moveValuesToRowsN()</code></a>, then perform a single bulk operation on rows, and then pivot/transpose back with <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html"><code>cdata::moveValuesToColumnsN()</code></a>. But let’s see how we simply work with a problem at hand.</span></p>
+<p>In the end we can examine and execute the mutate plan:</p>
+<pre class="r"><code>print(plan)</code></pre>
+<pre><code>## $group00001
+## ifebtest_k8d53426wlz1 
+##         &quot;rand()&gt;=0.5&quot; 
+## 
+## $group00002
+##                                                a_1 
+## &quot;ifelse( ifebtest_k8d53426wlz1, 'treatment', a_1)&quot; 
+##                                                a_2 
+##   &quot;ifelse( ifebtest_k8d53426wlz1, 'control', a_2)&quot; 
+## 
+## $group00003
+##                                                     a_1 
+##   &quot;ifelse( !( ifebtest_k8d53426wlz1 ), 'control', a_1)&quot; 
+##                                                     a_2 
+## &quot;ifelse( !( ifebtest_k8d53426wlz1 ), 'treatment', a_2)&quot;</code></pre>
+<pre class="r"><code>d %.&gt;% 
   mutate_seb(., plan) %.&gt;% 
   select_se(., grepdf('^ifebtest_.*', ., invert=TRUE)) %.&gt;% 
   dplyr::collect(.) %.&gt;% 
@@ -206,8 +225,8 @@ d %.&gt;%
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -245,9 +264,8 @@ d %.&gt;%
 </tr>
 </tbody>
 </table>
-<p>Above we are using the indent notation to indicate the code-blocks we are simulating with row-wise <code>if(){}else{}</code> blocks.<label for="tufte-sn-6" class="margin-toggle sidenote-number">6</label><input type="checkbox" id="tufte-sn-6" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">6</span> For more on this concept, please see: <a href="https://winvector.github.io/seplyr/reference/if_else_device.html" class="uri">https://winvector.github.io/seplyr/reference/if_else_device.html</a>.</span></p>
-<p>Now our goal was to perform this same operation on each of the 5 letter groups.</p>
-<p>We do this easily as follows:<label for="tufte-sn-7" class="margin-toggle sidenote-number">7</label><input type="checkbox" id="tufte-sn-7" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">7</span> A better overall design would be to use <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsN.html"><code>cdata::moveValuesToRowsN()</code></a>, then perform a single bulk operation on rows, and then pivot/transpose back with <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html"><code>cdata::moveValuesToColumnsN()</code></a>. But let’s see how we simply work with a problem at hand.</span></p>
+<p>Our larger goal was to perform this same operation on each of the 5 letter groups.</p>
+<p>We do this easily as follows:<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> That is to pick a small number of blocks, in our case the plan consisted of 3 blocks. The simple method of introducing a block boundary at each first use of derived value (without statement re-ordering) would create a very much larger set of blocks (which cause problems of their own). In particular the impression code and comments of <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091">upcoming <code>dplyr</code> fix</a> appear to indicate an undesirable large number of blocks solution.</span></p>
 <pre class="r"><code>plan &lt;- lapply(c('a', 'b', 'c', 'd', 'e'),
                function(gi) {
                  if_else_device(
@@ -290,10 +308,10 @@ d %.&gt;%
 <td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 </tr>
@@ -307,21 +325,21 @@ d %.&gt;%
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 </tr>
 <tr class="even">
 <td align="right">4</td>
@@ -331,10 +349,10 @@ d %.&gt;%
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
@@ -342,17 +360,17 @@ d %.&gt;%
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 </tr>
 </tbody>
 </table>
 <p>Please keep in mind: we are using a very simple and regular sequence only for purposes of illustration. The intent is to show the types of issues one runs into when standing-up non-trivial applications in <code>Sparklyr</code>.</p>
-<p>The purpose of <a href="https://github.com/WinVector/seplyr"><code>seplyr::partition_mutate_qt()</code></a> is to re-arrange statements and break them into blocks of non-dependent statements (no statement in a block depends on any other in the same block, and all value dependencies are respected by the block order). <code>seplyr::partition_mutate_qt()</code> if further defined to do this in a performant manner.<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> That is to pick a small number of blocks, in our case the plan consisted of 3 blocks. The simple method of introducing a block boundary at each first use of derived value (without statement re-ordering) would create a very much larger set of blocks (which cause problems of their own). In particular the impression code and comments of <a href="https://github.com/tidyverse/dbplyr/commit/36a44cd4b5f70bc06fb004e7787157165766d091">upcoming <code>dplyr</code> fix</a> appear to indicate an undesirable large number of blocks solution.</span></p>
+<p>The purpose of <a href="https://github.com/WinVector/seplyr"><code>seplyr::partition_mutate_qt()</code></a> is to re-arrange statements and break them into blocks of non-dependent statements (no statement in a block depends on any other in the same block, and all value dependencies are respected by the block order). <code>seplyr::partition_mutate_qt()</code> if further defined to do this in a performant manner.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> Note: no mere re-ordering of the statements would give this result.</span></p>
 <p>Without such partition planning the current version of <code>dplyr</code> (0.7.4) the results of <code>dplyr::mutate()</code> do not seem to be well-defined when values are created and re-used in the same <code>dplyr::mutate()</code> block. This is not a currently documented limitation, but it is present:</p>
 <pre class="r"><code>ex &lt;- dplyr::mutate(d,
                     condition_tmp = rand()&gt;=0.5,
@@ -379,8 +397,8 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 </thead>
 <tbody>
 <tr class="odd">
+<td align="left">NA</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 </tr>
 <tr class="even">
 <td align="left">control</td>
@@ -391,29 +409,32 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 <td align="left">treatment</td>
 </tr>
 <tr class="even">
+<td align="left">NA</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 </tr>
 <tr class="odd">
+<td align="left">NA</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 </tr>
 </tbody>
 </table>
-<p>Notice above the many <code>NA</code> columns, which are errors.<label for="tufte-sn-9" class="margin-toggle sidenote-number">9</label><input type="checkbox" id="tufte-sn-9" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">9</span> Note: no mere re-ordering of the statements would give this result.</span></p>
+<p>Notice above the many <code>NA</code> columns, which are errors.<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> Likely the <code>dplyr</code> <code>SQL</code> generator does not perform a correct live-value analysis and therefor gets fooled into thinking a statement can safely be eliminated (when it can not). <code>seplyr::partition_mutate_qt()</code> performs a correct live value calculation and make sure <code>dplyr::mutate()</code> is only seeing trivial blocks (blocks where no value depends on any calculation in the same block).</span></p>
 <pre class="r"><code>dplyr::show_query(ex)</code></pre>
 <pre><code>## &lt;SQL&gt;
 ## SELECT `rowNum`, `a_1`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;treatment&quot;) ELSE (`a_2`) END AS `a_2`
 ## FROM (SELECT `rowNum`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (`condition_tmp`) THEN (&quot;control&quot;) ELSE (`a_2`) END AS `a_2`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;control&quot;) ELSE (`a_1`) END AS `a_1`
 ## FROM (SELECT `rowNum`, `a_1`, `a_2`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, RAND() &gt;= 0.5 AS `condition_tmp`
-## FROM `d`) `enxncjtait`) `qboitguqvm`</code></pre>
-<p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<label for="tufte-sn-10" class="margin-toggle sidenote-number">10</label><input type="checkbox" id="tufte-sn-10" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">10</span> Likely the <code>dplyr</code> <code>SQL</code> generator does not perform a correct live-value analysis and therefor gets fooled into thinking a statement can safely be eliminated (when it can not). <code>seplyr::partition_mutate_qt()</code> performs a correct live value calculation and make sure <code>dplyr::mutate()</code> is only seeing trivial blocks (blocks where no value depends on any calculation in the same block).</span></p>
+## FROM `d`) `bblfamovdx`) `bofzeofnwm`</code></pre>
+<p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<a href="#fn11" class="footnoteRef" id="fnref11"><sup>11</sup></a></p>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
-<p><code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_qt()</code> type capability is essential for executing non-trivial code at scale in <code>Sparklyr</code>.</p>
+<p><code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_qt()</code> type capability is essential for executing non-trivial code at scale in <code>Sparklyr</code>. For more on the <code>if_else_device</code> we suggest reading up on the <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">function reference example</a>, and for a review on the <code>partition_mutate</code> variations we suggest the <a href="http://winvector.github.io/FluidData/partition_mutate.html">“Partitioning Mutate” article</a>.</p>
+</div>
+<div id="links" class="section level2">
+<h2>Links</h2>
 <p><a href="http://www.win-vector.com/">Win-Vector LLC</a> supplies a number of open-source <a href="https://www.r-project.org"><code>R</code></a> packages for working effectively with big data. These include:</p>
 <ul>
-<li><strong><a href="https://winvector.github.io/wrapr/">wrapr</a></strong>: supplies code re-writing tools that make coding <em>over</em> <code>dplyr</code> much easier.</li>
+<li><strong><a href="https://winvector.github.io/wrapr/">wrapr</a></strong>: supplies code re-writing tools that make coding <em>over</em> <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">“non standard evaluation”</a> interfaces (such as <code>dplyr</code>) <em>much</em> easier.</li>
 <li><strong><a href="https://winvector.github.io/cdata/">cdata</a></strong>: supplies pivot/un-pivot functionality at big data scale.</li>
 <li><strong><a href="https://winvector.github.io/seplyr/">seplyr</a></strong>: supplies improved interfaces for many data manipulation tasks.</li>
 <li><strong><a href="https://winvector.github.io/replyr/">replyr</a></strong>: supplies tools and patches for using <code>dplyr</code> on big data.</li>
