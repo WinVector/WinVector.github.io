@@ -223,10 +223,6 @@ to support actual production use-cases.^[And if you want to support
 porting working code from other systems, meaning a complete re-design is not
 on the table.]
 
-Note: the function `seplyr::partition_mutate_qt()` is new code and under
-development in version `0.5.0` 
-of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
-in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).
 
 For an example bringing out more of these issues please see [here](http://winvector.github.io/FluidData/partition_mutate_ex2.html).
 

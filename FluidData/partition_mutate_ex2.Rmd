@@ -26,9 +26,7 @@ In general, `dplyr` is good at handling intermediate variables in the mutate fun
 However, some of that breaks down when the processing is done on the `Apache Spark` side. [Win-Vector LLC](http://win-vector.com)
 developed the [`seplyr`](https://winvector.github.io/seplyr/) package to use with 
 consulting clients to mitigate some of these situations.^[And we distribute the package as open-source to give back to the `R` community.]
-In this article we will demonstrate we `seplyr` functions: `if_else_device()` and `partition_mutate_qt()`.^[Note: these functions are new code and under development in version `0.5.0` 
-of [`seplyr`](https://github.com/WinVector/seplyr) (and not yet available 
-in the [CRAN release version](https://CRAN.R-project.org/package=seplyr)).]
+In this article we will demonstrate we `seplyr` functions: `if_else_device()` and `partition_mutate_qt()`.
 
 
 This is a follow-on example building on our ["Partitioning Mutate" article](http://winvector.github.io/FluidData/partition_mutate.html),
