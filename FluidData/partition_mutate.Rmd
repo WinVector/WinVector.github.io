@@ -92,13 +92,12 @@ may not work against big data sources."
 The additional confounding issue is code like the following currently throws:
 
 ```r
-d %.>% 
-  dplyr::mutate(., 
-                a := 1, 
-                b := a, 
-                c := b)
-# Quitting from lines 87-92 (partition_mutate.Rmd) 
-# Error: org.apache.spark.sql.AnalysisException: cannot resolve '`b`' ...
+dplyr::mutate(d, 
+   a := 1, 
+   b := a, 
+   c := b)
+   
+# Error: org.apache.spark.sql.AnalysisException: cannot resolve '`b`'
 ```
 
 It appears there is a `dplyr` fix in the works.^[
@@ -117,8 +116,8 @@ with a new mutate introduced at least after each condition.^[This code is simula
 sequence of blocks of conditional column assignments.
 Such code is quite common in production `Spark` projects,
 especially those involving the translation of legacy imperative code such as `SAS`. 
-The issue is we don't have a control structure that chooses which column to assign
-to to match the `ifelse(,,)` control structure that chooses which value to use] 
+The issue is: we don't have a control structure that chooses which column to assign
+to, until we introduce [`seplyr::if_else_device()`](https://winvector.github.io/seplyr/reference/if_else_device.html).] 
 
 That is the following would get translated from this:
 

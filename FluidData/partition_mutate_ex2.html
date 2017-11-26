@@ -161,20 +161,20 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 <p>In the end we can examine and execute the mutate plan:</p>
 <pre class="r"><code>print(plan)</code></pre>
 <pre><code>## $group00001
-## ifebtest_ob9l8w7c2h12 
+## ifebtest_isoglyop78tl 
 ##         &quot;rand()&gt;=0.5&quot; 
 ## 
 ## $group00002
 ##                                                a_1 
-## &quot;ifelse( ifebtest_ob9l8w7c2h12, 'treatment', a_1)&quot; 
+## &quot;ifelse( ifebtest_isoglyop78tl, 'treatment', a_1)&quot; 
 ##                                                a_2 
-##   &quot;ifelse( ifebtest_ob9l8w7c2h12, 'control', a_2)&quot; 
+##   &quot;ifelse( ifebtest_isoglyop78tl, 'control', a_2)&quot; 
 ## 
 ## $group00003
 ##                                                     a_1 
-##   &quot;ifelse( !( ifebtest_ob9l8w7c2h12 ), 'control', a_1)&quot; 
+##   &quot;ifelse( !( ifebtest_isoglyop78tl ), 'control', a_1)&quot; 
 ##                                                     a_2 
-## &quot;ifelse( !( ifebtest_ob9l8w7c2h12 ), 'treatment', a_2)&quot;</code></pre>
+## &quot;ifelse( !( ifebtest_isoglyop78tl ), 'treatment', a_2)&quot;</code></pre>
 <pre class="r"><code>d %.&gt;% 
   mutate_seb(., plan) %.&gt;% 
   select_se(., grepdf('^ifebtest_.*', ., invert=TRUE)) %.&gt;% 
@@ -199,8 +199,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -212,8 +212,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -238,8 +238,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -306,10 +306,10 @@ d %.&gt;%
 <td align="right">1</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
@@ -319,51 +319,51 @@ d %.&gt;%
 <td align="right">2</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
 </tr>
 <tr class="even">
 <td align="right">4</td>
+<td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 </tr>
@@ -405,12 +405,12 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 <td align="left">treatment</td>
 </tr>
 <tr class="odd">
-<td align="left">NA</td>
-<td align="left">control</td>
-</tr>
-<tr class="even">
 <td align="left">control</td>
 <td align="left">treatment</td>
+</tr>
+<tr class="even">
+<td align="left">NA</td>
+<td align="left">control</td>
 </tr>
 <tr class="odd">
 <td align="left">NA</td>
@@ -424,7 +424,7 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 ## SELECT `rowNum`, `a_1`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;treatment&quot;) ELSE (`a_2`) END AS `a_2`
 ## FROM (SELECT `rowNum`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (`condition_tmp`) THEN (&quot;control&quot;) ELSE (`a_2`) END AS `a_2`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;control&quot;) ELSE (`a_1`) END AS `a_1`
 ## FROM (SELECT `rowNum`, `a_1`, `a_2`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, RAND() &gt;= 0.5 AS `condition_tmp`
-## FROM `d`) `veugovrsjq`) `dxosevhymx`</code></pre>
+## FROM `d`) `adwzsrjsnt`) `vsgjtmwbbh`</code></pre>
 <p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<a href="#fn10" class="footnoteRef" id="fnref10"><sup>10</sup></a></p>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
