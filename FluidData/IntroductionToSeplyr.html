@@ -59,7 +59,7 @@ starwars %&gt;%
 <p>Until you introduce a substitution system such as <a href="https://CRAN.R-project.org/package=rlang"><code>rlang</code></a> or <a href="https://winvector.github.io/wrapr/articles/let.html"><code>wrapr::let()</code></a> (which <a href="http://www.win-vector.com/blog/2017/11/let-xx-in-r/">we recommend over <code>rlang</code></a> and <a href="http://www.win-vector.com/blog/2017/08/lets-have-some-sympathy-for-the-part-time-r-user/">publicly pre-dates the public release of <code>rlang</code></a>) you have some difficulty writing re-usable programs that use the <code>dplyr</code> verbs over &quot;to be specified later&quot; column names.</p>
 <p>We are presumably not the only ones who considered this a limitation:</p>
 <p><a href="https://github.com/tidyverse/dplyr/issues/352"><img src="dplyrse2.png" alt="" /></a></p>
-<p><code>seplyr</code> is an attempt to make the standard interfaces the primary interfaces.</p>
+<p><code>seplyr</code> is an attempt to make programming a primary concern by making the value-oriented (standard) interfaces the primary interfaces.</p>
 <h1 id="mutate"><code>mutate()</code></h1>
 <p>The earlier &quot;standard evaluation costs just a few quotes&quot; becomes a bit strained when we talk about the <code>dplyr::mutate()</code> operator. It doesn't seem worth the effort unless you get something more in return. In <code>seplyr</code> <code>0.5.0</code> we introduced &quot;the something more&quot;: planning over and optimizing <code>dplyr::mutate()</code> sequences.</p>
 <p>A <code>seplyr</code> mutate looks like the following:</p>
@@ -128,12 +128,12 @@ starwars %&gt;%
   <span class="dt">testexpr =</span> <span class="st">&quot;runif(n())&gt;=0.5&quot;</span>,
   <span class="dt">thenexprs =</span> <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>,
   <span class="dt">elseexprs =</span> <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>)</code></pre></div>
-<pre><code>##                           ifebtest_437g7b7to779 
+<pre><code>##                           ifebtest_8qs6nx3491k2 
 ##                               &quot;runif(n())&gt;=0.5&quot; 
 ##                                          height 
-##    &quot;ifelse( ifebtest_437g7b7to779, NA, height)&quot; 
+##    &quot;ifelse( ifebtest_8qs6nx3491k2, NA, height)&quot; 
 ##                                            mass 
-## &quot;ifelse( !( ifebtest_437g7b7to779 ), NA, mass)&quot;</code></pre>
+## &quot;ifelse( !( ifebtest_8qs6nx3491k2 ), NA, mass)&quot;</code></pre>
 <p>Notice the <code>if_else_device</code> translates the user code into a sequence of <code>dplyr::mutate()</code> expressions (using only the weaker operator <code>ifelse()</code>). Obviously the user could perform this translation, but <code>if_else_device</code> automates the record keeping and <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">can even be nested</a>. Also many such steps can be chained together and broken into a minimal sequence of blocks by <code>partition_mutate_se()</code> (not forcing a new <code>dplyr::mutate()</code> step for each if-block encountered).</p>
 <p>When we combine the device with the partitioned we get performant database-safe code where the number of blocks is only the level of variable dependence (and not the possibly much larger number of initial value uses that a straightforward non-reordering split would give; note: <code>seplyr::mutate_se() 0.5.1</code> and later incorporate the <code>partition_mutate_se()</code> in <code>mutate_se()</code>).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">starwars %.&gt;%
@@ -145,15 +145,15 @@ starwars %&gt;%
 <span class="st">  </span><span class="kw">arrange_se</span>(., <span class="st">&quot;name&quot;</span>) %.&gt;%
 <span class="st">  </span><span class="kw">head</span>(.)</code></pre></div>
 <pre><code>## # A tibble: 6 x 4
-##                  name height  mass ifebtest_brce3wobarhu
+##                  name height  mass ifebtest_c6c3qud7ecnr
 ##                 &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;                 &lt;lgl&gt;
-## 1              Ackbar    180    NA                 FALSE
-## 2          Adi Gallia     NA    50                  TRUE
-## 3    Anakin Skywalker    188    NA                 FALSE
-## 4        Arvel Crynyd     NA    NA                  TRUE
-## 5         Ayla Secura    178    NA                 FALSE
+## 1              Ackbar     NA    83                  TRUE
+## 2          Adi Gallia    184    NA                 FALSE
+## 3    Anakin Skywalker     NA    84                  TRUE
+## 4        Arvel Crynyd     NA    NA                 FALSE
+## 5         Ayla Secura     NA    55                  TRUE
 ## 6 Bail Prestor Organa     NA    NA                  TRUE</code></pre>
 <h1 id="conclusion">Conclusion</h1>
 <p>The value oriented notation is a bit clunkier, but this is offset by it's greater flexibility in terms of composition and working parametrically.</p>
-<p>Our group has been using <code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_se()</code> to greatly simplify porting powerful <code>SAS</code> procedures to <code>R</code>/<code>Sparklyr</code>/<code>Apache Spark</code>clusters.</p>
+<p>Our group has been using <code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_se()</code> to greatly simplify porting powerful <code>SAS</code> procedures to <code>R</code>/<code>Sparklyr</code>/<code>Apache Spark</code> clusters.</p>
 <p>This is new code, but we are striving to supply sufficient initial <a href="http://www.win-vector.com/blog/2017/11/win-vector-llc-announces-new-big-data-in-r-tools/">documentation and examples</a>.</p>

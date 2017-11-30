@@ -74,7 +74,8 @@ We are presumably not the only ones who considered this a limitation:
 
 [![](dplyrse2.png)](https://github.com/tidyverse/dplyr/issues/352)
 
-`seplyr` is an attempt to make the standard interfaces the primary interfaces.
+`seplyr` is an attempt to make programming a primary concern by 
+making the value-oriented (standard) interfaces the primary interfaces.
 
 # `mutate()`
 
@@ -162,7 +163,7 @@ starwars %.>%
 The value oriented notation is a bit clunkier, but this is offset by it's greater
 flexibility in terms of composition and working parametrically.
 
-Our group has been using `seplyr::if_else_device()` and `seplyr::partition_mutate_se()` to greatly simplify porting powerful `SAS` procedures to `R`/`Sparklyr`/`Apache Spark`clusters.
+Our group has been using `seplyr::if_else_device()` and `seplyr::partition_mutate_se()` to greatly simplify porting powerful `SAS` procedures to `R`/`Sparklyr`/`Apache Spark` clusters.
 
 This is new code, but we are striving to supply sufficient initial [documentation and examples](http://www.win-vector.com/blog/2017/11/win-vector-llc-announces-new-big-data-in-r-tools/).
 

@@ -101,7 +101,7 @@ We are presumably not the only ones who considered this a limitation:
 
 [![](dplyrse2.png)](https://github.com/tidyverse/dplyr/issues/352)
 
-`seplyr` is an attempt to make the standard interfaces the primary interfaces.
+`seplyr` is an attempt to make programming a primary concern by making the value-oriented (standard) interfaces the primary interfaces.
 
 `mutate()`
 ==========
@@ -198,12 +198,12 @@ if_else_device(
   elseexprs = "mass" := "NA")
 ```
 
-    ##                           ifebtest_437g7b7to779 
+    ##                           ifebtest_8qs6nx3491k2 
     ##                               "runif(n())>=0.5" 
     ##                                          height 
-    ##    "ifelse( ifebtest_437g7b7to779, NA, height)" 
+    ##    "ifelse( ifebtest_8qs6nx3491k2, NA, height)" 
     ##                                            mass 
-    ## "ifelse( !( ifebtest_437g7b7to779 ), NA, mass)"
+    ## "ifelse( !( ifebtest_8qs6nx3491k2 ), NA, mass)"
 
 Notice the `if_else_device` translates the user code into a sequence of `dplyr::mutate()` expressions (using only the weaker operator `ifelse()`). Obviously the user could perform this translation, but `if_else_device` automates the record keeping and [can even be nested](https://winvector.github.io/seplyr/reference/if_else_device.html). Also many such steps can be chained together and broken into a minimal sequence of blocks by `partition_mutate_se()` (not forcing a new `dplyr::mutate()` step for each if-block encountered).
 
@@ -221,13 +221,13 @@ starwars %.>%
 ```
 
     ## # A tibble: 6 x 4
-    ##                  name height  mass ifebtest_brce3wobarhu
+    ##                  name height  mass ifebtest_c6c3qud7ecnr
     ##                 <chr>  <int> <dbl>                 <lgl>
-    ## 1              Ackbar    180    NA                 FALSE
-    ## 2          Adi Gallia     NA    50                  TRUE
-    ## 3    Anakin Skywalker    188    NA                 FALSE
-    ## 4        Arvel Crynyd     NA    NA                  TRUE
-    ## 5         Ayla Secura    178    NA                 FALSE
+    ## 1              Ackbar     NA    83                  TRUE
+    ## 2          Adi Gallia    184    NA                 FALSE
+    ## 3    Anakin Skywalker     NA    84                  TRUE
+    ## 4        Arvel Crynyd     NA    NA                 FALSE
+    ## 5         Ayla Secura     NA    55                  TRUE
     ## 6 Bail Prestor Organa     NA    NA                  TRUE
 
 Conclusion
@@ -235,6 +235,6 @@ Conclusion
 
 The value oriented notation is a bit clunkier, but this is offset by it's greater flexibility in terms of composition and working parametrically.
 
-Our group has been using `seplyr::if_else_device()` and `seplyr::partition_mutate_se()` to greatly simplify porting powerful `SAS` procedures to `R`/`Sparklyr`/`Apache Spark`clusters.
+Our group has been using `seplyr::if_else_device()` and `seplyr::partition_mutate_se()` to greatly simplify porting powerful `SAS` procedures to `R`/`Sparklyr`/`Apache Spark` clusters.
 
 This is new code, but we are striving to supply sufficient initial [documentation and examples](http://www.win-vector.com/blog/2017/11/win-vector-llc-announces-new-big-data-in-r-tools/).
