@@ -1,0 +1,159 @@
+<h1 id="an-introduction-to-seplyr">An Introduction to seplyr</h1>
+<p>John Mount, Win-Vector LLC 2017-11-29</p>
+<h1 id="introduction">Introduction</h1>
+<p><a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> is an <a href="https://www.r-project.org"><code>R</code></a> package that supplies improved standard evaluation interfaces for many common data wrangling tasks.</p>
+<p>The core of <code>seplyr</code> is a re-skinning of <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>'s to <code>seplyr</code> conventions (similar to how <a href="https://CRAN.R-project.org/package=stringr"><code>stringr</code></a> re-skins the implementing package <a href="https://CRAN.R-project.org/package=stringi"><code>stringi</code></a>).</p>
+<h1 id="standard-evaluation-and-non-standard-evaluation">Standard Evaluation and Non-Standard Evaluation</h1>
+<p>&quot;Standard evaluation&quot; is the name we are using for the value oriented calling convention found in many programming languages. The idea is: functions are only allowed to look at the values of their arguments and not how those values arise (i.e., they can not look at source code or variable names). This evaluation principle allows one to transform, optimize, and reason about code.</p>
+<p>It is what let's us say the following two snippets of code are equivalent.</p>
+<ul class="incremental">
+<li><code>x &lt;- 4; sqrt(x)</code></li>
+<li><code>x &lt;- 4; sqrt(4)</code></li>
+</ul>
+<p>The mantra is:</p>
+<blockquote>
+<p>&quot;variables can be replaced with their values.&quot;</p>
+</blockquote>
+<p>Which is called <a href="https://en.wikipedia.org/wiki/Referential_transparency">referential transparency</a>.</p>
+<p><a href="http://adv-r.had.co.nz/Computing-on-the-language.html">&quot;Non-standard evaluation&quot;</a> is the name used for code that more aggressively inspects its environment. It is often used for harmless tasks such as conveniently setting axis labels on plots. For example, notice the following two plots have different y-axis labels (despite plotting identical values).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="dt">x =</span> <span class="dv">1</span>:<span class="dv">3</span>)</code></pre></div>
+<p><img src="IntroductionToSeplyr_files/figure-markdown_github/plot1-1.png" width="50%" /></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">plot</span>(<span class="dt">x =</span> <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>))</code></pre></div>
+<p><img src="IntroductionToSeplyr_files/figure-markdown_github/plot1-2.png" width="50%" /></p>
+<h1 id="dplyr-and-seplyr"><code>dplyr</code> and <code>seplyr</code></h1>
+<p>The <code>dplyr</code> authors appear to <em>strongly</em> prefer a non-standard evaluation interface. Many in the <code>dplyr</code> community have come to <em>think</em> a package such as <code>dplyr</code> requires a non-standard interface. <code>seplyr</code> started as an experiment to show this is not actually the case.</p>
+<p>Syntactically the packages are deliberately similar.</p>
+<p>We can take a <code>dplyr</code> pipeline:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">suppressPackageStartupMessages</span>(<span class="kw">library</span>(<span class="st">&quot;dplyr&quot;</span>))
+
+starwars %&gt;%
+<span class="st">  </span><span class="kw">select</span>(name, height, mass) %&gt;%
+<span class="st">  </span><span class="kw">arrange</span>(<span class="kw">desc</span>(height)) %&gt;%
+<span class="st">  </span><span class="kw">head</span>()</code></pre></div>
+<pre><code>## # A tibble: 6 x 3
+##           name height  mass
+##          &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;
+## 1  Yarael Poof    264    NA
+## 2      Tarfful    234   136
+## 3      Lama Su    229    88
+## 4    Chewbacca    228   112
+## 5 Roos Tarpals    224    82
+## 6     Grievous    216   159</code></pre>
+<p>And re-write it in <code>seplyr</code> notation:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;seplyr&quot;</span>)</code></pre></div>
+<pre><code>## Loading required package: wrapr</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">starwars %.&gt;%
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;height&quot;</span>, <span class="st">&quot;mass&quot;</span>)) %.&gt;%
+<span class="st">  </span><span class="kw">arrange_se</span>(., <span class="st">&quot;desc(height)&quot;</span>) %.&gt;%
+<span class="st">  </span><span class="kw">head</span>(.)</code></pre></div>
+<pre><code>## # A tibble: 6 x 3
+##           name height  mass
+##          &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;
+## 1  Yarael Poof    264    NA
+## 2      Tarfful    234   136
+## 3      Lama Su    229    88
+## 4    Chewbacca    228   112
+## 5 Roos Tarpals    224    82
+## 6     Grievous    216   159</code></pre>
+<p>For the common <code>dplyr</code>-verbs (excluding <code>mutate()</code>, which we will discuss next) all the non-standard evaluation is saving us is a few quote marks and array designations (and we have <a href="https://winvector.github.io/wrapr/reference/qc.html">ways of getting rid of the need for quote marks</a>). In exchange for this small benefit the <a href="http://www.win-vector.com/blog/2017/06/non-standard-evaluation-and-function-composition-in-r/">non-standard evaluation is needlessly hard to program over</a>. For instance in the <code>seplyr</code> pipeline it is easy to accept the list of columns from an outside source as a simple array of names.</p>
+<p>Until you introduce a substitution system such as <a href="https://CRAN.R-project.org/package=rlang"><code>rlang</code></a> or <a href="https://winvector.github.io/wrapr/articles/let.html"><code>wrapr::let()</code></a> (which <a href="http://www.win-vector.com/blog/2017/11/let-xx-in-r/">we recommend over <code>rlang</code></a> and <a href="http://www.win-vector.com/blog/2017/08/lets-have-some-sympathy-for-the-part-time-r-user/">publicly pre-dates the public release of <code>rlang</code></a>) you have some difficulty writing re-usable programs that use the <code>dplyr</code> verbs over &quot;to be specified later&quot; column names.</p>
+<p>We are presumably not the only ones who considered this a limitation:</p>
+<p><a href="https://github.com/tidyverse/dplyr/issues/352"><img src="dplyrse2.png" alt="" /></a></p>
+<p><code>seplyr</code> is an attempt to make the standard interfaces the primary interfaces.</p>
+<h1 id="mutate"><code>mutate()</code></h1>
+<p>The earlier &quot;standard evaluation costs just a few quotes&quot; becomes a bit strained when we talk about the <code>dplyr::mutate()</code> operator. It doesn't seem worth the effort unless you get something more in return. In <code>seplyr</code> <code>0.5.0</code> we introduced &quot;the something more&quot;: planning over and optimizing <code>dplyr::mutate()</code> sequences.</p>
+<p>A <code>seplyr</code> mutate looks like the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">starwars %.&gt;%
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;height&quot;</span>, <span class="st">&quot;mass&quot;</span>)) %.&gt;%
+<span class="st">  </span><span class="kw">mutate_se</span>(., <span class="kw">c</span>(
+    <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;height + 1&quot;</span>,
+    <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;mass + 1&quot;</span>,
+    <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;height + 2&quot;</span>,
+    <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;mass + 2&quot;</span>,
+    <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;height + 3&quot;</span>,
+    <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;mass + 3&quot;</span>
+  )) %.&gt;%
+<span class="st">  </span><span class="kw">arrange_se</span>(., <span class="st">&quot;name&quot;</span>) %.&gt;%
+<span class="st">  </span><span class="kw">head</span>(.)</code></pre></div>
+<pre><code>## # A tibble: 6 x 3
+##                  name height  mass
+##                 &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;
+## 1              Ackbar    186    89
+## 2          Adi Gallia    190    56
+## 3    Anakin Skywalker    194    90
+## 4        Arvel Crynyd     NA    NA
+## 5         Ayla Secura    184    61
+## 6 Bail Prestor Organa    197    NA</code></pre>
+<p><code>seplyr::mutate_se()</code> always uses &quot;<code>:=</code>&quot; to denote assignment (<code>dplyr::mutate()</code> prefers &quot;<code>=</code>&quot; for assignment, except in cases where &quot;<code>:=</code>&quot; is required).</p>
+<p>The advantage is: once we are go to the trouble to capture the mutate expressions we can treat them <em>as data</em> and apply procedures to <em>them</em>. For example we can re-group and optimize the mutate assignments.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plan &lt;-<span class="st"> </span><span class="kw">partition_mutate_se</span>(
+  <span class="kw">c</span>(<span class="st">&quot;name&quot;</span> :<span class="er">=</span><span class="st"> &quot;tolower(name)&quot;</span>,
+    <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;height + 0.5&quot;</span>,
+    <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;floor(height)&quot;</span>,
+    <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;mass + 0.5&quot;</span>,
+    <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;floor(mass)&quot;</span>))
+<span class="kw">print</span>(plan)</code></pre></div>
+<pre><code>## $group00001
+##            name          height            mass 
+## &quot;tolower(name)&quot;  &quot;height + 0.5&quot;    &quot;mass + 0.5&quot; 
+## 
+## $group00002
+##          height            mass 
+## &quot;floor(height)&quot;   &quot;floor(mass)&quot;</code></pre>
+<p>Notice <code>seplyr::partition_mutate_se()</code> re-ordered and re-grouped the assignments so that:</p>
+<ul class="incremental">
+<li>In each group each value used is independent of values produced in other assignments.</li>
+<li>All dependencies between assignments are respected by the group order.</li>
+</ul>
+<p>The &quot;safe block&quot; assignments can then be used in a pipeline:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">starwars %.&gt;%
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;height&quot;</span>, <span class="st">&quot;mass&quot;</span>)) %.&gt;%
+<span class="st">  </span><span class="kw">mutate_seb</span>(., plan) %.&gt;%
+<span class="st">  </span><span class="kw">arrange_se</span>(., <span class="st">&quot;name&quot;</span>) %.&gt;%
+<span class="st">  </span><span class="kw">head</span>(.)</code></pre></div>
+<pre><code>## # A tibble: 6 x 3
+##                  name height  mass
+##                 &lt;chr&gt;  &lt;dbl&gt; &lt;dbl&gt;
+## 1              ackbar    180    83
+## 2          adi gallia    184    50
+## 3    anakin skywalker    188    84
+## 4        arvel crynyd     NA    NA
+## 5         ayla secura    178    55
+## 6 bail prestor organa    191    NA</code></pre>
+<p>This may not seem like much. However, when using <code>dplyr</code> with a <code>SQL</code> database (such as <code>PostgreSQL</code> or even <code>Sparklyr</code>) keeping the number of dependencies in a block low is <a href="https://github.com/WinVector/Examples/blob/master/dplyr/Dependencies.md">critical for correct calculation</a> (which is why I <a href="http://www.win-vector.com/blog/2017/09/my-advice-on-dplyrmutate/">recommend keeping dependencies low</a>). Furthermore, on <code>Sparklyr</code> sequences of <code>mutate</code>s are simulated by nesting of <code>SQL</code> statements, so you must also keep the number of <code>mutate</code>s at a moderate level (i.e., you want a minimal number of blocks or groups).</p>
+<h1 id="machine-generated-code">Machine Generated Code</h1>
+<p>Because we are representing <code>mutate</code> assignments as user manipulable data we can also enjoy the benefit of machine generated code. <code>seplyr</code> <code>0.5.*</code> uses this opportunity to introduce a simple function named <code>if_else_device()</code>. This device uses <code>R</code>'s <code>ifelse()</code> statement (which conditionally chooses values in a vectorized form) to implement a more powerful <a href="http://www.win-vector.com/blog/2017/11/vectorized-block-ifelse-in-r/">block-if/else statement</a> (which conditionally simultaneously controls blocks of values and assignments; <a href="http://support.sas.com/documentation/cdl/en/lrdict/64316/HTML/default/viewer.htm#a000201978.htm"><code>SAS</code> has such a feature</a>).</p>
+<p>For example: suppose we want to <code>NA</code>-out one of <code>height</code> or <code>mass</code> for each row of the <code>starwars</code> data. This can be written naturally using the <code>if_else_device</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">if_else_device</span>(
+  <span class="dt">testexpr =</span> <span class="st">&quot;runif(n())&gt;=0.5&quot;</span>,
+  <span class="dt">thenexprs =</span> <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>,
+  <span class="dt">elseexprs =</span> <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>)</code></pre></div>
+<pre><code>##                           ifebtest_437g7b7to779 
+##                               &quot;runif(n())&gt;=0.5&quot; 
+##                                          height 
+##    &quot;ifelse( ifebtest_437g7b7to779, NA, height)&quot; 
+##                                            mass 
+## &quot;ifelse( !( ifebtest_437g7b7to779 ), NA, mass)&quot;</code></pre>
+<p>Notice the <code>if_else_device</code> translates the user code into a sequence of <code>dplyr::mutate()</code> expressions (using only the weaker operator <code>ifelse()</code>). Obviously the user could perform this translation, but <code>if_else_device</code> automates the record keeping and <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">can even be nested</a>. Also many such steps can be chained together and broken into a minimal sequence of blocks by <code>partition_mutate_se()</code> (not forcing a new <code>dplyr::mutate()</code> step for each if-block encountered).</p>
+<p>When we combine the device with the partitioned we get performant database-safe code where the number of blocks is only the level of variable dependence (and not the possibly much larger number of initial value uses that a straightforward non-reordering split would give; note: <code>seplyr::mutate_se() 0.5.1</code> and later incorporate the <code>partition_mutate_se()</code> in <code>mutate_se()</code>).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">starwars %.&gt;%
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;name&quot;</span>, <span class="st">&quot;height&quot;</span>, <span class="st">&quot;mass&quot;</span>)) %.&gt;%
+<span class="st">  </span><span class="kw">mutate_se</span>(., <span class="kw">if_else_device</span>(
+    <span class="dt">testexpr =</span> <span class="st">&quot;runif(n())&gt;=0.5&quot;</span>,
+    <span class="dt">thenexprs =</span> <span class="st">&quot;height&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>,
+    <span class="dt">elseexprs =</span> <span class="st">&quot;mass&quot;</span> :<span class="er">=</span><span class="st"> &quot;NA&quot;</span>)) %.&gt;%
+<span class="st">  </span><span class="kw">arrange_se</span>(., <span class="st">&quot;name&quot;</span>) %.&gt;%
+<span class="st">  </span><span class="kw">head</span>(.)</code></pre></div>
+<pre><code>## # A tibble: 6 x 4
+##                  name height  mass ifebtest_brce3wobarhu
+##                 &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;                 &lt;lgl&gt;
+## 1              Ackbar    180    NA                 FALSE
+## 2          Adi Gallia     NA    50                  TRUE
+## 3    Anakin Skywalker    188    NA                 FALSE
+## 4        Arvel Crynyd     NA    NA                  TRUE
+## 5         Ayla Secura    178    NA                 FALSE
+## 6 Bail Prestor Organa     NA    NA                  TRUE</code></pre>
+<h1 id="conclusion">Conclusion</h1>
+<p>The value oriented notation is a bit clunkier, but this is offset by it's greater flexibility in terms of composition and working parametrically.</p>
+<p>Our group has been using <code>seplyr::if_else_device()</code> and <code>seplyr::partition_mutate_se()</code> to greatly simplify porting powerful <code>SAS</code> procedures to <code>R</code>/<code>Sparklyr</code>/<code>Apache Spark</code>clusters.</p>
+<p>This is new code, but we are striving to supply sufficient initial <a href="http://www.win-vector.com/blog/2017/11/win-vector-llc-announces-new-big-data-in-r-tools/">documentation and examples</a>.</p>
