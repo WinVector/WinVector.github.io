@@ -1,0 +1,175 @@
+<h1 id="dplyrdependencies">DplyrDependencies</h1>
+<p>Win-Vector LLC 11/30/2017</p>
+<p>In <a href="https://github.com/WinVector/Examples/blob/master/dplyr/Dependencies.md">an earlier note</a> we exhibited a non-signalling result corruption in <code>dplyr</code> <code>0.7.4</code>. In this note we demonstrate the <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> work-around.</p>
+<p>Re-establish up our example:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">packageVersion</span>(<span class="st">&quot;dplyr&quot;</span>)</code></pre></div>
+<pre><code>## [1] &#39;0.7.4&#39;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">my_db &lt;-<span class="st"> </span>DBI::<span class="kw">dbConnect</span>(RSQLite::<span class="kw">SQLite</span>(),
+                        <span class="st">&quot;:memory:&quot;</span>)
+d &lt;-<span class="st"> </span>dplyr::<span class="kw">copy_to</span>(my_db, 
+                    <span class="kw">data.frame</span>(<span class="dt">valuesA =</span> <span class="kw">c</span>(<span class="st">&quot;A&quot;</span>, <span class="ot">NA</span>, <span class="ot">NA</span>),
+                               <span class="dt">valuesB =</span> <span class="kw">c</span>(<span class="st">&quot;B&quot;</span>, <span class="ot">NA</span>, <span class="ot">NA</span>),
+                               <span class="dt">canUseFix1 =</span> <span class="kw">c</span>(<span class="ot">TRUE</span>, <span class="ot">TRUE</span>, <span class="ot">FALSE</span>),
+                               <span class="dt">fix1 =</span> <span class="kw">c</span>(<span class="st">&#39;Fix_1_V1&#39;</span>, <span class="st">&quot;Fix_1_V2&quot;</span>, <span class="st">&quot;Fix_1_V3&quot;</span>),
+                               <span class="dt">canUseFix2 =</span> <span class="kw">c</span>(<span class="ot">FALSE</span>, <span class="ot">FALSE</span>, <span class="ot">TRUE</span>),
+                               <span class="dt">fix2 =</span> <span class="kw">c</span>(<span class="st">&#39;Fix_2_V1&#39;</span>, <span class="st">&quot;Fix_2_V2&quot;</span>, <span class="st">&quot;Fix_2_V3&quot;</span>),
+                               <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>),
+                    <span class="st">&#39;d&#39;</span>, 
+                    <span class="dt">temporary =</span> <span class="ot">TRUE</span>, <span class="dt">overwrite =</span> <span class="ot">TRUE</span>)
+knitr::<span class="kw">kable</span>(dplyr::<span class="kw">collect</span>(d))</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">valuesA</th>
+<th align="left">valuesB</th>
+<th align="right">canUseFix1</th>
+<th align="left">fix1</th>
+<th align="right">canUseFix2</th>
+<th align="left">fix2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">A</td>
+<td align="left">B</td>
+<td align="right">1</td>
+<td align="left">Fix_1_V1</td>
+<td align="right">0</td>
+<td align="left">Fix_2_V1</td>
+</tr>
+<tr class="even">
+<td align="left">NA</td>
+<td align="left">NA</td>
+<td align="right">1</td>
+<td align="left">Fix_1_V2</td>
+<td align="right">0</td>
+<td align="left">Fix_2_V2</td>
+</tr>
+<tr class="odd">
+<td align="left">NA</td>
+<td align="left">NA</td>
+<td align="right">0</td>
+<td align="left">Fix_1_V3</td>
+<td align="right">1</td>
+<td align="left">Fix_2_V3</td>
+</tr>
+</tbody>
+</table>
+<p><a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> has a fix/work-around for the earlier issue: automatically break up the steps into safe blocks (<a href="http://www.win-vector.com/blog/2017/11/win-vector-llc-announces-new-big-data-in-r-tools/">announcement</a>; here we are using the development <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> <code>0.5.1</code> version of <a href="https://winvector.github.io/seplyr/reference/mutate_se.html"><code>mutate_se()</code></a>).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(<span class="st">&quot;seplyr&quot;</span>)</code></pre></div>
+<pre><code>## Loading required package: wrapr</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">packageVersion</span>(<span class="st">&quot;seplyr&quot;</span>)</code></pre></div>
+<pre><code>## [1] &#39;0.5.1&#39;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">d %.&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate_nse</span>(., 
+             valuesA :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesA) &amp;<span class="st"> </span>canUseFix1, 
+                               fix1, valuesA),
+             valuesA :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesA) &amp;<span class="st"> </span>canUseFix2, 
+                               fix2, valuesA),
+             valuesB :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesB) &amp;<span class="st"> </span>canUseFix1, 
+                               fix1, valuesB),
+             valuesB :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesB) &amp;<span class="st"> </span>canUseFix2, 
+                               fix2, valuesB),
+             <span class="dt">mutate_nse_printPlan =</span> <span class="ot">TRUE</span>) %.&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;valuesA&quot;</span>, <span class="st">&quot;valuesB&quot;</span>)) %.&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">collect</span>(.) %.&gt;%<span class="st"> </span>
+<span class="st">  </span>knitr::<span class="kw">kable</span>(.)</code></pre></div>
+<pre><code>## $group00001
+##                                              valuesA 
+## &quot;ifelse(is.na(valuesA) &amp; canUseFix1, fix1, valuesA)&quot; 
+##                                              valuesB 
+## &quot;ifelse(is.na(valuesB) &amp; canUseFix1, fix1, valuesB)&quot; 
+## 
+## $group00002
+##                                              valuesA 
+## &quot;ifelse(is.na(valuesA) &amp; canUseFix2, fix2, valuesA)&quot; 
+##                                              valuesB 
+## &quot;ifelse(is.na(valuesB) &amp; canUseFix2, fix2, valuesB)&quot;</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="left">valuesA</th>
+<th align="left">valuesB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">A</td>
+<td align="left">B</td>
+</tr>
+<tr class="even">
+<td align="left">Fix_1_V2</td>
+<td align="left">Fix_1_V2</td>
+</tr>
+<tr class="odd">
+<td align="left">Fix_2_V3</td>
+<td align="left">Fix_2_V3</td>
+</tr>
+</tbody>
+</table>
+<p>We now have correct result (all cells filled).</p>
+<p><code>seplyr</code> used safe statement re-ordering to break the calculation into the minimum number of blocks/groups that have no in-block dependencies between statements (note this is more efficient that merely introducing a new mutate each first time a new value is used).</p>
+<p>We can slow that down and see how the underlying planning functions break the assignments down into a small number of safe blocks (here we are using the development <a href="https://winvector.github.io/wrapr/"><code>wrapr</code></a> <code>1.0.2</code> function <a href="https://winvector.github.io/wrapr/reference/qae.html"><code>qae()</code></a>).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">packageVersion</span>(<span class="st">&quot;wrapr&quot;</span>)</code></pre></div>
+<pre><code>## [1] &#39;1.0.2&#39;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">steps &lt;-<span class="st"> </span><span class="kw">qae</span>(valuesA :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesA) &amp;<span class="st"> </span>canUseFix1, 
+                               fix1, valuesA),
+             valuesA :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesA) &amp;<span class="st"> </span>canUseFix2, 
+                               fix2, valuesA),
+             valuesB :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesB) &amp;<span class="st"> </span>canUseFix1, 
+                               fix1, valuesB),
+             valuesB :<span class="er">=</span><span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">is.na</span>(valuesB) &amp;<span class="st"> </span>canUseFix2, 
+                               fix2, valuesB))
+<span class="kw">print</span>(steps)</code></pre></div>
+<pre><code>## $valuesA
+## [1] &quot;ifelse(is.na(valuesA) &amp; canUseFix1, fix1, valuesA)&quot;
+## 
+## $valuesA
+## [1] &quot;ifelse(is.na(valuesA) &amp; canUseFix2, fix2, valuesA)&quot;
+## 
+## $valuesB
+## [1] &quot;ifelse(is.na(valuesB) &amp; canUseFix1, fix1, valuesB)&quot;
+## 
+## $valuesB
+## [1] &quot;ifelse(is.na(valuesB) &amp; canUseFix2, fix2, valuesB)&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">plan &lt;-<span class="st"> </span><span class="kw">partition_mutate_se</span>(steps)
+<span class="kw">print</span>(plan)</code></pre></div>
+<pre><code>## $group00001
+##                                              valuesA 
+## &quot;ifelse(is.na(valuesA) &amp; canUseFix1, fix1, valuesA)&quot; 
+##                                              valuesB 
+## &quot;ifelse(is.na(valuesB) &amp; canUseFix1, fix1, valuesB)&quot; 
+## 
+## $group00002
+##                                              valuesA 
+## &quot;ifelse(is.na(valuesA) &amp; canUseFix2, fix2, valuesA)&quot; 
+##                                              valuesB 
+## &quot;ifelse(is.na(valuesB) &amp; canUseFix2, fix2, valuesB)&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">d %.&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">mutate_seb</span>(., plan) %.&gt;%<span class="st"> </span>
+<span class="st">  </span><span class="kw">select_se</span>(., <span class="kw">c</span>(<span class="st">&quot;valuesA&quot;</span>, <span class="st">&quot;valuesB&quot;</span>)) %.&gt;%<span class="st"> </span>
+<span class="st">  </span>dplyr::<span class="kw">collect</span>(.) %.&gt;%<span class="st"> </span>
+<span class="st">  </span>knitr::<span class="kw">kable</span>(.)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">valuesA</th>
+<th align="left">valuesB</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">A</td>
+<td align="left">B</td>
+</tr>
+<tr class="even">
+<td align="left">Fix_1_V2</td>
+<td align="left">Fix_1_V2</td>
+</tr>
+<tr class="odd">
+<td align="left">Fix_2_V3</td>
+<td align="left">Fix_2_V3</td>
+</tr>
+</tbody>
+</table>
+<p>For more on <a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> <a href="http://winvector.github.io/FluidData/IntroductionToSeplyr.html">please start here</a>.</p>
