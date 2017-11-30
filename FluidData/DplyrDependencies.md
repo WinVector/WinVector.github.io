@@ -151,4 +151,6 @@ d %.>%
 | Fix\_1\_V2 | Fix\_1\_V2 |
 | Fix\_2\_V3 | Fix\_2\_V3 |
 
+Note that the current `CRAN` versions of `wrapr` and `seplyr` *already* implement the above work-around. Just some of the conveniences such as `mutate_nse_printPlan = TRUE` and `qae()` require the development versions of these packages.
+
 For more on [`seplyr`](https://winvector.github.io/seplyr/) [please start here](http://winvector.github.io/FluidData/IntroductionToSeplyr.html).
