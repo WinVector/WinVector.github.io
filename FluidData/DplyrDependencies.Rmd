@@ -97,7 +97,7 @@ d %.>%
   knitr::kable(.)
 ```
 
-Note that the current `CRAN` versions of `wrapr` and `seplyr` *already*
+Note that the current `CRAN` versions of [`wrapr`](https://CRAN.R-project.org/package=wrapr) and [`seplyr`](https://CRAN.R-project.org/package=seplyr) *already*
 implement the above work-around.  Just some of the conveniences such
 as `mutate_nse_printPlan = TRUE` and `qae()` require the development versions
 of these packages.
