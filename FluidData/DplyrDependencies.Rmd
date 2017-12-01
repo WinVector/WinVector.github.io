@@ -2,7 +2,16 @@
 title: "DplyrDependencies"
 author: "Win-Vector LLC"
 date: "11/30/2017"
-output: github_document
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
 ---
 
 In [an earlier note](https://github.com/WinVector/Examples/blob/master/dplyr/Dependencies.md) we exhibited a non-signalling result corruption in `dplyr` `0.7.4`. In this note we
@@ -15,16 +24,18 @@ packageVersion("dplyr")
 
 my_db <- DBI::dbConnect(RSQLite::SQLite(),
                         ":memory:")
-d <- dplyr::copy_to(my_db, 
-                    data.frame(valuesA = c("A", NA, NA),
-                               valuesB = c("B", NA, NA),
-                               canUseFix1 = c(TRUE, TRUE, FALSE),
-                               fix1 = c('Fix_1_V1', "Fix_1_V2", "Fix_1_V3"),
-                               canUseFix2 = c(FALSE, FALSE, TRUE),
-                               fix2 = c('Fix_2_V1', "Fix_2_V2", "Fix_2_V3"),
-                               stringsAsFactors = FALSE),
-                    'd', 
-                    temporary = TRUE, overwrite = TRUE)
+d <- dplyr::copy_to(
+  my_db, 
+  data.frame(
+    valuesA = c("A", NA, NA),
+    valuesB = c("B", NA, NA),
+    canUseFix1 = c(TRUE, TRUE, FALSE),
+    fix1 = c('Fix_1_V1', "Fix_1_V2", "Fix_1_V3"),
+    canUseFix2 = c(FALSE, FALSE, TRUE),
+    fix2 = c('Fix_2_V1', "Fix_2_V2", "Fix_2_V3"),
+    stringsAsFactors = FALSE),
+  'd', 
+  temporary = TRUE, overwrite = TRUE)
 knitr::kable(dplyr::collect(d))
 ```
 
@@ -35,16 +46,17 @@ library("seplyr")
 packageVersion("seplyr")
 
 d %.>% 
-  mutate_nse(., 
-             valuesA := ifelse(is.na(valuesA) & canUseFix1, 
-                               fix1, valuesA),
-             valuesA := ifelse(is.na(valuesA) & canUseFix2, 
-                               fix2, valuesA),
-             valuesB := ifelse(is.na(valuesB) & canUseFix1, 
-                               fix1, valuesB),
-             valuesB := ifelse(is.na(valuesB) & canUseFix2, 
-                               fix2, valuesB),
-             mutate_nse_printPlan = TRUE) %.>% 
+  mutate_nse(
+    ., 
+    valuesA := ifelse(is.na(valuesA) & canUseFix1, 
+                      fix1, valuesA),
+    valuesA := ifelse(is.na(valuesA) & canUseFix2, 
+                      fix2, valuesA),
+    valuesB := ifelse(is.na(valuesB) & canUseFix1, 
+                      fix1, valuesB),
+    valuesB := ifelse(is.na(valuesB) & canUseFix2, 
+                      fix2, valuesB),
+    mutate_nse_printPlan = TRUE) %.>% 
   select_se(., c("valuesA", "valuesB")) %.>% 
   dplyr::collect(.) %.>% 
   knitr::kable(.)
@@ -65,14 +77,15 @@ number of safe blocks (here we are using the development [`wrapr`](https://winve
 ```{r goodresult2s}
 packageVersion("wrapr")
 
-steps <- qae(valuesA := ifelse(is.na(valuesA) & canUseFix1, 
-                               fix1, valuesA),
-             valuesA := ifelse(is.na(valuesA) & canUseFix2, 
-                               fix2, valuesA),
-             valuesB := ifelse(is.na(valuesB) & canUseFix1, 
-                               fix1, valuesB),
-             valuesB := ifelse(is.na(valuesB) & canUseFix2, 
-                               fix2, valuesB))
+steps <- qae(
+  valuesA := ifelse(is.na(valuesA) & canUseFix1, 
+                    fix1, valuesA),
+  valuesA := ifelse(is.na(valuesA) & canUseFix2, 
+                    fix2, valuesA),
+  valuesB := ifelse(is.na(valuesB) & canUseFix1, 
+                    fix1, valuesB),
+  valuesB := ifelse(is.na(valuesB) & canUseFix2, 
+                    fix2, valuesB))
 print(steps)
 plan <- partition_mutate_se(steps)
 print(plan)
