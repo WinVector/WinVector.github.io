@@ -143,7 +143,7 @@ This may not seem like much.  However, when using `dplyr` with a `SQL` database 
 
 Because we are representing `mutate` assignments as user manipulable data we can also enjoy the benefit of machine generated code.  `seplyr` `0.5.*` uses this opportunity to introduce a simple function named `if_else_device()`.   This device uses `R`'s `ifelse()` statement (which conditionally chooses values in a vectorized form) to implement a more powerful [block-if/else statement](http://www.win-vector.com/blog/2017/11/vectorized-block-ifelse-in-r/) (which conditionally simultaneously controls blocks of values and assignments; [`SAS` has such a feature](http://support.sas.com/documentation/cdl/en/lrdict/64316/HTML/default/viewer.htm#a000201978.htm)).
 
-For example: suppose we want to `NA`-out one of `height` or `mass` for each row of the `starwars` data.  This can be written naturally using the `if_else_device`.
+For example: suppose we want to `NA`-out one of `height` or `mass` for each row of the `starwars` data uniformly at random.  This can be written naturally using the `if_else_device`.
 
 ```{r ifelsedevice}
 if_else_device(

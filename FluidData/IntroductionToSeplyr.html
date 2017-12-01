@@ -180,17 +180,17 @@ print(plan)</code></pre>
 <div id="machine-generated-code" class="section level1">
 <h1>Machine Generated Code</h1>
 <p>Because we are representing <code>mutate</code> assignments as user manipulable data we can also enjoy the benefit of machine generated code. <code>seplyr</code> <code>0.5.*</code> uses this opportunity to introduce a simple function named <code>if_else_device()</code>. This device uses <code>R</code>’s <code>ifelse()</code> statement (which conditionally chooses values in a vectorized form) to implement a more powerful <a href="http://www.win-vector.com/blog/2017/11/vectorized-block-ifelse-in-r/">block-if/else statement</a> (which conditionally simultaneously controls blocks of values and assignments; <a href="http://support.sas.com/documentation/cdl/en/lrdict/64316/HTML/default/viewer.htm#a000201978.htm"><code>SAS</code> has such a feature</a>).</p>
-<p>For example: suppose we want to <code>NA</code>-out one of <code>height</code> or <code>mass</code> for each row of the <code>starwars</code> data. This can be written naturally using the <code>if_else_device</code>.</p>
+<p>For example: suppose we want to <code>NA</code>-out one of <code>height</code> or <code>mass</code> for each row of the <code>starwars</code> data uniformly at random. This can be written naturally using the <code>if_else_device</code>.</p>
 <pre class="r"><code>if_else_device(
   testexpr = &quot;runif(n())&gt;=0.5&quot;,
   thenexprs = &quot;height&quot; := &quot;NA&quot;,
   elseexprs = &quot;mass&quot; := &quot;NA&quot;)</code></pre>
-<pre><code>##                           ifebtest_lifscpmn15sq 
+<pre><code>##                           ifebtest_30etsitqqutk 
 ##                               &quot;runif(n())&gt;=0.5&quot; 
 ##                                          height 
-##    &quot;ifelse( ifebtest_lifscpmn15sq, NA, height)&quot; 
+##    &quot;ifelse( ifebtest_30etsitqqutk, NA, height)&quot; 
 ##                                            mass 
-## &quot;ifelse( !( ifebtest_lifscpmn15sq ), NA, mass)&quot;</code></pre>
+## &quot;ifelse( !( ifebtest_30etsitqqutk ), NA, mass)&quot;</code></pre>
 <p>Notice the <code>if_else_device</code> translates the user code into a sequence of <code>dplyr::mutate()</code> expressions (using only the weaker operator <code>ifelse()</code>). Obviously the user could perform this translation, but <code>if_else_device</code> automates the record keeping and <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">can even be nested</a>. Also many such steps can be chained together and broken into a minimal sequence of blocks by <code>partition_mutate_se()</code> (not forcing a new <code>dplyr::mutate()</code> step for each if-block encountered).</p>
 <p>When we combine the device with the partitioned we get performant database-safe code where the number of blocks is only the level of variable dependence (and not the possibly much larger number of initial value uses that a straightforward non-reordering split would give; note: <code>seplyr::mutate_se() 0.5.1</code> and later incorporate the <code>partition_mutate_se()</code> in <code>mutate_se()</code>).</p>
 <pre class="r"><code>starwars %.&gt;%
@@ -202,14 +202,14 @@ print(plan)</code></pre>
   arrange_se(., &quot;name&quot;) %.&gt;%
   head(.)</code></pre>
 <pre><code>## # A tibble: 6 x 4
-##                  name height  mass ifebtest_gv9ym2c14jvv
+##                  name height  mass ifebtest_wwr9k0bq4v04
 ##                 &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;                 &lt;lgl&gt;
 ## 1              Ackbar     NA    83                  TRUE
-## 2          Adi Gallia     NA    50                  TRUE
+## 2          Adi Gallia    184    NA                 FALSE
 ## 3    Anakin Skywalker     NA    84                  TRUE
-## 4        Arvel Crynyd     NA    NA                 FALSE
+## 4        Arvel Crynyd     NA    NA                  TRUE
 ## 5         Ayla Secura    178    NA                 FALSE
-## 6 Bail Prestor Organa     NA    NA                  TRUE</code></pre>
+## 6 Bail Prestor Organa    191    NA                 FALSE</code></pre>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
