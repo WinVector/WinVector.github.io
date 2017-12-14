@@ -51,7 +51,7 @@ if (window.hljs) {
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p><a href="https://winvector.github.io/seplyr/"><code>seplyr</code></a> is an <a href="https://www.r-project.org"><code>R</code></a> package that supplies improved standard evaluation interfaces for many common data wrangling tasks.</p>
-<p>The core of <code>seplyr</code> is a re-skinning of <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>’s to <code>seplyr</code> conventions (similar to how <a href="https://CRAN.R-project.org/package=stringr"><code>stringr</code></a> re-skins the implementing package <a href="https://CRAN.R-project.org/package=stringi"><code>stringi</code></a>).</p>
+<p>The core of <code>seplyr</code> is a re-skinning of <a href="https://CRAN.R-project.org/package=dplyr"><code>dplyr</code></a>’s functionality to <code>seplyr</code> conventions (similar to how <a href="https://CRAN.R-project.org/package=stringr"><code>stringr</code></a> re-skins the implementing package <a href="https://CRAN.R-project.org/package=stringi"><code>stringi</code></a>).</p>
 </div>
 <div id="standard-evaluation-and-non-standard-evaluation" class="section level1">
 <h1>Standard Evaluation and Non-Standard Evaluation</h1>
@@ -185,12 +185,12 @@ print(plan)</code></pre>
   testexpr = &quot;runif(n())&gt;=0.5&quot;,
   thenexprs = &quot;height&quot; := &quot;NA&quot;,
   elseexprs = &quot;mass&quot; := &quot;NA&quot;)</code></pre>
-<pre><code>##                           ifebtest_30etsitqqutk 
+<pre><code>##                           ifebtest_3cs6vice74ao 
 ##                               &quot;runif(n())&gt;=0.5&quot; 
 ##                                          height 
-##    &quot;ifelse( ifebtest_30etsitqqutk, NA, height)&quot; 
+##    &quot;ifelse( ifebtest_3cs6vice74ao, NA, height)&quot; 
 ##                                            mass 
-## &quot;ifelse( !( ifebtest_30etsitqqutk ), NA, mass)&quot;</code></pre>
+## &quot;ifelse( !( ifebtest_3cs6vice74ao ), NA, mass)&quot;</code></pre>
 <p>Notice the <code>if_else_device</code> translates the user code into a sequence of <code>dplyr::mutate()</code> expressions (using only the weaker operator <code>ifelse()</code>). Obviously the user could perform this translation, but <code>if_else_device</code> automates the record keeping and <a href="https://winvector.github.io/seplyr/reference/if_else_device.html">can even be nested</a>. Also many such steps can be chained together and broken into a minimal sequence of blocks by <code>partition_mutate_se()</code> (not forcing a new <code>dplyr::mutate()</code> step for each if-block encountered).</p>
 <p>When we combine the device with the partitioned we get performant database-safe code where the number of blocks is only the level of variable dependence (and not the possibly much larger number of initial value uses that a straightforward non-reordering split would give; note: <code>seplyr::mutate_se() 0.5.1</code> and later incorporate the <code>partition_mutate_se()</code> in <code>mutate_se()</code>).</p>
 <pre class="r"><code>starwars %.&gt;%
@@ -202,13 +202,13 @@ print(plan)</code></pre>
   arrange_se(., &quot;name&quot;) %.&gt;%
   head(.)</code></pre>
 <pre><code>## # A tibble: 6 x 4
-##                  name height  mass ifebtest_wwr9k0bq4v04
+##                  name height  mass ifebtest_v9sn082e6uhf
 ##                 &lt;chr&gt;  &lt;int&gt; &lt;dbl&gt;                 &lt;lgl&gt;
 ## 1              Ackbar     NA    83                  TRUE
-## 2          Adi Gallia    184    NA                 FALSE
+## 2          Adi Gallia     NA    50                  TRUE
 ## 3    Anakin Skywalker     NA    84                  TRUE
-## 4        Arvel Crynyd     NA    NA                  TRUE
-## 5         Ayla Secura    178    NA                 FALSE
+## 4        Arvel Crynyd     NA    NA                 FALSE
+## 5         Ayla Secura     NA    55                  TRUE
 ## 6 Bail Prestor Organa    191    NA                 FALSE</code></pre>
 </div>
 <div id="conclusion" class="section level1">
