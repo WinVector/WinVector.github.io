@@ -21,7 +21,7 @@ that supplies improved standard evaluation interfaces for many common data wrang
 
 The core of `seplyr` is a 
 re-skinning of [`dplyr`](https://CRAN.R-project.org/package=dplyr)'s 
-to `seplyr` conventions (similar to how [`stringr`](https://CRAN.R-project.org/package=stringr) 
+functionality to `seplyr` conventions (similar to how [`stringr`](https://CRAN.R-project.org/package=stringr) 
 re-skins the implementing package [`stringi`](https://CRAN.R-project.org/package=stringi)).
 
 # Standard Evaluation and Non-Standard Evaluation
