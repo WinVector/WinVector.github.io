@@ -62,7 +62,7 @@ d %.>%
   knitr::kable(.)
 ```
 
-We now have correct result (all cells filled).
+We now have a correct result (all cells filled).
 
 `seplyr` used safe statement re-ordering to break the calculation into the minimum
 number of blocks/groups that have no in-block dependencies between statements (note
