@@ -168,7 +168,7 @@ The above operation is a bit exotic and it (and its inverse) already go under nu
 
   * `pivot` / un-pivot (Microsoft Excel)
   * `pivot` / anti-pivot (databases)
-  * `crosstab` / un-crosstab (databases)
+  * `crosstab` / shred (databases)
   * `unstack` / `stack` (`R`)
   * `cast` / `melt` (`reshape`, `reshape2`)
   * `spread` / `gather` (`tidyr`)
