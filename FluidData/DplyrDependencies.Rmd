@@ -46,17 +46,17 @@ library("seplyr")
 packageVersion("seplyr")
 
 d %.>% 
-  mutate_nse(
+  mutate_se(
     ., 
-    valuesA := ifelse(is.na(valuesA) & canUseFix1, 
-                      fix1, valuesA),
-    valuesA := ifelse(is.na(valuesA) & canUseFix2, 
-                      fix2, valuesA),
-    valuesB := ifelse(is.na(valuesB) & canUseFix1, 
-                      fix1, valuesB),
-    valuesB := ifelse(is.na(valuesB) & canUseFix2, 
-                      fix2, valuesB),
-    mutate_nse_printPlan = TRUE) %.>% 
+    qae(valuesA := ifelse(is.na(valuesA) & canUseFix1, 
+                          fix1, valuesA),
+        valuesA := ifelse(is.na(valuesA) & canUseFix2, 
+                          fix2, valuesA),
+        valuesB := ifelse(is.na(valuesB) & canUseFix1, 
+                          fix1, valuesB),
+        valuesB := ifelse(is.na(valuesB) & canUseFix2, 
+                          fix2, valuesB)),
+    printPlan = TRUE) %.>% 
   select_se(., c("valuesA", "valuesB")) %.>% 
   dplyr::collect(.) %.>% 
   knitr::kable(.)
@@ -99,6 +99,6 @@ d %.>%
 
 Note that the current `CRAN` versions of [`wrapr`](https://CRAN.R-project.org/package=wrapr) and [`seplyr`](https://CRAN.R-project.org/package=seplyr) *already*
 implement the above work-around.  Just some of the conveniences such
-as `mutate_nse_printPlan = TRUE` and `qae()` require the development versions
+as `printPlan = TRUE` and `qae()` require the development versions
 of these packages.
 

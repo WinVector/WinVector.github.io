@@ -111,17 +111,17 @@ knitr::kable(dplyr::collect(d))</code></pre>
 <pre class="r"><code>packageVersion(&quot;seplyr&quot;)</code></pre>
 <pre><code>## [1] '0.5.1'</code></pre>
 <pre class="r"><code>d %.&gt;% 
-  mutate_nse(
+  mutate_se(
     ., 
-    valuesA := ifelse(is.na(valuesA) &amp; canUseFix1, 
-                      fix1, valuesA),
-    valuesA := ifelse(is.na(valuesA) &amp; canUseFix2, 
-                      fix2, valuesA),
-    valuesB := ifelse(is.na(valuesB) &amp; canUseFix1, 
-                      fix1, valuesB),
-    valuesB := ifelse(is.na(valuesB) &amp; canUseFix2, 
-                      fix2, valuesB),
-    mutate_nse_printPlan = TRUE) %.&gt;% 
+    qae(valuesA := ifelse(is.na(valuesA) &amp; canUseFix1, 
+                          fix1, valuesA),
+        valuesA := ifelse(is.na(valuesA) &amp; canUseFix2, 
+                          fix2, valuesA),
+        valuesB := ifelse(is.na(valuesB) &amp; canUseFix1, 
+                          fix1, valuesB),
+        valuesB := ifelse(is.na(valuesB) &amp; canUseFix2, 
+                          fix2, valuesB)),
+    printPlan = TRUE) %.&gt;% 
   select_se(., c(&quot;valuesA&quot;, &quot;valuesB&quot;)) %.&gt;% 
   dplyr::collect(.) %.&gt;% 
   knitr::kable(.)</code></pre>
@@ -162,7 +162,7 @@ knitr::kable(dplyr::collect(d))</code></pre>
 <p><code>seplyr</code> used safe statement re-ordering to break the calculation into the minimum number of blocks/groups that have no in-block dependencies between statements (note this is more efficient that merely introducing a new mutate each first time a new value is used).</p>
 <p>We can slow that down and see how the underlying planning functions break the assignments down into a small number of safe blocks (here we are using the development <a href="https://winvector.github.io/wrapr/"><code>wrapr</code></a> <code>1.0.2</code> function <a href="https://winvector.github.io/wrapr/reference/qae.html"><code>qae()</code></a>).</p>
 <pre class="r"><code>packageVersion(&quot;wrapr&quot;)</code></pre>
-<pre><code>## [1] '1.0.2'</code></pre>
+<pre><code>## [1] '1.0.3'</code></pre>
 <pre class="r"><code>steps &lt;- qae(
   valuesA := ifelse(is.na(valuesA) &amp; canUseFix1, 
                     fix1, valuesA),
@@ -224,7 +224,7 @@ print(plan)</code></pre>
 </tr>
 </tbody>
 </table>
-<p>Note that the current <code>CRAN</code> versions of <a href="https://CRAN.R-project.org/package=wrapr"><code>wrapr</code></a> and <a href="https://CRAN.R-project.org/package=seplyr"><code>seplyr</code></a> <em>already</em> implement the above work-around. Just some of the conveniences such as <code>mutate_nse_printPlan = TRUE</code> and <code>qae()</code> require the development versions of these packages.</p>
+<p>Note that the current <code>CRAN</code> versions of <a href="https://CRAN.R-project.org/package=wrapr"><code>wrapr</code></a> and <a href="https://CRAN.R-project.org/package=seplyr"><code>seplyr</code></a> <em>already</em> implement the above work-around. Just some of the conveniences such as <code>printPlan = TRUE</code> and <code>qae()</code> require the development versions of these packages.</p>
 
 
 
