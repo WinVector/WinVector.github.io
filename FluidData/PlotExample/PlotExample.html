@@ -641,7 +641,7 @@ acc
 cT %.&gt;%
   knitr::kable(.) %.&gt;%
   kable_styling(., full_width = F) %.&gt;%
-  column_spec(., c(2,3), background = &quot;yellow&quot;)</code></pre>
+  column_spec(., 2:3, background = &quot;yellow&quot;)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -681,6 +681,50 @@ val_acc
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>cT %.&gt;%
+  moveValuesToColumnsD(
+    .,
+    controlTable = cT,
+    keyColumns = NULL) %.&gt;%
+  select_se(.,
+            qc(val_loss, val_acc, loss, acc)) %.&gt;%
+  knitr::kable(.) %.&gt;%
+  kable_styling(., full_width = F) %.&gt;%
+  column_spec(., 1:4, background = &quot;yellow&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+val_loss
+</th>
+<th style="text-align:left;">
+val_acc
+</th>
+<th style="text-align:left;">
+loss
+</th>
+<th style="text-align:left;">
+acc
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;background-color: yellow;">
+val_loss
+</td>
+<td style="text-align:left;background-color: yellow;">
+val_acc
+</td>
+<td style="text-align:left;background-color: yellow;">
+loss
+</td>
+<td style="text-align:left;background-color: yellow;">
+acc
+</td>
+</tr>
+</tbody>
+</table>
 <pre class="r"><code>d %.&gt;%
   head(., n=1) %.&gt;%
   moveValuesToRowsD(
@@ -688,7 +732,7 @@ val_acc
     controlTable = cT) %.&gt;%
   knitr::kable(.) %.&gt;%
   kable_styling(., full_width = F) %.&gt;%
-  column_spec(., c(2,3), background = &quot;yellow&quot;)</code></pre>
+  column_spec(., 2:3, background = &quot;yellow&quot;)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -733,14 +777,13 @@ accuracy
   controlTable = cT,
   columnsToCopy = &quot;epoch&quot;)
 
-dT$measure &lt;- factor(dT$measure, 
-                     levels = c(&quot;minus binary cross entropy&quot;,
-                                &quot;accuracy&quot;))
 dT %.&gt;%
   head(.) %.&gt;%
   knitr::kable(.) %.&gt;%
-  kable_styling(., full_width = F) </code></pre>
-<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+  kable_styling(., full_width = F) %.&gt;%
+  kable_styling(., full_width = F) %.&gt;%
+  column_spec(., 3:4, background = &quot;yellow&quot;)</code></pre>
+<table class="table table" style="width: auto !important; margin-left: auto; margin-right: auto; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
 <th style="text-align:right;">
@@ -765,10 +808,10 @@ validation
 <td style="text-align:left;">
 minus binary cross entropy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.5067290
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.3769818
 </td>
 </tr>
@@ -779,10 +822,10 @@ minus binary cross entropy
 <td style="text-align:left;">
 accuracy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.7852000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.8722000
 </td>
 </tr>
@@ -793,10 +836,10 @@ accuracy
 <td style="text-align:left;">
 minus binary cross entropy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.3002033
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.2996994
 </td>
 </tr>
@@ -807,10 +850,10 @@ minus binary cross entropy
 <td style="text-align:left;">
 accuracy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.9040000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.8895000
 </td>
 </tr>
@@ -821,10 +864,10 @@ accuracy
 <td style="text-align:left;">
 minus binary cross entropy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.2165675
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 -0.2963943
 </td>
 </tr>
@@ -835,16 +878,20 @@ minus binary cross entropy
 <td style="text-align:left;">
 accuracy
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.9303333
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: yellow;">
 0.8822000
 </td>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># note: this step requres wrapr 1.0.3 or better
+<pre class="r"><code>dT$measure &lt;- factor(dT$measure, 
+                     levels = c(&quot;minus binary cross entropy&quot;,
+                                &quot;accuracy&quot;))
+
+# note: this step requres wrapr 1.0.3 or better
 dT &lt;- dT %.&gt;%
   mutate_se(.,
             qae(rmin := ifelse(validation &lt;= training, validation, NA),
