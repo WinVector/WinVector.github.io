@@ -165,7 +165,7 @@ ggplot(data = dT,
            ymax = rmax)) +
   geom_segment(alpha = 0.5) +
   geom_point() +
-  geom_point(aes(y = training), shape = 3) +
+  geom_point(aes(y = training), shape = 3, alpha = 0.5) +
   stat_smooth(geom = "line",
               se = FALSE, 
               color  = "#d95f02", 
