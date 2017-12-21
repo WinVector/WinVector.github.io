@@ -182,5 +182,5 @@ ggplot(data = dT,
   geom_vline(xintercept = pick, alpha=0.7, color='#e6ab02') +
   facet_wrap(~measure, ncol=1, scales = 'free_y') +
   ylab("performance") +
-  ggtitle("plotting over-fit as a function of epoch")
+  ggtitle("model performance by epoch, dataset, and measure")
 ```
