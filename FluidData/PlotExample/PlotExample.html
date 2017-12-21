@@ -901,9 +901,11 @@ dT &lt;- dT %.&gt;%
                 rmax := ifelse(validation &lt;= training, training, NA),
                 discounted := ifelse(validation &lt;= training, 
                                      validation - 0.1*(training-validation), 
-                                     validation)))
-
-pick &lt;- dT %.&gt;%
+                                     validation)))</code></pre>
+<pre><code>## [1] &quot;ifelse(validation &lt;= training, validation, NA)&quot;
+## [1] &quot;ifelse(validation &lt;= training, training, NA)&quot;
+## [1] &quot;ifelse(validation &lt;= training, validation - 0.1 * (training - \n    validation), validation)&quot;</code></pre>
+<pre class="r"><code>pick &lt;- dT %.&gt;%
   filter_se(.,
             qe(measure == &quot;minus binary cross entropy&quot;)) %.&gt;%
   .$epoch[[which.max(.$discounted)]]
