@@ -16,8 +16,11 @@ options(knitr.table.format = "html")
 h <- readRDS("historyobject.rds")
 plot(h)
 
-d <- readRDS("metricsframe.rds")
-d$epoch <- seq_len(nrow(d))
+dOrig <- readRDS("metricsframe.rds")
+dOrig$epoch <- seq_len(nrow(dOrig))
+
+
+d <- dOrig
 d$loss <- -d$loss
 d$val_loss <- -d$val_loss
 d %.>%
@@ -184,3 +187,16 @@ ggplot(data = dT,
   ylab("performance") +
   ggtitle("model performance by epoch, dataset, and measure")
 ```
+
+```{r wvplots}
+# or with WVPlots 0.2.8 or better
+WVPlots::plot_fit_trajectory(
+  dOrig, 
+  column_description = cT, 
+  needs_flip = "minus binary cross entropy",
+  epoch_name = "epoch",
+  title = "model performance by epoch, dataset, and measure",
+  pick_metric = "minus binary cross entropy",
+  discount_rate = 0.1)
+```
+
