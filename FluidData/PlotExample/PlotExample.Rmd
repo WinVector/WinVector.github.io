@@ -163,7 +163,7 @@ ggplot(data = dT,
            yend = training,
            ymin = rmin,
            ymax = rmax)) +
-  geom_segment() +
+  geom_segment(alpha = 0.5) +
   geom_point() +
   geom_point(aes(y = training), shape = 3) +
   stat_smooth(geom = "line",
