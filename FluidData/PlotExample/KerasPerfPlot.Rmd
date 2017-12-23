@@ -30,6 +30,8 @@ And next is our [`WVPlots::plot_Keras_fit_trajectory()`](https://winvector.githu
 ```{r wvplots}
 d <- readRDS("metricsframe.rds")
 
+knitr::kable(head(d))
+
 WVPlots::plot_Keras_fit_trajectory(
   d, 
   title = "model performance by epoch, dataset, and measure")
