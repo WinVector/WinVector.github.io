@@ -24,7 +24,7 @@ h <- readRDS("historyobject.rds")
 plot(h)
 ```
 
-This is our `WVPlots` plot.
+And next is our [`WVPlots::plot_Keras_fit_trajectory()`](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html) plot.
 
 
 ```{r wvplots}
