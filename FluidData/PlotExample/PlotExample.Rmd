@@ -186,4 +186,4 @@ ggplot(data = dT,
   ggtitle("model performance by epoch, dataset, and measure")
 ```
 
-
+All of the above is now wrapped in convenient function: [WVPlots::plot_Keras_fit_trajectory()](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html).
