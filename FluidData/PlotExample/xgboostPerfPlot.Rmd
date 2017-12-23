@@ -18,6 +18,10 @@ Below is the standard performance trajectory history from `xgboost`.
 ```{r setup, message=FALSE}
 library("xgboost")
 library("WVPlots")
+library("seplyr")
+library("sigr")
+library("kableExtra")
+options(knitr.table.format = "html") 
 
 # From:
 # http://xgboost.readthedocs.io/en/latest/R-package/xgboostPresentation.html
@@ -111,6 +115,26 @@ knitr::kable(head(eval))
 
 We can then plot the performanc trajectory using  [`WVPlots::plot_fit_trajectory()`](https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html) plot.
 
+```{r plottraj}
+cT <- dplyr::tribble(
+  ~measure,                 ~training,             ~validation,
+  "minus mean deviance",    "train_mean_deviance", "train_mean_deviance",
+  "accuracy",               "train_accuracy",      "test_accuracy",
+  "AUC",                    "train_AUC",           "test_AUC"
+)
+cT %.>%
+  knitr::kable(.) %.>%
+  kable_styling(., full_width = F) %.>%
+  column_spec(., 2:3, background = "yellow")
+
+plot_fit_trajectory(eval,
+                    column_description = cT,
+                    epoch_name = "train_epoch",
+                    needs_flip = "minus mean deviance",
+                    pick_metric = "minus mean deviance",
+                    title = "xgboost performance trajectories")
+```
+
 
 
 Obviously this plot needs some training to interpret, but that is pretty much the case for all visualizations.
@@ -120,7 +144,7 @@ The ideas of this plot include:
   * All facets have the same interpretation: "up is better." This makes it easier to relate the shapes in one pane to the other.
   * The only horizontal solid curve rendered is the validation (or hold-out) performance.  The validation performance is the primary item of interest, so it gets a unique presentation.
   * The training performance is represented as the upper boundary of the shaded region and with the pluses and vertical strokes.
-  * A vertical line is added at the best epoch picked by the "minus binary cross entropy" metric (this can be turned off or changed).
+  * A vertical line is added at the best epoch picked by the "minus mean deviance" metric (this can be turned off or changed).
   * An optional additional training over-fit penalized dashed curve is added.  The default is: this is the validation score minus `10%` of the excess generalization error (the difference in training and validation performance).
 
 
