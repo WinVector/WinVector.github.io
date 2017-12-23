@@ -157,8 +157,6 @@ pick <- dT %.>%
             qe(measure == "minus binary cross entropy")) %.>%
   .$epoch[[which.max(.$discounted)]]
 
-
-
 ggplot(data = dT, 
        aes(x = epoch,
            xend = epoch,
@@ -188,15 +186,4 @@ ggplot(data = dT,
   ggtitle("model performance by epoch, dataset, and measure")
 ```
 
-```{r wvplots}
-# or with WVPlots 0.2.8 or better
-WVPlots::plot_fit_trajectory(
-  dOrig, 
-  column_description = cT, 
-  needs_flip = "minus binary cross entropy",
-  epoch_name = "epoch",
-  title = "model performance by epoch, dataset, and measure",
-  pick_metric = "minus binary cross entropy",
-  discount_rate = 0.1)
-```
 
