@@ -331,7 +331,7 @@ test_AUC
 </tr>
 </tbody>
 </table>
-<p>We can then plot the performanc trajectory using <a href="https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html"><code>WVPlots::plot_fit_trajectory()</code></a> plot.</p>
+<p>We can then plot the performance trajectory using <a href="https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html"><code>WVPlots::plot_fit_trajectory()</code></a> plot.</p>
 <pre class="r"><code>cT &lt;- dplyr::tribble(
   ~measure,                 ~training,             ~validation,
   &quot;minus mean deviance&quot;,    &quot;train_mean_deviance&quot;, &quot;train_mean_deviance&quot;,
@@ -404,7 +404,7 @@ test_AUC
 <ul>
 <li>All facets have the same interpretation: “up is better.” This makes it easier to relate the shapes in one pane to the other.</li>
 <li>The only horizontal solid curve rendered is the validation (or hold-out) performance. The validation performance is the primary item of interest, so it gets a unique presentation.</li>
-<li>The training performance is represented as the upper boundary of the shaded region and with the pluses and vertical strokes.</li>
+<li>The training performance is represented as the upper boundary of the shaded region and with the pluses and vertical strokes (not visible in this example, as the two are close or reversed here).</li>
 <li>A vertical line is added at the best epoch picked by the “minus mean deviance” metric (this can be turned off or changed).</li>
 <li>An optional additional training over-fit penalized dashed curve is added. The default is: this is the validation score minus <code>10%</code> of the excess generalization error (the difference in training and validation performance).</li>
 </ul>
