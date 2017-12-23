@@ -85,17 +85,29 @@ score_model_trajectory <- function(model,
                                 data, 
                                 datasetname)
                   })
-  dplyr::bind_rows(evals)
+  r <- dplyr::bind_rows(evals)
+  colnames(r) <- paste(datasetname, 
+                       colnames(r), 
+                       sep = "_")
+  r
 }
 
-score_model_trajectory(bstSparse, 
-                       seq_len(epochs), 
-                       train, 
-                       "train")
-score_model_trajectory(bstSparse, 
-                       seq_len(epochs), 
-                       test, 
-                       "test")
+eval <- 
+  cbind(
+    score_model_trajectory(bstSparse, 
+                           seq_len(epochs), 
+                           train, 
+                           "train"),
+    score_model_trajectory(bstSparse, 
+                           seq_len(epochs), 
+                           test, 
+                           "test"))
+cols <- c("train_epoch", "train_accuracy", 
+          "train_mean_deviance", "train_AUC", 
+          "test_accuracy", "test_mean_deviance", 
+          "test_AUC")
+eval <- eval[, cols, drop = FALSE]
+knitr::kable(head(eval))
 ```
 
 Obviously this plot needs some training to interpret, but that is pretty much the case for all visualizations.
