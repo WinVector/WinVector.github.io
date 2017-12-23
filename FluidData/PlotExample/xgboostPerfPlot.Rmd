@@ -41,12 +41,10 @@ bstSparse <-
 head(bstSparse$evaluation_log)
 ```
 
+Next we re-evaluate the model performance trajectory both on training and test data using
+metrics of our own choosing.
 
-And next is our [`WVPlots::plot_Keras_fit_trajectory()`](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html) plot.
-
-
-```{r wvplots}
-
+```{r rescore}
 score_model <- function(model, 
                         epoch, 
                         data, 
@@ -109,6 +107,11 @@ cols <- c("train_epoch", "train_accuracy",
 eval <- eval[, cols, drop = FALSE]
 knitr::kable(head(eval))
 ```
+
+
+We can then plot the performanc trajectory using  [`WVPlots::plot_fit_trajectory()`](https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html) plot.
+
+
 
 Obviously this plot needs some training to interpret, but that is pretty much the case for all visualizations.
 
