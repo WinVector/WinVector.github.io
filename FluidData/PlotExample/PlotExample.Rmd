@@ -5,6 +5,8 @@ date: "12/21/2017"
 output: html_document
 ---
 
+Start up and show original `Keras` plot.
+
 ```{r setup}
 library("ggplot2")
 library("cdata")
@@ -28,6 +30,8 @@ d %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) 
 ```
+
+First plot: reproduce the original with bulk-renaming of columns (via the new [`cdata::map_fieldsD()`](https://winvector.github.io/cdata/reference/map_fieldsD.html) function).
 
 ```{r firstplot}
 cT <- buildUnPivotControlTable(
@@ -88,6 +92,7 @@ ggplot(data = dT,
   ggtitle("model performance by epoch, dataset, and measure")
 ```
 
+Second plot: the steps to get to [WVPlots::plot_Keras_fit_trajectory()](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html).  In particular show the structure of the control table (especially when applied to itself).  The idea is: any in-table block-structure can be taken to any block-structure by moving through a very wide column as an intermediate (or dual form: through a very thin intermediate structure such as RDF-triples).
 
 ```{r lineplot}
 d %.>%
