@@ -60,7 +60,11 @@ mp <- data.frame(
   stringsAsFactors = FALSE)
 mp %.>%
   knitr::kable(.) %.>%
-  kable_styling(., full_width = F) 
+  kable_styling(., full_width = F)  %.>%
+  row_spec(., 0:nrow(mp), background = "lightgrey") %.>%
+  column_spec(., 1, background = "lightgreen") %.>%
+  column_spec(., 2:ncol(mp), background = "yellow")
+
 
 
 dT <- map_fieldsD(dT, 
@@ -69,10 +73,14 @@ dT <- map_fieldsD(dT,
 dT$measure <- factor(dT$measure, 
                      levels = c("minus binary cross entropy",
                                 "accuracy"))
-dT %.>%
-  head(.) %.>%
+cR <- dT %.>%
+  head(.)
+cR %.>%
   knitr::kable(.) %.>%
-  kable_styling(., full_width = F) 
+  kable_styling(., full_width = F)  %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  column_spec(., 2, background = "lightgreen") %.>%
+  column_spec(., c(4,5), background = "yellow")
 
 pick <- dT %.>%
   filter_se(.,
@@ -100,6 +108,7 @@ d %.>%
   select_se(., qc(val_loss, val_acc, loss, acc)) %.>%
   knitr::kable(.)  %.>%
   kable_styling(., full_width = F) %.>%
+  row_spec(., 0:1, background = "lightgrey") %.>%
   column_spec(., 1:4, background = "yellow")
 
 cT <- dplyr::tribble(
@@ -110,26 +119,33 @@ cT <- dplyr::tribble(
 cT %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cT), background = "lightgrey") %.>%
+  column_spec(., 1, background = "lightgreen") %.>%
   column_spec(., 2:3, background = "yellow")
 
-cT %.>%
+cR <- cT %.>%
   moveValuesToColumnsD(
     .,
     controlTable = cT,
     keyColumns = NULL) %.>%
   select_se(.,
-            qc(val_loss, val_acc, loss, acc)) %.>%
+            qc(val_loss, val_acc, loss, acc)) 
+cR %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
   column_spec(., 1:4, background = "yellow")
 
-d %.>%
+cR <- d %.>%
   head(., n=1) %.>%
   moveValuesToRowsD(
     .,
-    controlTable = cT) %.>%
+    controlTable = cT)
+cR %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  column_spec(., 1, background = "lightgreen") %.>%
   column_spec(., 2:3, background = "yellow")
 
 dT <- moveValuesToRowsD(
@@ -137,11 +153,14 @@ dT <- moveValuesToRowsD(
   controlTable = cT,
   columnsToCopy = "epoch")
 
-dT %.>%
-  head(.) %.>%
+cR <- dT %.>%
+  head(.)
+cR %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) %.>%
   kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  column_spec(., 2, background = "lightgreen") %.>%
   column_spec(., 3:4, background = "yellow")
 
 dT$measure <- factor(dT$measure, 
