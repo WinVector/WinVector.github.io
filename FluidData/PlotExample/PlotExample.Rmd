@@ -269,7 +269,7 @@ All of the above is now wrapped in convenient function: [WVPlots::plot_Keras_fit
 
 # Conclusion
 
-All of the above is the 2n-generation fluid data theory behind the `cdata` package.  The [first generation of the theory](http://winvector.github.io/FluidData/RowsAndColumns.html) was about establishing and maintaining invariant that make data transform reversible and commutative.  The [second generation of the theory](http://winvector.github.io/FluidData/ArbitraryTransform.html) is about transforms beyond pivot/un-pivot (moving sets of values in unison).
+All of the above is based on the second generation fluid data theory behind the `cdata` package.  The [first generation of the theory](http://winvector.github.io/FluidData/RowsAndColumns.html) was about establishing and maintaining invariant that make data transform reversible and commutative.  The [second generation of the theory](http://winvector.github.io/FluidData/ArbitraryTransform.html) is about transforms beyond pivot/un-pivot (moving sets of values in unison).
 
 A quick list of references:
 
