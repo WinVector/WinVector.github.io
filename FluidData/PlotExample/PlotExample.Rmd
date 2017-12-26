@@ -277,6 +277,6 @@ A quick list of references:
   * [Arbitrary Data Transforms Using cdata](http://winvector.github.io/FluidData/ArbitraryTransform.html)
   * [Data Wrangling at Scale](http://winvector.github.io/FluidData/DataWranglingAtScale.html)
   * [Big Data Transforms](http://winvector.github.io/FluidData/BigDataTransforms.html)
-  * ["cdata Transforms](http://winvector.github.io/FluidData/PlotExample/PlotExample.html) (*this article*)
+  * [cdata Transforms](http://winvector.github.io/FluidData/PlotExample/PlotExample.html) (*this article*)
   * [Plotting Keras Performance Trajectories](http://winvector.github.io/FluidData/PlotExample/KerasPerfPlot.html)
   * [Plotting xgboost Performance Trajectories](http://winvector.github.io/FluidData/PlotExample/xgboostPerfPlot.html)
