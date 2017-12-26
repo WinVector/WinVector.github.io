@@ -1,7 +1,7 @@
 ---
-title: "PlotExample"
+title: "cdata Transforms"
 author: "Win-Vector LLC"
-date: "12/21/2017"
+date: "12/26/2017"
 output: html_document
 ---
 
@@ -31,7 +31,11 @@ d %.>%
   kable_styling(., full_width = F) 
 ```
 
+# Reproducing the first plot
+
 First plot: reproduce the original with bulk-renaming of columns (via the new [`cdata::map_fieldsD()`](https://winvector.github.io/cdata/reference/map_fieldsD.html) function).
+
+First we perform the equivalent of a "shred", "un-pivot", or "gather":
 
 ```{r firstplot}
 cT <- buildUnPivotControlTable(
@@ -49,6 +53,12 @@ dT %.>%
   head(.) %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) 
+```
+
+The we define a value mapping table to build the new 
+value key columns that we need.
+
+```{r fp2}
 
 mp <- data.frame(
   origColName = qc(val_loss, val_acc, 
@@ -64,9 +74,11 @@ mp %.>%
   row_spec(., 0:nrow(mp), background = "lightgrey") %.>%
   column_spec(., 1, background = "lightgreen") %.>%
   column_spec(., 2:ncol(mp), background = "yellow")
+```
 
+We apply that key map and we are ready to plot:
 
-
+```{r akm}
 dT <- map_fieldsD(dT, 
                   "origColName",
                   mp)
@@ -100,9 +112,27 @@ ggplot(data = dT,
   ggtitle("model performance by epoch, dataset, and measure")
 ```
 
+# Creating an improved performance trajectory plot 
+
 Second plot: the steps to get to [WVPlots::plot_Keras_fit_trajectory()](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html).  In particular show the structure of the control table (especially when applied to itself).  The idea is: any in-table block-structure can be taken to any block-structure by moving through a very wide column as an intermediate (or dual form: through a very thin intermediate structure such as RDF-triples).
 
+First let's take a look at our data.
+
 ```{r lineplot}
+cR <- d %.>%
+  head(.) %.>%
+  select_se(., qc(val_loss, val_acc, loss, acc))
+cR %.>%
+  knitr::kable(.)  %.>%
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  column_spec(., 1:4, background = "yellow") %.>%
+  row_spec(., 2:nrow(cR), background = "lightgrey") 
+```
+
+Let's concentrate on a single row.
+
+```{r lineplot1}
 d %.>%
   head(., n=1) %.>%
   select_se(., qc(val_loss, val_acc, loss, acc)) %.>%
@@ -110,31 +140,19 @@ d %.>%
   kable_styling(., full_width = F) %.>%
   row_spec(., 0:1, background = "lightgrey") %.>%
   column_spec(., 1:4, background = "yellow")
+```
 
+To create `ggplot2::geom_ribbon()` and `ggplot2::geom_segment()` we
+need both the training and validation loss for a given epoch to be in the same row.
+We also want the different performance metrics to be in different rows so we can
+use `ggplot2::facet_wrap()`.  That means we want the first row of data to look like the following sub-table:
+
+```{r lineplot2}
 cT <- dplyr::tribble(
   ~measure,                 ~training, ~validation,
   "minus binary cross entropy", "loss",    "val_loss",
   "accuracy",               "acc",     "val_acc"
 )
-cT %.>%
-  knitr::kable(.) %.>%
-  kable_styling(., full_width = F) %.>%
-  row_spec(., 0:nrow(cT), background = "lightgrey") %.>%
-  column_spec(., 1, background = "lightgreen") %.>%
-  column_spec(., 2:3, background = "yellow")
-
-cR <- cT %.>%
-  moveValuesToColumnsD(
-    .,
-    controlTable = cT,
-    keyColumns = NULL) %.>%
-  select_se(.,
-            qc(val_loss, val_acc, loss, acc)) 
-cR %.>%
-  knitr::kable(.) %.>%
-  kable_styling(., full_width = F) %.>%
-  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
-  column_spec(., 1:4, background = "yellow")
 
 cR <- d %.>%
   head(., n=1) %.>%
@@ -147,7 +165,44 @@ cR %.>%
   row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
   column_spec(., 1, background = "lightgreen") %.>%
   column_spec(., 2:3, background = "yellow")
+```
 
+What allows this motion is the `controlTable` which is essentially a before or after
+diagram of the transform (depending on which direction you are going).  I can not emphasize
+enough the benefit of looking at the data and drawing out the transform on paper *before*
+attempting any coding.
+
+The control table is as follows:
+
+```{r lpcct}
+cT %.>%
+  knitr::kable(.) %.>%
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cT), background = "lightgrey") %.>%
+  column_spec(., 1, background = "lightgreen") %.>%
+  column_spec(., 2:3, background = "yellow")
+```
+
+It can be applied to data, or to itself, in a forward or backward direction (depending if we use `cdata::moveValuesToRowsD()` or `cdata::moveValuesToColumnsD()`).
+
+```{r lpc}
+cR <- cT %.>%
+  moveValuesToColumnsD(
+    .,
+    controlTable = cT,
+    keyColumns = NULL) %.>%
+  select_se(.,
+            qc(val_loss, val_acc, loss, acc)) 
+cR %.>%
+  knitr::kable(.) %.>%
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  column_spec(., 1:4, background = "yellow")
+```
+
+We can now apply the transform to all the data, and produce the final plot.
+
+```{r moveall}
 dT <- moveValuesToRowsD(
   d,
   controlTable = cT,
@@ -211,3 +266,17 @@ ggplot(data = dT,
 ```
 
 All of the above is now wrapped in convenient function: [WVPlots::plot_Keras_fit_trajectory()](https://winvector.github.io/WVPlots/reference/plot_Keras_fit_trajectory.html).
+
+# Conclusion
+
+All of the above is the 2n-generation fluid data theory behind the `cdata` package.  The [first generation of the theory](http://winvector.github.io/FluidData/RowsAndColumns.html) was about establishing and maintaining invariant that make data transform reversible and commutative.  The [second generation of the theory](http://winvector.github.io/FluidData/ArbitraryTransform.html) is about transforms beyond pivot/un-pivot (moving sets of values in unison).
+
+A quick list of references:
+
+  * [Coordinatized Data: A Fluid Data Specification](http://winvector.github.io/FluidData/RowsAndColumns.html)
+  * [Arbitrary Data Transforms Using cdata](http://winvector.github.io/FluidData/ArbitraryTransform.html)
+  * [Data Wrangling at Scale](http://winvector.github.io/FluidData/DataWranglingAtScale.html)
+  * [Big Data Transforms](http://winvector.github.io/FluidData/BigDataTransforms.html)
+  * ["cdata Transforms](http://winvector.github.io/FluidData/PlotExample/PlotExample.html) (*this article*)
+  * [Plotting Keras Performance Trajectories](http://winvector.github.io/FluidData/PlotExample/KerasPerfPlot.html)
+  * [Plotting xgboost Performance Trajectories](http://winvector.github.io/FluidData/PlotExample/xgboostPerfPlot.html)
