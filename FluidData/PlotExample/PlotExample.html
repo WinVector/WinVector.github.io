@@ -616,16 +616,19 @@ ggplot(data = dT,
 <p>First let’s take a look at our data.</p>
 <pre class="r"><code>cR &lt;- d %.&gt;%
   head(.) %.&gt;%
-  select_se(., qc(val_loss, val_acc, loss, acc))
+  select_se(., qc(epoch, val_loss, val_acc, loss, acc))
 cR %.&gt;%
   knitr::kable(.)  %.&gt;%
   kable_styling(., full_width = F) %.&gt;%
   row_spec(., 0:nrow(cR), background = &quot;lightgrey&quot;) %.&gt;%
-  column_spec(., 1:4, background = &quot;yellow&quot;) %.&gt;%
+  column_spec(., 2:5, background = &quot;yellow&quot;) %.&gt;%
   row_spec(., 2:nrow(cR), background = &quot;lightgrey&quot;) </code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
+<th style="text-align:right;background-color: lightgrey;">
+epoch
+</th>
 <th style="text-align:right;background-color: lightgrey;">
 val_loss
 </th>
@@ -642,6 +645,9 @@ acc
 </thead>
 <tbody>
 <tr>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
 -0.3769818
 </td>
@@ -656,6 +662,9 @@ acc
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;background-color: lightgrey;">
+2
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;background-color: lightgrey;">
 -0.2996994
 </td>
@@ -670,6 +679,9 @@ acc
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;background-color: lightgrey;">
+3
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;background-color: lightgrey;">
 -0.2963943
 </td>
@@ -684,6 +696,9 @@ acc
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;background-color: lightgrey;">
+4
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;background-color: lightgrey;">
 -0.2779052
 </td>
@@ -698,6 +713,9 @@ acc
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;background-color: lightgrey;">
+5
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;background-color: lightgrey;">
 -0.2842501
 </td>
@@ -712,6 +730,9 @@ acc
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;background-color: lightgrey;">
+6
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;background-color: lightgrey;">
 -0.3119754
 </td>
@@ -727,17 +748,20 @@ acc
 </tr>
 </tbody>
 </table>
-<p>Let’s concentrate on a single row.</p>
+<p>Let’s concentrate on a single row (in this case the first row).</p>
 <pre class="r"><code>d %.&gt;%
   head(., n=1) %.&gt;%
-  select_se(., qc(val_loss, val_acc, loss, acc)) %.&gt;%
+  select_se(., qc(epoch, val_loss, val_acc, loss, acc)) %.&gt;%
   knitr::kable(.)  %.&gt;%
   kable_styling(., full_width = F) %.&gt;%
   row_spec(., 0:1, background = &quot;lightgrey&quot;) %.&gt;%
-  column_spec(., 1:4, background = &quot;yellow&quot;)</code></pre>
+  column_spec(., 2:5, background = &quot;yellow&quot;)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
+<th style="text-align:right;background-color: lightgrey;">
+epoch
+</th>
 <th style="text-align:right;background-color: lightgrey;">
 val_loss
 </th>
@@ -754,6 +778,9 @@ acc
 </thead>
 <tbody>
 <tr>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
 -0.3769818
 </td>
@@ -780,16 +807,20 @@ cR &lt;- d %.&gt;%
   head(., n=1) %.&gt;%
   moveValuesToRowsD(
     .,
-    controlTable = cT)
+    controlTable = cT,
+    columnsToCopy = &quot;epoch&quot;)
 cR %.&gt;%
   knitr::kable(.) %.&gt;%
   kable_styling(., full_width = F) %.&gt;%
   row_spec(., 0:nrow(cR), background = &quot;lightgrey&quot;) %.&gt;%
-  column_spec(., 1, background = &quot;lightgreen&quot;) %.&gt;%
-  column_spec(., 2:3, background = &quot;yellow&quot;)</code></pre>
+  column_spec(., 2, background = &quot;lightgreen&quot;) %.&gt;%
+  column_spec(., 3:4, background = &quot;yellow&quot;)</code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
+<th style="text-align:right;background-color: lightgrey;">
+epoch
+</th>
 <th style="text-align:left;background-color: lightgrey;">
 measure
 </th>
@@ -803,6 +834,9 @@ validation
 </thead>
 <tbody>
 <tr>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 minus binary cross entropy
 </td>
@@ -814,6 +848,9 @@ minus binary cross entropy
 </td>
 </tr>
 <tr>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 accuracy
 </td>

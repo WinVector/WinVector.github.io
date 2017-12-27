@@ -121,25 +121,25 @@ First let's take a look at our data.
 ```{r lineplot}
 cR <- d %.>%
   head(.) %.>%
-  select_se(., qc(val_loss, val_acc, loss, acc))
+  select_se(., qc(epoch, val_loss, val_acc, loss, acc))
 cR %.>%
   knitr::kable(.)  %.>%
   kable_styling(., full_width = F) %.>%
   row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
-  column_spec(., 1:4, background = "yellow") %.>%
+  column_spec(., 2:5, background = "yellow") %.>%
   row_spec(., 2:nrow(cR), background = "lightgrey") 
 ```
 
-Let's concentrate on a single row.
+Let's concentrate on a single row (in this case the first row).
 
 ```{r lineplot1}
 d %.>%
   head(., n=1) %.>%
-  select_se(., qc(val_loss, val_acc, loss, acc)) %.>%
+  select_se(., qc(epoch, val_loss, val_acc, loss, acc)) %.>%
   knitr::kable(.)  %.>%
   kable_styling(., full_width = F) %.>%
   row_spec(., 0:1, background = "lightgrey") %.>%
-  column_spec(., 1:4, background = "yellow")
+  column_spec(., 2:5, background = "yellow")
 ```
 
 To create `ggplot2::geom_ribbon()` and `ggplot2::geom_segment()` we
@@ -158,13 +158,14 @@ cR <- d %.>%
   head(., n=1) %.>%
   moveValuesToRowsD(
     .,
-    controlTable = cT)
+    controlTable = cT,
+    columnsToCopy = "epoch")
 cR %.>%
   knitr::kable(.) %.>%
   kable_styling(., full_width = F) %.>%
   row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
-  column_spec(., 1, background = "lightgreen") %.>%
-  column_spec(., 2:3, background = "yellow")
+  column_spec(., 2, background = "lightgreen") %.>%
+  column_spec(., 3:4, background = "yellow")
 ```
 
 What allows this motion is the `controlTable` which is essentially a before or after
