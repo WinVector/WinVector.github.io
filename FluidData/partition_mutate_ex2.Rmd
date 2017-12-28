@@ -3,10 +3,10 @@ title: "Partitioning Mutate, Example 2"
 author: "John Mount, Win-Vector LLC"
 date: "2017-11-24"
 output:
+  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
-  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
@@ -213,8 +213,15 @@ These include:
 
   * **[wrapr](https://winvector.github.io/wrapr/)**: supplies code re-writing tools that make coding *over* ["non standard evaluation"](http://adv-r.had.co.nz/Computing-on-the-language.html) interfaces (such as `dplyr`) *much* easier.
   * **[cdata](https://winvector.github.io/cdata/)**: supplies pivot/un-pivot functionality at big data scale.
+  * **[rquery](https://github.com/WinVector/rquery)**: (in development) big data scale relational data operators.
   * **[seplyr](https://winvector.github.io/seplyr/)**: supplies improved interfaces for many data manipulation tasks.
   * **[replyr](https://winvector.github.io/replyr/)**: supplies tools and patches for using `dplyr` on big data.
+
+Partitioning mutate articles:
+
+  * **[Partitioning Mutate](http://winvector.github.io/FluidData/partition_mutate.html)**: basic example.
+  * **[Partitioning Mutate, Example 2](http://winvector.github.io/FluidData/partition_mutate_ex2.html)**: `ifelse` example.
+  * **[Partitioning Mutate, Example 3](http://winvector.github.io/FluidData/partition_mutate_ex3.html)** [`rquery`](https://github.com/WinVector/rquery) example.
 
 Topics such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
 

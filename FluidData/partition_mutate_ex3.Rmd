@@ -1,0 +1,117 @@
+---
+title: "Partitioning Mutate, Example 3"
+author: "John Mount, Win-Vector LLC"
+date: "2017-12-28"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
+link-citations: yes
+---
+
+```{r setupa, include=FALSE}
+library("tufte")
+# invalidate cache when the tufte version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+options(htmltools.dir.version = FALSE)
+```
+
+This third article shows our second example being processed by the [rquery](https://github.com/WinVector/rquery) big data scale relational data operator system (currently in development).
+
+```{r sed, include=FALSE}
+library("wrapr")
+library("rquery")
+
+sc <- 
+  sparklyr::spark_connect(version = '2.2.0', 
+                          master = "local")
+dL <- data.frame(rowNum = 1:5,
+                 a_1 = "",
+                 a_2 = "",
+                 b_1 = "",
+                 b_2 = "",
+                 c_1 = "",
+                 c_2 = "",
+                 d_1 = "",
+                 d_2 = "",
+                 e_1 = "",
+                 e_2 = "",
+                 stringsAsFactors = FALSE)
+d <- rquery::dbi_copy_to(sc, dL, 
+                         table_name = 'd',
+                         overwrite = FALSE,
+                         temporary = TRUE)
+
+```
+
+We will repeat the steps from [Partitioning Mutate, Example 2](http://winvector.github.io/FluidData/partition_mutate_ex2.html), using only 
+the `rquery` package and `DBI`/`sparklyr` (no `dplyr`).
+
+```{r p1}
+library("wrapr")
+library("rquery")
+
+class(sc)
+class(d)
+
+d %.>% 
+  to_sql(., sc) %.>%
+  DBI::dbGetQuery(sc, .) %.>%
+  knitr::kable(.)
+```
+
+
+```{r dL, comment = ""}
+dQ <- d %.>%
+  extend_se(.,
+            if_else_block(
+              testexpr =
+                "rand()>=0.5",
+              thenexprs = qae(
+                a_1 := 'treatment',
+                a_2 := 'control'),
+              elseexprs =  qae(
+                a_1 := 'control',
+                a_2 := 'treatment'))) %.>%
+  select_columns(., c("rowNum", "a_1", "a_2"))
+
+cat(format(dQ))
+
+sql <- to_sql(dQ, sc)
+cat(sql)
+```
+
+```{r dLex}
+DBI::dbGetQuery(sc, sql) %.>%
+  knitr::kable(.)
+```
+
+Links
+-----
+
+[Win-Vector LLC](http://www.win-vector.com/) supplies a number of open-source
+[`R`](https://www.r-project.org) packages for working effectively with big data.
+These include:
+
+  * **[wrapr](https://winvector.github.io/wrapr/)**: supplies code re-writing tools that make coding *over* ["non standard evaluation"](http://adv-r.had.co.nz/Computing-on-the-language.html) interfaces (such as `dplyr`) *much* easier.
+  * **[cdata](https://winvector.github.io/cdata/)**: supplies pivot/un-pivot functionality at big data scale.
+  * **[rquery](https://github.com/WinVector/rquery)**: (in development) big data scale relational data operators.
+  * **[seplyr](https://winvector.github.io/seplyr/)**: supplies improved interfaces for many data manipulation tasks.
+  * **[replyr](https://winvector.github.io/replyr/)**: supplies tools and patches for using `dplyr` on big data.
+
+Partitioning mutate articles:
+
+  * **[Partitioning Mutate](http://winvector.github.io/FluidData/partition_mutate.html)**: basic example.
+  * **[Partitioning Mutate, Example 2](http://winvector.github.io/FluidData/partition_mutate_ex2.html)**: `ifelse` example.
+  * **[Partitioning Mutate, Example 3](http://winvector.github.io/FluidData/partition_mutate_ex3.html)** [`rquery`](https://github.com/WinVector/rquery) example.
+
+Topics such as the above are often discussed on the [Win-Vector blog](http://www.win-vector.com/blog/).
+
+```{r cleanup, include=FALSE}
+sparklyr::spark_disconnect(sc)
+```

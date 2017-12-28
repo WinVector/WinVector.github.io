@@ -161,20 +161,20 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 <p>In the end we can examine and execute the mutate plan:</p>
 <pre class="r"><code>print(plan)</code></pre>
 <pre><code>## $group00001
-## ifebtest_isoglyop78tl 
+## ifebtest_p0ws9ugjb4o4 
 ##         &quot;rand()&gt;=0.5&quot; 
 ## 
 ## $group00002
 ##                                                a_1 
-## &quot;ifelse( ifebtest_isoglyop78tl, 'treatment', a_1)&quot; 
+## &quot;ifelse( ifebtest_p0ws9ugjb4o4, 'treatment', a_1)&quot; 
 ##                                                a_2 
-##   &quot;ifelse( ifebtest_isoglyop78tl, 'control', a_2)&quot; 
+##   &quot;ifelse( ifebtest_p0ws9ugjb4o4, 'control', a_2)&quot; 
 ## 
 ## $group00003
 ##                                                     a_1 
-##   &quot;ifelse( !( ifebtest_isoglyop78tl ), 'control', a_1)&quot; 
+##   &quot;ifelse( !( ifebtest_p0ws9ugjb4o4 ), 'control', a_1)&quot; 
 ##                                                     a_2 
-## &quot;ifelse( !( ifebtest_isoglyop78tl ), 'treatment', a_2)&quot;</code></pre>
+## &quot;ifelse( !( ifebtest_p0ws9ugjb4o4 ), 'treatment', a_2)&quot;</code></pre>
 <pre class="r"><code>d %.&gt;% 
   mutate_seb(., plan) %.&gt;% 
   select_se(., grepdf('^ifebtest_.*', ., invert=TRUE)) %.&gt;% 
@@ -199,8 +199,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 <tbody>
 <tr class="odd">
 <td align="right">1</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -238,8 +238,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -251,8 +251,8 @@ packageVersion(&quot;seplyr&quot;)</code></pre>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
 <td align="left">NA</td>
@@ -306,36 +306,36 @@ d %.&gt;%
 <td align="right">1</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">control</td>
@@ -343,27 +343,27 @@ d %.&gt;%
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>
+<td align="left">treatment</td>
+<td align="left">control</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 <td align="left">treatment</td>
-<td align="left">treatment</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
 <td align="left">control</td>
 </tr>
@@ -401,16 +401,16 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 <td align="left">control</td>
 </tr>
 <tr class="even">
-<td align="left">control</td>
-<td align="left">treatment</td>
-</tr>
-<tr class="odd">
-<td align="left">control</td>
-<td align="left">treatment</td>
-</tr>
-<tr class="even">
 <td align="left">NA</td>
 <td align="left">control</td>
+</tr>
+<tr class="odd">
+<td align="left">NA</td>
+<td align="left">control</td>
+</tr>
+<tr class="even">
+<td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="left">NA</td>
@@ -424,7 +424,7 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 ## SELECT `rowNum`, `a_1`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;treatment&quot;) ELSE (`a_2`) END AS `a_2`
 ## FROM (SELECT `rowNum`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, `condition_tmp`, CASE WHEN (`condition_tmp`) THEN (&quot;control&quot;) ELSE (`a_2`) END AS `a_2`, CASE WHEN (NOT((`condition_tmp`))) THEN (&quot;control&quot;) ELSE (`a_1`) END AS `a_1`
 ## FROM (SELECT `rowNum`, `a_1`, `a_2`, `b_1`, `b_2`, `c_1`, `c_2`, `d_1`, `d_2`, `e_1`, `e_2`, RAND() &gt;= 0.5 AS `condition_tmp`
-## FROM `d`) `adwzsrjsnt`) `vsgjtmwbbh`</code></pre>
+## FROM `d`) `qsvyigftyp`) `ohdwcvdgni`</code></pre>
 <p>Looking at the query we see that one of the conditional statements is missing (notice only 3 case statements, not 4):<a href="#fn10" class="footnoteRef" id="fnref10"><sup>10</sup></a></p>
 <div id="conclusion" class="section level2">
 <h2>Conclusion</h2>
@@ -436,8 +436,15 @@ knitr::kable(dplyr::collect(dplyr::select(ex, a_1, a_2)))</code></pre>
 <ul>
 <li><strong><a href="https://winvector.github.io/wrapr/">wrapr</a></strong>: supplies code re-writing tools that make coding <em>over</em> <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">“non standard evaluation”</a> interfaces (such as <code>dplyr</code>) <em>much</em> easier.</li>
 <li><strong><a href="https://winvector.github.io/cdata/">cdata</a></strong>: supplies pivot/un-pivot functionality at big data scale.</li>
+<li><strong><a href="https://github.com/WinVector/rquery">rquery</a></strong>: (in development) big data scale relational data operators.</li>
 <li><strong><a href="https://winvector.github.io/seplyr/">seplyr</a></strong>: supplies improved interfaces for many data manipulation tasks.</li>
 <li><strong><a href="https://winvector.github.io/replyr/">replyr</a></strong>: supplies tools and patches for using <code>dplyr</code> on big data.</li>
+</ul>
+<p>Partitioning mutate articles:</p>
+<ul>
+<li><strong><a href="http://winvector.github.io/FluidData/partition_mutate.html">Partitioning Mutate</a></strong>: basic example.</li>
+<li><strong><a href="http://winvector.github.io/FluidData/partition_mutate_ex2.html">Partitioning Mutate, Example 2</a></strong>: <code>ifelse</code> example.</li>
+<li><strong><a href="http://winvector.github.io/FluidData/partition_mutate_ex3.html">Partitioning Mutate, Example 3</a></strong> <a href="https://github.com/WinVector/rquery"><code>rquery</code></a> example.</li>
 </ul>
 <p>Topics such as the above are often discussed on the <a href="http://www.win-vector.com/blog/">Win-Vector blog</a>.</p>
 </div>
