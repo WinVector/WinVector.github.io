@@ -145,130 +145,132 @@ dOrig$epoch &lt;- seq_len(nrow(dOrig))
 d &lt;- dOrig
 d$loss &lt;- -d$loss
 d$val_loss &lt;- -d$val_loss
-d %.&gt;%
-  head(.) %.&gt;%
+cR &lt;- d %.&gt;%
+  head(.) 
+cR %.&gt;%
   knitr::kable(.) %.&gt;%
-  kable_styling(., full_width = F) </code></pre>
+  kable_styling(., full_width = F) %.&gt;%
+  row_spec(., 0:nrow(cR), background = &quot;lightgrey&quot;) </code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 val_loss
 </th>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 val_acc
 </th>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 loss
 </th>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 acc
 </th>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 epoch
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.3769818
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8722
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.5067290
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.7852000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 1
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2996994
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8895
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.3002033
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.9040000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 2
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2963943
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8822
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2165675
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.9303333
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 3
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2779052
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8899
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.1738829
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.9428000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 4
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2842501
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8861
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.1410933
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.9545333
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 5
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.3119754
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8817
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.1135626
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.9656000
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 6
 </td>
 </tr>
@@ -289,88 +291,90 @@ dT &lt;- moveValuesToRowsD(
   d,
   controlTable = cT,
   columnsToCopy = &quot;epoch&quot;)
-dT %.&gt;%
-  head(.) %.&gt;%
+cR &lt;- dT %.&gt;%
+  head(.) 
+cR %.&gt;%
   knitr::kable(.) %.&gt;%
-  kable_styling(., full_width = F) </code></pre>
+  kable_styling(., full_width = F) %.&gt;%
+  row_spec(., 0:nrow(cR), background = &quot;lightgrey&quot;) </code></pre>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 epoch
 </th>
-<th style="text-align:left;">
+<th style="text-align:left;background-color: lightgrey;">
 origColName
 </th>
-<th style="text-align:right;">
+<th style="text-align:right;background-color: lightgrey;">
 performance
 </th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 1
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 val_loss
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.3769818
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 1
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 val_acc
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8722000
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 1
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 loss
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.5067290
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 1
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 acc
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.7852000
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 2
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 val_loss
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 -0.2996994
 </td>
 </tr>
 <tr>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 2
 </td>
-<td style="text-align:left;">
+<td style="text-align:left;background-color: lightgrey;">
 val_acc
 </td>
-<td style="text-align:right;">
+<td style="text-align:right;background-color: lightgrey;">
 0.8895000
 </td>
 </tr>

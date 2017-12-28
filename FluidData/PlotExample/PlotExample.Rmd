@@ -25,10 +25,12 @@ dOrig$epoch <- seq_len(nrow(dOrig))
 d <- dOrig
 d$loss <- -d$loss
 d$val_loss <- -d$val_loss
-d %.>%
-  head(.) %.>%
+cR <- d %.>%
+  head(.) 
+cR %.>%
   knitr::kable(.) %.>%
-  kable_styling(., full_width = F) 
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") 
 ```
 
 # Reproducing the first plot
@@ -49,10 +51,12 @@ dT <- moveValuesToRowsD(
   d,
   controlTable = cT,
   columnsToCopy = "epoch")
-dT %.>%
-  head(.) %.>%
+cR <- dT %.>%
+  head(.) 
+cR %.>%
   knitr::kable(.) %.>%
-  kable_styling(., full_width = F) 
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") 
 ```
 
 The we define a value mapping table to build the new 
