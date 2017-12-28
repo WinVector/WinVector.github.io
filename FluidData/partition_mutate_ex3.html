@@ -48,7 +48,7 @@ if (window.hljs) {
 
 
 
-<p>This third article shows our second example being processed by the <a href="https://github.com/WinVector/rquery">rquery</a> big data scale relational data operator system (currently in development).</p>
+<p>This third article shows our second example being processed by the <a href="https://github.com/WinVector/rquery"><code>rquery</code></a> big data scale relational data operator system (currently in development).</p>
 <p>We will repeat the steps from <a href="http://winvector.github.io/FluidData/partition_mutate_ex2.html">Partitioning Mutate, Example 2</a>, using only the <code>rquery</code> package and <code>DBI</code>/<code>sparklyr</code> (no <code>dplyr</code>).</p>
 <pre class="r"><code>library(&quot;wrapr&quot;)
 library(&quot;rquery&quot;)
@@ -170,42 +170,9 @@ cat(format(dQ))</code></pre>
   a_1 := ifelse(!( ifebtest_1 ),&quot;control&quot;,a_1),
   a_2 := ifelse(!( ifebtest_1 ),&quot;treatment&quot;,a_2)) %.&gt;%
  select_columns(., rowNum, a_1, a_2)</code></pre>
+<p>Notice the <code>rquery</code> <code>extend_se</code> command accepts the <code>if_else_block</code> <em>and</em> partitions it into conflict-free segments. Also the <code>rquery</code> presentation lets the user inspect the operation plan before attempting execution.</p>
 <pre class="r"><code>sql &lt;- to_sql(dQ, sc)
-cat(sql)</code></pre>
-<pre><code>SELECT
- `rowNum`,
- `a_1`,
- `a_2`
-FROM (
- SELECT
-  `ifebtest_1`,
-  `rowNum`,
-  ( CASE WHEN ( ( NOT ( `ifebtest_1` ) ) ) THEN ( &quot;control&quot; ) ELSE ( `a_1` ) END )  AS `a_1`,
-  ( CASE WHEN ( ( NOT ( `ifebtest_1` ) ) ) THEN ( &quot;treatment&quot; ) ELSE ( `a_2` ) END )  AS `a_2`
- FROM (
-  SELECT
-   `ifebtest_1`,
-   `rowNum`,
-   ( CASE WHEN ( `ifebtest_1` ) THEN ( &quot;treatment&quot; ) ELSE ( `a_1` ) END )  AS `a_1`,
-   ( CASE WHEN ( `ifebtest_1` ) THEN ( &quot;control&quot; ) ELSE ( `a_2` ) END )  AS `a_2`
-  FROM (
-   SELECT
-    `rowNum`,
-    `a_1`,
-    `a_2`,
-    rand ( ) &gt;= 0.5  AS `ifebtest_1`
-   FROM (
-    SELECT
-     `d`.`rowNum`,
-     `d`.`a_1`,
-     `d`.`a_2`
-    FROM
-     `d`
-    ) tsql_0000
-   ) tsql_0001
-  ) tsql_0002
-) tsql_0003</code></pre>
-<pre class="r"><code>DBI::dbGetQuery(sc, sql) %.&gt;%
+DBI::dbGetQuery(sc, sql) %.&gt;%
   knitr::kable(.)</code></pre>
 <table>
 <thead>
@@ -243,6 +210,41 @@ FROM (
 </tr>
 </tbody>
 </table>
+<p>The underlying <code>SQL</code> is fairly involved, but can be performant at big-data scale.</p>
+<pre class="r"><code>cat(sql)</code></pre>
+<pre><code>SELECT
+ `rowNum`,
+ `a_1`,
+ `a_2`
+FROM (
+ SELECT
+  `ifebtest_1`,
+  `rowNum`,
+  ( CASE WHEN ( ( NOT ( `ifebtest_1` ) ) ) THEN ( &quot;control&quot; ) ELSE ( `a_1` ) END )  AS `a_1`,
+  ( CASE WHEN ( ( NOT ( `ifebtest_1` ) ) ) THEN ( &quot;treatment&quot; ) ELSE ( `a_2` ) END )  AS `a_2`
+ FROM (
+  SELECT
+   `ifebtest_1`,
+   `rowNum`,
+   ( CASE WHEN ( `ifebtest_1` ) THEN ( &quot;treatment&quot; ) ELSE ( `a_1` ) END )  AS `a_1`,
+   ( CASE WHEN ( `ifebtest_1` ) THEN ( &quot;control&quot; ) ELSE ( `a_2` ) END )  AS `a_2`
+  FROM (
+   SELECT
+    `rowNum`,
+    `a_1`,
+    `a_2`,
+    rand ( ) &gt;= 0.5  AS `ifebtest_1`
+   FROM (
+    SELECT
+     `d`.`rowNum`,
+     `d`.`a_1`,
+     `d`.`a_2`
+    FROM
+     `d`
+    ) tsql_0000
+   ) tsql_0001
+  ) tsql_0002
+) tsql_0003</code></pre>
 <div id="links" class="section level2">
 <h2>Links</h2>
 <p><a href="http://www.win-vector.com/">Win-Vector LLC</a> supplies a number of open-source <a href="https://www.r-project.org"><code>R</code></a> packages for working effectively with big data. These include:</p>

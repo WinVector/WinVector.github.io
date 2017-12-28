@@ -21,7 +21,7 @@ knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
 options(htmltools.dir.version = FALSE)
 ```
 
-This third article shows our second example being processed by the [rquery](https://github.com/WinVector/rquery) big data scale relational data operator system (currently in development).
+This third article shows our second example being processed by the [`rquery`](https://github.com/WinVector/rquery) big data scale relational data operator system (currently in development).
 
 ```{r sed, include=FALSE}
 library("wrapr")
@@ -81,14 +81,24 @@ dQ <- d %.>%
   select_columns(., c("rowNum", "a_1", "a_2"))
 
 cat(format(dQ))
-
-sql <- to_sql(dQ, sc)
-cat(sql)
 ```
 
+Notice the `rquery` `extend_se` command accepts the `if_else_block` *and*
+partitions it into conflict-free segments.  Also the `rquery` presentation lets
+the user inspect the operation plan before attempting execution.
+
+
+
 ```{r dLex}
+sql <- to_sql(dQ, sc)
 DBI::dbGetQuery(sc, sql) %.>%
   knitr::kable(.)
+```
+
+The underlying `SQL` is fairly involved, but can be performant at big-data scale.
+
+```{r dS, comment=""}
+cat(sql)
 ```
 
 Links
