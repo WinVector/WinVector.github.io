@@ -12,7 +12,7 @@
 
 <meta name="author" content="John Mount" />
 
-<meta name="date" content="2017-12-23" />
+<meta name="date" content="2017-12-29" />
 
 <title>Plotting xgboost Performance Trajectories</title>
 
@@ -44,7 +44,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Plotting xgboost Performance Trajectories</h1>
 <h4 class="author"><em>John Mount</em></h4>
-<h4 class="date"><em>2017-12-23</em></h4>
+<h4 class="date"><em>2017-12-29</em></h4>
 
 
 
@@ -331,6 +331,7 @@ test_AUC
 </tr>
 </tbody>
 </table>
+<p>At this point we have gotten to the very wide table one might expect to have on hand from a training procedure. So only the code this point and below is actually the plotting procedure.</p>
 <p>We can then plot the performance trajectory using <a href="https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html"><code>WVPlots::plot_fit_trajectory()</code></a> plot.</p>
 <pre class="r"><code>cT &lt;- dplyr::tribble(
   ~measure,                 ~training,             ~validation,

@@ -112,6 +112,7 @@ eval <- eval[, cols, drop = FALSE]
 knitr::kable(head(eval))
 ```
 
+At this point we have gotten to the very wide table one might expect to have on hand from a training procedure.  So only the code this point and below is actually the plotting procedure.
 
 We can then plot the performance trajectory using  [`WVPlots::plot_fit_trajectory()`](https://winvector.github.io/WVPlots/reference/plot_fit_trajectory.html) plot.
 
