@@ -75,7 +75,7 @@ dQ <- d %.>%
               thenexprs = qae(
                 a_1 := 'treatment',
                 a_2 := 'control'),
-              elseexprs =  qae(
+              elseexprs = qae(
                 a_1 := 'control',
                 a_2 := 'treatment'))) %.>%
   select_columns(., c("rowNum", "a_1", "a_2"))

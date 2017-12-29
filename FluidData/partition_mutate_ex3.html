@@ -154,7 +154,7 @@ class(sc)</code></pre>
               thenexprs = qae(
                 a_1 := 'treatment',
                 a_2 := 'control'),
-              elseexprs =  qae(
+              elseexprs = qae(
                 a_1 := 'control',
                 a_2 := 'treatment'))) %.&gt;%
   select_columns(., c(&quot;rowNum&quot;, &quot;a_1&quot;, &quot;a_2&quot;))
@@ -164,11 +164,11 @@ cat(format(dQ))</code></pre>
  extend(.,
   ifebtest_1 := rand() &gt;= 0.5) %.&gt;%
  extend(.,
-  a_1 := ifelse(ifebtest_1,&quot;treatment&quot;,a_1),
-  a_2 := ifelse(ifebtest_1,&quot;control&quot;,a_2)) %.&gt;%
+  a_1 := ifelse(ifebtest_1, &quot;treatment&quot;, a_1),
+  a_2 := ifelse(ifebtest_1, &quot;control&quot;, a_2)) %.&gt;%
  extend(.,
-  a_1 := ifelse(!( ifebtest_1 ),&quot;control&quot;,a_1),
-  a_2 := ifelse(!( ifebtest_1 ),&quot;treatment&quot;,a_2)) %.&gt;%
+  a_1 := ifelse(!( ifebtest_1 ), &quot;control&quot;, a_1),
+  a_2 := ifelse(!( ifebtest_1 ), &quot;treatment&quot;, a_2)) %.&gt;%
  select_columns(., rowNum, a_1, a_2)</code></pre>
 <p>Notice the <code>rquery</code> <code>extend_se</code> command accepts the <code>if_else_block</code> <em>and</em> partitions it into conflict-free segments. Also the <code>rquery</code> presentation lets the user inspect the operation plan before attempting execution.</p>
 <pre class="r"><code>sql &lt;- to_sql(dQ, sc)
@@ -195,8 +195,8 @@ DBI::dbGetQuery(sc, sql) %.&gt;%
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 </tr>
 <tr class="even">
 <td align="right">4</td>
