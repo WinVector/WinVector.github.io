@@ -276,6 +276,138 @@ epoch
 </tr>
 </tbody>
 </table>
+<p>Or with a bit more color:</p>
+<pre class="r"><code>cR %.&gt;%
+  knitr::kable(.) %.&gt;%
+  kable_styling(., full_width = F) %.&gt;%
+  row_spec(., 0:nrow(cR), background = &quot;lightgrey&quot;) %.&gt;%
+  row_spec(., 0, background = &quot;lightgreen&quot;) %.&gt;%
+  column_spec(., 1:4, background = &quot;yellow&quot;)</code></pre>
+<table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;background-color: lightgrey;background-color: lightgreen;">
+val_loss
+</th>
+<th style="text-align:right;background-color: lightgrey;background-color: lightgreen;">
+val_acc
+</th>
+<th style="text-align:right;background-color: lightgrey;background-color: lightgreen;">
+loss
+</th>
+<th style="text-align:right;background-color: lightgrey;background-color: lightgreen;">
+acc
+</th>
+<th style="text-align:right;background-color: lightgrey;background-color: lightgreen;">
+epoch
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.3769818
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8722
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.5067290
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.7852000
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.2996994
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8895
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.3002033
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9040000
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+2
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.2963943
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8822
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.2165675
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9303333
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+3
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.2779052
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8899
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.1738829
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9428000
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+4
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.2842501
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8861
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.1410933
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9545333
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.3119754
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8817
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+-0.1135626
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9656000
+</td>
+<td style="text-align:right;background-color: lightgrey;">
+6
+</td>
+</tr>
+</tbody>
+</table>
 <div id="reproducing-the-first-plot" class="section level1">
 <h1>Reproducing the first plot</h1>
 <p>First plot: reproduce the original with bulk-renaming of columns (via the new <a href="https://winvector.github.io/cdata/reference/map_fieldsD.html"><code>cdata::map_fieldsD()</code></a> function).</p>
@@ -380,7 +512,7 @@ val_acc
 </tr>
 </tbody>
 </table>
-<p>The we define a value mapping table to build the new value key columns that we need.</p>
+<p>Then we define a value mapping table to build the new value key columns that we need.</p>
 <pre class="r"><code>mp &lt;- data.frame(
   origColName = qc(val_loss, val_acc, 
                      loss, acc),
