@@ -58,8 +58,8 @@ if (window.hljs) {
 </ol>
 <p><code>cdata</code> supplies two general operators for fluid data work at database scale (and <code>Spark</code> big data scale):</p>
 <ol style="list-style-type: decimal">
-<li><a href="https://winvector.github.io/cdata/reference/moveValuesToRowsN.html"><code>moveValuesToRows*()</code></a>: operators centered around <code>SQL</code> <code>cross-join</code> semantics. un-pivot, <code>tidyr::gather()</code>, and <a href="https://winvector.github.io/cdata/reference/unpivotValuesToRows.html"><code>cdata::unpivotValuesToRows()</code></a> are special cases of this general operator.</li>
-<li><a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html"><code>moveValuesToColumns*()</code></a>: an operator centered around <code>SQL</code> <code>group by</code> semantics. pivot, <code>tidyr::spread()</code>, <a href="https://winvector.github.io/cdata/reference/pivotValuesToColumns.html"><code>cdata::pivotValuesToColumns()</code></a>, transpose, and one-hot-encoding are special cases of this general operator.</li>
+<li><a href="https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html"><code>moveValuesToRows*()</code></a>: operators centered around <code>SQL</code> <code>cross-join</code> semantics. un-pivot, <code>tidyr::gather()</code>, and <a href="https://winvector.github.io/cdata/reference/unpivot_to_blocks.html"><code>cdata::unpivot_to_blocks()</code></a> are special cases of this general operator.</li>
+<li><a href="https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html"><code>moveValuesToColumns*()</code></a>: an operator centered around <code>SQL</code> <code>group by</code> semantics. pivot, <code>tidyr::spread()</code>, <a href="https://winvector.github.io/cdata/reference/pivot_to_rowrecs.html"><code>cdata::pivot_to_rowrecs()</code></a>, transpose, and one-hot-encoding are special cases of this general operator.</li>
 </ol>
 <p>Because these operators are powerful, they are fairly general, and at first hard to mentally model (especially if you insist on think of them in only in terms of more a specialized operator such as pivot, instead of more general relational concepts such as “cross join” and “group by”). These operators are thin wrappers populating and enforcing a few invariants over a large <code>SQL</code> statement. That does not mean that these operators are trivial, they are thin because <code>SQL</code> is powerful and we have a good abstraction.</p>
 <p>Due to the very detailed and explicit controls used in these operators- they are very comprehensible once studied. We will follow-up later with additional training material to make quicker comprehension available to more readers. This document is limiting itself to being a mere concise statement of and demonstration of the operators.</p>
@@ -173,7 +173,7 @@ as.matrix(namePairings[ , c(&quot;coords_style1&quot;, &quot;coords_style2&quot;
 <p>The idea is the control table is a very succinct description of the pairing of the <code>namePairings$coords_style1</code> cell partial coordinates and the <code>namePairings$coords_style2</code> cell partial coordinates. As we have said the <code>namePairings$coords_style1</code> cell partial coordinates become full cell coordinates for the data cells in <code>dat1</code> when combined with the <code>dat1</code> <code>ID</code> column. The <code>namePairings$coords_style2</code> are part of a natural naming for the data cells in the following table:</p>
 <pre class="r"><code>my_db &lt;- DBI::dbConnect(RSQLite::SQLite(), &quot;:memory:&quot;)
 dat1db &lt;- dplyr::copy_to(my_db, dat1, 'dat1db')
-dat2 &lt;- cdata::moveValuesToRowsN(wideTable = 'dat1db',
+dat2 &lt;- cdata::rowrecs_to_blocks_q(wideTable = 'dat1db',
                                  controlTable = controlTable,
                                  my_db = my_db,
                                  columnsToCopy = &quot;ID&quot;,
@@ -255,7 +255,7 @@ controlTable &lt;- dplyr::tribble(~group, ~col1, ~col2,
                                  'aa',  'c1',  'c2',
                                  'bb',  'c3',  'c4')
 columnsToCopy &lt;- 'ID'
-cdata::moveValuesToRowsN(wideTable = wideTableName,
+cdata::rowrecs_to_blocks_q(wideTable = wideTableName,
                          controlTable =  controlTable,
                          my_db = my_db,
                          columnsToCopy = columnsToCopy,
@@ -330,7 +330,7 @@ controlTable &lt;- dplyr::tribble(~group, ~col1, ~col2,
                                  'aa',  'c1',  'c2',
                                  'bb',  'c3',  'c4')
 keyColumns &lt;- 'ID'
-cdata::moveValuesToColumnsN(tallTable = tallTableName,
+cdata::blocks_to_rowrecs_q(tallTable = tallTableName,
                             controlTable = controlTable,
                             keyColumns = keyColumns,
                             my_db = my_db,
@@ -426,9 +426,9 @@ knitr::kable(d)</code></pre>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># the cdata::pivotValuesToColumns version
+<pre class="r"><code># the cdata::pivot_to_rowrecs version
 # equivalent to tidyr::spread(d, 'meastype', 'meas')
-cdata::pivotValuesToColumns(d,
+cdata::pivot_to_rowrecs(d,
                            columnToTakeKeysFrom = 'meastype',
                            columnToTakeValuesFrom = 'meas',
                            rowKeyColumns= 'index',
@@ -463,7 +463,7 @@ cdata::pivotValuesToColumns(d,
 </table>
 <pre class="r"><code># the cdata::moveValuesToColumns*() version
 dtall &lt;- dplyr::copy_to(my_db, d, &quot;dtall&quot;)
-controlTable &lt;- cdata::buildPivotControlTableN(tableName = &quot;dtall&quot;,
+controlTable &lt;- cdata::build_pivot_control_q(tableName = &quot;dtall&quot;,
                                                columnToTakeKeysFrom = 'meastype',
                                                columnToTakeValuesFrom = 'meas',
                                                my_db = my_db,
@@ -487,7 +487,7 @@ knitr::kable(controlTable)</code></pre>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>moveValuesToColumnsN(tallTable = &quot;dtall&quot;,
+<pre class="r"><code>blocks_to_rowrecs_q(tallTable = &quot;dtall&quot;,
                      controlTable = controlTable,
                      keyColumns = &quot;index&quot;,
                      my_db = my_db,
@@ -561,9 +561,9 @@ knitr::kable(d)</code></pre>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># the cdata::unpivotValuesToRows() version
+<pre class="r"><code># the cdata::unpivot_to_blocks() version
 # equivalent to tidyr::gather(d, 'meastype', 'meas', c('meas1','meas2'))
-cdata::unpivotValuesToRows(d,
+cdata::unpivot_to_blocks(d,
                         nameForNewKeyColumn= 'meastype',
                         nameForNewValueColumn= 'meas',
                         columnsToTakeFrom= c('meas1','meas2')) %&gt;%
@@ -617,9 +617,9 @@ cdata::unpivotValuesToRows(d,
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># the cdata::cdata::unpivotValuesToRows() version
+<pre class="r"><code># the cdata::cdata::unpivot_to_blocks() version
 dwide &lt;- dplyr::copy_to(my_db, d, &quot;dwide&quot;)
-controlTable &lt;- buildUnPivotControlTable(nameForNewKeyColumn= 'meastype',
+controlTable &lt;- build_unpivot_control(nameForNewKeyColumn= 'meastype',
                                          nameForNewValueColumn= 'meas',
                                          columnsToTakeFrom= c('meas1','meas2'))
 knitr::kable(controlTable)</code></pre>
@@ -642,7 +642,7 @@ knitr::kable(controlTable)</code></pre>
 </tbody>
 </table>
 <pre class="r"><code>keyColumns = c('index', 'info')
-moveValuesToRowsN(wideTable = &quot;dwide&quot;,
+rowrecs_to_blocks_q(wideTable = &quot;dwide&quot;,
                   controlTable = controlTable,
                   my_db = my_db,
                   columnsToCopy = keyColumns,
@@ -768,7 +768,7 @@ knitr::kable(controlTable)</code></pre>
 </tr>
 </tbody>
 </table>
-<pre class="r"><code>purchasesTall &lt;- moveValuesToRowsN(wideTable = &quot;purchaseDat&quot;,
+<pre class="r"><code>purchasesTall &lt;- rowrecs_to_blocks_q(wideTable = &quot;purchaseDat&quot;,
                                    columnsToCopy = &quot;ID&quot;, 
                                    controlTable = controlTable, 
                                    my_db = my_db,
@@ -890,7 +890,7 @@ knitr::kable(controlTable)</code></pre>
 # pivot or un-pivot
 # due to the larger controlTable
 # (especially if there were more quarters)
-result &lt;- moveValuesToColumnsN(tallTable = &quot;purchasesTallC&quot;,
+result &lt;- blocks_to_rowrecs_q(tallTable = &quot;purchasesTallC&quot;,
                                keyColumns = &quot;ID&quot;,
                                controlTable = controlTable,
                                my_db = my_db,
@@ -954,7 +954,7 @@ knitr::kable(result)</code></pre>
 tallTableName &lt;- 'dc'
 d &lt;- dplyr::copy_to(my_db, controlTable, tallTableName)
 keyColumns &lt;- NULL
-wideTableName &lt;- moveValuesToColumnsN(tallTable = tallTableName,
+wideTableName &lt;- blocks_to_rowrecs_q(tallTable = tallTableName,
                            controlTable = controlTable,
                            keyColumns = keyColumns,
                            my_db = my_db) 
@@ -980,8 +980,8 @@ knitr::kable(dw)</code></pre>
 </table>
 <p>The transformed table is essentially an example row of the wide-form.</p>
 <p>And we can, of course, map back.</p>
-<p>This “everything maps to a row” form means the control table is essentially a graphical representation of the desired data transform. It also helps make clear that just about <em>any</em> even more general shape to shape transform can be achieved by a <code>moveValuesToColumnsN()</code> followed by a <code>moveValuesToRowsN()</code>.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> Or by the a <code>moveValuesToRowsN()</code> followed by a <code>moveValuesToColumnsN()</code>. One direction is storing all intermediate values in a single denormalized column, the other is storing in many RDF-triple like rows.</span></p>
-<pre class="r"><code>moveValuesToRowsN(wideTable = wideTableName,
+<p>This “everything maps to a row” form means the control table is essentially a graphical representation of the desired data transform. It also helps make clear that just about <em>any</em> even more general shape to shape transform can be achieved by a <code>blocks_to_rowrecs_q()</code> followed by a <code>rowrecs_to_blocks_q()</code>.<label for="tufte-sn-1" class="margin-toggle sidenote-number">1</label><input type="checkbox" id="tufte-sn-1" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">1</span> Or by the a <code>rowrecs_to_blocks_q()</code> followed by a <code>blocks_to_rowrecs_q()</code>. One direction is storing all intermediate values in a single denormalized column, the other is storing in many RDF-triple like rows.</span></p>
+<pre class="r"><code>rowrecs_to_blocks_q(wideTable = wideTableName,
                   controlTable = controlTable,
                   my_db = my_db) %&gt;%
   dplyr::tbl(my_db, .) %&gt;%

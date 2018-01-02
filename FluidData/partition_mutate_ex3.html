@@ -57,7 +57,7 @@ class(sc)</code></pre>
 <pre><code>## [1] &quot;spark_connection&quot;       &quot;spark_shell_connection&quot;
 ## [3] &quot;DBIConnection&quot;</code></pre>
 <pre class="r"><code>class(d)</code></pre>
-<pre><code>## [1] &quot;relop_table_source&quot; &quot;relop&quot;</code></pre>
+<pre><code>## [1] &quot;relop_table_source&quot; &quot;relop&quot;              &quot;wrapr_applicable&quot;</code></pre>
 <pre class="r"><code>d %.&gt;% 
   to_sql(., sc) %.&gt;%
   DBI::dbGetQuery(sc, .) %.&gt;%
@@ -190,18 +190,18 @@ DBI::dbGetQuery(sc, sql) %.&gt;%
 </tr>
 <tr class="even">
 <td align="right">2</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="odd">
 <td align="right">3</td>
-<td align="left">treatment</td>
 <td align="left">control</td>
+<td align="left">treatment</td>
 </tr>
 <tr class="even">
 <td align="right">4</td>
-<td align="left">control</td>
 <td align="left">treatment</td>
+<td align="left">control</td>
 </tr>
 <tr class="odd">
 <td align="right">5</td>

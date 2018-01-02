@@ -105,13 +105,13 @@ replyr_split(dB, 'group')
 
 # pivoting
 pivotControl <- 
-  cdata::buildPivotControlTableN('d', 
+  cdata::build_pivot_control_q('d', 
                                  columnToTakeKeysFrom = 'group', 
                                  columnToTakeValuesFrom = 'x',
                                  sep = '_',
                                  my_db = my_db)
 dWname <- 
-  cdata::moveValuesToColumnsN(keyColumns = NULL,
+  cdata::blocks_to_rowrecs_q(keyColumns = NULL,
                               controlTable = pivotControl,
                               tallTable = 'd',
                               my_db = my_db, strict = FALSE) 
@@ -121,11 +121,11 @@ knitr::kable(dW)
 
 # un-pivoting
 unpivotControl <- 
-  cdata::buildUnPivotControlTable(nameForNewKeyColumn = 'group',
+  cdata::build_unpivot_control(nameForNewKeyColumn = 'group',
                                   nameForNewValueColumn = 'x',
                                   columnsToTakeFrom = colnames(dW))
 dXname <- 
-  cdata::moveValuesToRowsN(controlTable = unpivotControl,
+  cdata::rowrecs_to_blocks_q(controlTable = unpivotControl,
                            wideTable = dWname,
                            my_db = my_db)
 dX <- dplyr::tbl(my_db, dXname)

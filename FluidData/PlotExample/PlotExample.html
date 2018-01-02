@@ -280,14 +280,14 @@ epoch
 <h1>Reproducing the first plot</h1>
 <p>First plot: reproduce the original with bulk-renaming of columns (via the new <a href="https://winvector.github.io/cdata/reference/map_fieldsD.html"><code>cdata::map_fieldsD()</code></a> function).</p>
 <p>First we perform the equivalent of a “shred”, “un-pivot”, or “gather”:</p>
-<pre class="r"><code>cT &lt;- buildUnPivotControlTable(
+<pre class="r"><code>cT &lt;- build_unpivot_control(
   nameForNewKeyColumn= 'origColName',
   nameForNewValueColumn= 'performance',
   columnsToTakeFrom= c('val_loss',
                        'val_acc',
                        'loss',
                        'acc' ))
-dT &lt;- moveValuesToRowsD(
+dT &lt;- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = &quot;epoch&quot;)
@@ -457,9 +457,9 @@ accuracy
 </tbody>
 </table>
 <p>We apply that key map and we are ready to plot:</p>
-<pre class="r"><code>dT &lt;- map_fieldsD(dT, 
-                  &quot;origColName&quot;,
-                  mp)
+<pre class="r"><code>dT &lt;- map_fields(dT, 
+                 &quot;origColName&quot;,
+                 mp)
 dT$measure &lt;- factor(dT$measure, 
                      levels = c(&quot;minus binary cross entropy&quot;,
                                 &quot;accuracy&quot;))
@@ -809,7 +809,7 @@ acc
 
 cR &lt;- d %.&gt;%
   head(., n=1) %.&gt;%
-  moveValuesToRowsD(
+  rowrecs_to_blocks(
     .,
     controlTable = cT,
     columnsToCopy = &quot;epoch&quot;)
@@ -914,9 +914,9 @@ val_acc
 </tr>
 </tbody>
 </table>
-<p>It can be applied to data, or to itself, in a forward or backward direction (depending if we use <code>cdata::moveValuesToRowsD()</code> or <code>cdata::moveValuesToColumnsD()</code>).</p>
+<p>It can be applied to data, or to itself, in a forward or backward direction (depending if we use <code>cdata::rowrecs_to_blocks()</code> or <code>cdata::blocks_to_rowrecs()</code>).</p>
 <pre class="r"><code>cR &lt;- cT %.&gt;%
-  moveValuesToColumnsD(
+  blocks_to_rowrecs(
     .,
     controlTable = cT,
     keyColumns = NULL) %.&gt;%
@@ -962,7 +962,7 @@ acc
 </tbody>
 </table>
 <p>We can now apply the transform to all the data, and produce the final plot.</p>
-<pre class="r"><code>dT &lt;- moveValuesToRowsD(
+<pre class="r"><code>dT &lt;- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = &quot;epoch&quot;)
@@ -1091,11 +1091,9 @@ dT &lt;- dT %.&gt;%
                 rmax := ifelse(validation &lt;= training, training, NA),
                 discounted := ifelse(validation &lt;= training, 
                                      validation - 0.1*(training-validation), 
-                                     validation)))</code></pre>
-<pre><code>## [1] &quot;ifelse(validation &lt;= training, validation, NA)&quot;
-## [1] &quot;ifelse(validation &lt;= training, training, NA)&quot;
-## [1] &quot;ifelse(validation &lt;= training, validation - 0.1 * (training - \n    validation), validation)&quot;</code></pre>
-<pre class="r"><code>pick &lt;- dT %.&gt;%
+                                     validation)))
+
+pick &lt;- dT %.&gt;%
   filter_se(.,
             qe(measure == &quot;minus binary cross entropy&quot;)) %.&gt;%
   .$epoch[[which.max(.$discounted)]]

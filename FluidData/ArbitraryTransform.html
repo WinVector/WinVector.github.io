@@ -10,7 +10,7 @@
 <p>What I want to do now is &quot;write a bit more, so I finally feel I have been concise.&quot;</p>
 <p>The <a href="https://winvector.github.io/cdata/"><code>cdata</code></a> <a href="https://www.r-project.org"><code>R</code></a> package supplies general data transform operators.</p>
 <ul class="incremental">
-<li>The whole system is based on two primitives or operators <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsD.html"><code>cdata::moveValuesToRowsD()</code></a> and <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html"><code>cdata::moveValuesToColumnsD()</code></a>.</li>
+<li>The whole system is based on two primitives or operators <a href="https://winvector.github.io/cdata/reference/rowrecs_to_blocks.html"><code>cdata::rowrecs_to_blocks()</code></a> and <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html"><code>cdata::moveValuesToColumnsD()</code></a>.</li>
 <li>These operators have pivot, un-pivot, one-hot encode, transpose, moving multiple rows and columns, and many other transforms as simple special cases.</li>
 <li>It is easy to write many different operations in terms of the <code>cdata</code> primitives.</li>
 <li>These operators can work-in memory or at big data scale (with databases and Apache Spark; for big data we use the <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsN.html"><code>cdata::moveValuesToRowsN()</code></a> and <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html"><code>cdata::moveValuesToColumnsN()</code></a> variants).</li>
@@ -65,7 +65,7 @@
                                               <span class="st">&quot;East&quot;</span>, 
                                               <span class="st">&quot;Both&quot;</span>)))</code></pre></div>
 <p>Our notional goal is (as part of a larger data processing plan) to reformat the data a thin/tall table or a <a href="https://en.wikipedia.org/wiki/Semantic_triple">RDF-triple</a> like form. Further suppose we wanted to copy the derived column into every row of the transformed table (perhaps to make some other step involving this value easy).</p>
-<p>We can use <a href="https://winvector.github.io/cdata/reference/moveValuesToRowsD.html"><code>cdata::moveValuesToRowsD()</code></a> to do this quickly and easily.</p>
+<p>We can use <a href="https://winvector.github.io/cdata/reference/rowrecs_to_blocks.html"><code>cdata::rowrecs_to_blocks()</code></a> to do this quickly and easily.</p>
 <p>First we design what is called a transform control table.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">cT1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(<span class="dt">Region =</span> <span class="kw">c</span>(<span class="st">&quot;West&quot;</span>, <span class="st">&quot;East&quot;</span>),
                   <span class="dt">Bookings =</span> <span class="kw">c</span>(<span class="st">&quot;BookingsWest&quot;</span>, <span class="st">&quot;BookingsEast&quot;</span>),
@@ -77,15 +77,15 @@
 ## 2   East BookingsEast BestRegion</code></pre>
 <p>In a control table:</p>
 <ul class="incremental">
-<li>The column names specify new columns that will be formed by <code>cdata::moveValuesToRowsD()</code>.</li>
+<li>The column names specify new columns that will be formed by <code>cdata::rowrecs_to_blocks()</code>.</li>
 <li>The values specify where to take values from.</li>
 </ul>
 <p>This control table is called &quot;non trivial&quot; as it does not correspond to a simple pivot/un-pivot (those tables all have two columns). The control table is a picture of of the mapping we want to perform.</p>
-<p>An interesting fact is <code>cdata::moveValuesToColumnsD(cT1, cT1, keyColumns = NULL)</code> is a picture of the control table as a one-row table (and this one row table can be mapped back to the original control table by <code>cdata::moveValuesToRowsD()</code>, these two operators work roughly as inverses of each other; though <code>cdata::moveValuesToRowsD()</code> operates on rows and <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html"><code>cdata::moveValuesToColumnsD()</code></a> operates on groups of rows specified by the keying columns).</p>
+<p>An interesting fact is <code>cdata::moveValuesToColumnsD(cT1, cT1, keyColumns = NULL)</code> is a picture of the control table as a one-row table (and this one row table can be mapped back to the original control table by <code>cdata::rowrecs_to_blocks()</code>, these two operators work roughly as inverses of each other; though <code>cdata::rowrecs_to_blocks()</code> operates on rows and <a href="https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html"><code>cdata::moveValuesToColumnsD()</code></a> operates on groups of rows specified by the keying columns).</p>
 <p>The mnemonic is:</p>
 <ul class="incremental">
 <li><code>cdata::moveValuesToColumnsD()</code> converts arbitrary grouped blocks of rows that look like the control table into many columns.</li>
-<li><code>cdata::moveValuesToRowsD()</code> converts each row into row blocks that have the same shape as the control table.</li>
+<li><code>cdata::rowrecs_to_blocks()</code> converts each row into row blocks that have the same shape as the control table.</li>
 </ul>
 <p>Because pivot and un-pivot are fairly common needs <code>cdata</code> also supplies functions that pre-populate the controls tables for these operations (<a href="https://winvector.github.io/cdata/reference/buildPivotControlTableD.html"><code>buildPivotControlTableD()</code></a> and <a href="https://winvector.github.io/cdata/reference/buildUnPivotControlTable.html"><code>buildUnPivotControlTable()</code></a>).</p>
 <p>To design any transform you draw out the control table and then apply one of these operators (you can pretty much move from any block structure to any block structure by chaining two or more of these steps).</p>
@@ -95,7 +95,7 @@
                 <span class="dt">Quarter =</span> <span class="kw">substr</span>(Period,<span class="dv">5</span>,<span class="dv">6</span>),
                 <span class="dt">Year =</span> <span class="kw">as.numeric</span>(<span class="kw">substr</span>(Period,<span class="dv">1</span>,<span class="dv">4</span>)))  %.&gt;%<span class="st"> </span>
 <span class="st">  </span>dplyr::<span class="kw">select</span>(., -Period)  %.&gt;%<span class="st"> </span>
-<span class="st">  </span><span class="kw">moveValuesToRowsD</span>(., 
+<span class="st">  </span><span class="kw">rowrecs_to_blocks</span>(., 
                     <span class="dt">controlTable =</span> cT1, 
                     <span class="dt">columnsToCopy =</span> <span class="kw">c</span>(<span class="st">&#39;SalesPerson&#39;</span>, 
                                       <span class="st">&#39;Year&#39;</span>, 

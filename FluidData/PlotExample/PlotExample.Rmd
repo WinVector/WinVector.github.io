@@ -40,14 +40,14 @@ First plot: reproduce the original with bulk-renaming of columns (via the new [`
 First we perform the equivalent of a "shred", "un-pivot", or "gather":
 
 ```{r firstplot}
-cT <- buildUnPivotControlTable(
+cT <- build_unpivot_control(
   nameForNewKeyColumn= 'origColName',
   nameForNewValueColumn= 'performance',
   columnsToTakeFrom= c('val_loss',
                        'val_acc',
                        'loss',
                        'acc' ))
-dT <- moveValuesToRowsD(
+dT <- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = "epoch")
@@ -83,9 +83,9 @@ mp %.>%
 We apply that key map and we are ready to plot:
 
 ```{r akm}
-dT <- map_fieldsD(dT, 
-                  "origColName",
-                  mp)
+dT <- map_fields(dT, 
+                 "origColName",
+                 mp)
 dT$measure <- factor(dT$measure, 
                      levels = c("minus binary cross entropy",
                                 "accuracy"))
@@ -160,7 +160,7 @@ cT <- dplyr::tribble(
 
 cR <- d %.>%
   head(., n=1) %.>%
-  moveValuesToRowsD(
+  rowrecs_to_blocks(
     .,
     controlTable = cT,
     columnsToCopy = "epoch")
@@ -188,11 +188,11 @@ cT %.>%
   column_spec(., 2:3, background = "yellow")
 ```
 
-It can be applied to data, or to itself, in a forward or backward direction (depending if we use `cdata::moveValuesToRowsD()` or `cdata::moveValuesToColumnsD()`).
+It can be applied to data, or to itself, in a forward or backward direction (depending if we use `cdata::rowrecs_to_blocks()` or `cdata::blocks_to_rowrecs()`).
 
 ```{r lpc}
 cR <- cT %.>%
-  moveValuesToColumnsD(
+  blocks_to_rowrecs(
     .,
     controlTable = cT,
     keyColumns = NULL) %.>%
@@ -208,7 +208,7 @@ cR %.>%
 We can now apply the transform to all the data, and produce the final plot.
 
 ```{r moveall}
-dT <- moveValuesToRowsD(
+dT <- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = "epoch")
