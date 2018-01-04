@@ -58,8 +58,8 @@ if (window.hljs) {
 </ol>
 <p><code>cdata</code> supplies two general operators for fluid data work at database scale (and <code>Spark</code> big data scale):</p>
 <ol style="list-style-type: decimal">
-<li><a href="https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html"><code>moveValuesToRows*()</code></a>: operators centered around <code>SQL</code> <code>cross-join</code> semantics. un-pivot, <code>tidyr::gather()</code>, and <a href="https://winvector.github.io/cdata/reference/unpivot_to_blocks.html"><code>cdata::unpivot_to_blocks()</code></a> are special cases of this general operator.</li>
-<li><a href="https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html"><code>moveValuesToColumns*()</code></a>: an operator centered around <code>SQL</code> <code>group by</code> semantics. pivot, <code>tidyr::spread()</code>, <a href="https://winvector.github.io/cdata/reference/pivot_to_rowrecs.html"><code>cdata::pivot_to_rowrecs()</code></a>, transpose, and one-hot-encoding are special cases of this general operator.</li>
+<li><a href="https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html"><code>cdata::rowrecs_to_blocks()</code></a>: operators centered around <code>SQL</code> <code>cross-join</code> semantics. un-pivot, <code>tidyr::gather()</code>, and <a href="https://winvector.github.io/cdata/reference/unpivot_to_blocks.html"><code>cdata::unpivot_to_blocks()</code></a> are special cases of this general operator.</li>
+<li><a href="https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html"><code>blocks_to_rowrecs()</code></a>: an operator centered around <code>SQL</code> <code>group by</code> semantics. pivot, <code>tidyr::spread()</code>, <a href="https://winvector.github.io/cdata/reference/pivot_to_rowrecs.html"><code>cdata::pivot_to_rowrecs()</code></a>, transpose, and one-hot-encoding are special cases of this general operator.</li>
 </ol>
 <p>Because these operators are powerful, they are fairly general, and at first hard to mentally model (especially if you insist on think of them in only in terms of more a specialized operator such as pivot, instead of more general relational concepts such as “cross join” and “group by”). These operators are thin wrappers populating and enforcing a few invariants over a large <code>SQL</code> statement. That does not mean that these operators are trivial, they are thin because <code>SQL</code> is powerful and we have a good abstraction.</p>
 <p>Due to the very detailed and explicit controls used in these operators- they are very comprehensible once studied. We will follow-up later with additional training material to make quicker comprehension available to more readers. This document is limiting itself to being a mere concise statement of and demonstration of the operators.</p>
@@ -234,15 +234,15 @@ knitr::kable(dat2)</code></pre>
 </div>
 <div id="the-operators" class="section level1">
 <h1>The Operators</h1>
-<p>In terms of the above notation/theory our two operators <code>moveValuesToRows*()</code> and <code>moveValuesToColumns*()</code> are (in principle) easy to describe:</p>
+<p>In terms of the above notation/theory our two operators <code>rowrecs_to_blocks()</code> and <code>blocks_to_rowrecs()</code> are (in principle) easy to describe:</p>
 <ul>
-<li><code>moveValuesToRows*()</code> reshapes data from style 1 to style 2</li>
-<li><code>moveValuesToColumns*()</code> reshapes data from style 2 to style 1.</li>
+<li><code>rowrecs_to_blocks()</code> reshapes data from style 1 to style 2</li>
+<li><code>blocks_to_rowrecs()</code> reshapes data from style 2 to style 1.</li>
 </ul>
 <p>The above is certainly succinct, but carries a lot of information and allows for a lot of different possible applications. Many important applications are derived from how these two operators interact with row-operations and column-operations.</p>
 <p>We give simple examples of each of the operators below.</p>
-<div id="movevaluestorows" class="section level2">
-<h2><code>moveValuesToRows*()</code></h2>
+<div id="rowrecs_to_blocks" class="section level2">
+<h2><code>rowrecs_to_blocks()</code></h2>
 <pre class="r"><code>wideTableName &lt;- 'dat'
 d &lt;- dplyr::copy_to(my_db,
       dplyr::tribble(
@@ -312,8 +312,8 @@ cdata::rowrecs_to_blocks_q(wideTable = wideTableName,
 </tbody>
 </table>
 </div>
-<div id="movevaluestocolumns" class="section level2">
-<h2><code>moveValuesToColumns*()</code></h2>
+<div id="blocks_to_rowrecs" class="section level2">
+<h2><code>blocks_to_rowrecs()</code></h2>
 <pre class="r"><code>tallTableName &lt;- 'dat'
 d &lt;- dplyr::copy_to(my_db,
   dplyr::tribble(
@@ -376,7 +376,7 @@ cdata::blocks_to_rowrecs_q(tallTable = tallTableName,
 </div>
 <div id="pivotun-pivot" class="section level1">
 <h1>Pivot/Un-Pivot</h1>
-<p>Pivot and un-pivot (or <code>tidyr::spread()</code> and <code>tidyr::gather()</code>) are special cases of the <code>moveValuesToColumns*()</code> and <code>moveValuesToRows*()</code> operators. Pivot/un-pivot are the cases where the control table has two columns.</p>
+<p>Pivot and un-pivot (or <code>tidyr::spread()</code> and <code>tidyr::gather()</code>) are special cases of the <code>blocks_to_rowrecs()</code> and <code>rowrecs_to_blocks()</code> operators. Pivot/un-pivot are the cases where the control table has two columns.</p>
 <div id="pivot" class="section level2">
 <h2>Pivot</h2>
 <pre class="r"><code>d &lt;- data.frame(
@@ -461,7 +461,7 @@ cdata::pivot_to_rowrecs(d,
 </tr>
 </tbody>
 </table>
-<pre class="r"><code># the cdata::moveValuesToColumns*() version
+<pre class="r"><code># the cdata::blocks_to_rowrecs() version
 dtall &lt;- dplyr::copy_to(my_db, d, &quot;dtall&quot;)
 controlTable &lt;- cdata::build_pivot_control_q(tableName = &quot;dtall&quot;,
                                                columnToTakeKeysFrom = 'meastype',
@@ -702,7 +702,7 @@ rowrecs_to_blocks_q(wideTable = &quot;dwide&quot;,
 </div>
 <div id="additional-interesting-applications" class="section level1">
 <h1>Additional Interesting Applications</h1>
-<p>Interesting applications of <code>cdata::moveValuesToRows*()</code> and <code>cdata::moveValuesToColumns*()</code> include situations where <code>tidyr</code> is not available (databases and <code>Spark</code>) and also when the data transformation is not obviously a single pivot or un-pivot.</p>
+<p>Interesting applications of <code>cdata::rowrecs_to_blocks()</code> and <code>cdata::blocks_to_rowrecs()</code> include situations where <code>tidyr</code> is not available (databases and <code>Spark</code>) and also when the data transformation is not obviously a single pivot or un-pivot.</p>
 <div id="row-parallel-dispatch" class="section level2">
 <h2>Row-parallel dispatch</h2>
 <p>A particularly interesting application is converting many column operations into a single operation using a row-parallel dispatch.</p>
@@ -935,7 +935,7 @@ knitr::kable(result)</code></pre>
 </div>
 <div id="one-hot-encoding" class="section level2">
 <h2>One-hot encoding</h2>
-<p>Adding indicators or dummy variables (by one-hot encoding, or other methods) are essentially special cases of the pivot flavor of <code>cdata::moveValuesToColumns*()</code>.</p>
+<p>Adding indicators or dummy variables (by one-hot encoding, or other methods) are essentially special cases of the pivot flavor of <code>cdata::blocks_to_rowrecs()</code>.</p>
 </div>
 <div id="transpose" class="section level2">
 <h2>Transpose</h2>
@@ -947,7 +947,7 @@ knitr::kable(result)</code></pre>
 </div>
 <div id="some-fun" class="section level2">
 <h2>Some fun</h2>
-<p>The structure of the control table is so similar to the data expected by <code>moveValuesToColumns*()</code> that you can actually send the control table through <code>moveValuesToColumns*()</code> to illustrate the kernel of the transformation.</p>
+<p>The structure of the control table is so similar to the data expected by <code>blocks_to_rowrecs()</code> that you can actually send the control table through <code>blocks_to_rowrecs()</code> to illustrate the kernel of the transformation.</p>
 <pre class="r"><code>controlTable &lt;- dplyr::tribble(~group, ~col1, ~col2,
                                  'aa',  'c1',  'c2',
                                  'bb',  'c3',  'c4')
@@ -1012,7 +1012,7 @@ knitr::kable(dw)</code></pre>
 </div>
 <div id="conclusion" class="section level1">
 <h1>Conclusion</h1>
-<p><code>cdata::moveValuesToRows*()</code> and <code>cdata::moveValuesToColumns*()</code> represent two very general “fluid data” or “coordinatized data” operators that have database scale (via <code>DBI/dbplyr/dplyr</code>) and big data scale implementations (via <code>Sparklyr</code>). Some very powerful data transformations can be translated into the above explicit control table terminology. The extra details explicitly managed in the control table notation makes for clear calling interfaces.</p>
+<p><code>cdata::rowrecs_to_blocks()</code> and <code>cdata::blocks_to_rowrecs()</code> represent two very general “fluid data” or “coordinatized data” operators that have database scale (via <code>DBI/dbplyr/dplyr</code>) and big data scale implementations (via <code>Sparklyr</code>). Some very powerful data transformations can be translated into the above explicit control table terminology. The extra details explicitly managed in the control table notation makes for clear calling interfaces.</p>
 <pre class="r"><code>for(ti in tng(dumpList = TRUE)) {
   dplyr::db_drop_table(my_db, ti)
 }

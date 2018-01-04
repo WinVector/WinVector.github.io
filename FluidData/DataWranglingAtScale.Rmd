@@ -47,7 +47,7 @@ cT <- buildUnPivotControlTable(
   nameForNewKeyColumn = "measurement",
   nameForNewValueColumn = "value",
   columnsToTakeFrom = c('height', 'mass') )
-dTName <- moveValuesToRowsN(
+dTName <- rowrecs_to_blocks_q(
   "starwars", 
   controlTable = cT, 
   my_db = sc, 
@@ -86,14 +86,14 @@ use of `dplyr::tbl()` to produce remote data handles in this example.^[Basing st
 instead of handles means: for production code you need tools to help manage table 
 lifetime. `cdata::makeTempNameGenerator()` is supplied for that purpose.  As
 in-memory data doesn't have representation names in the same sense remote data does,
-`cdata` supplies in-memory value to value functions: `moveValuesToRowsD()`, `buildPivotControlTableD()`,
-and `moveValuesToColumnsD()`.]
+`cdata` supplies in-memory value to value functions: `rowrecs_to_blocks()`, `buildPivotControlTableD()`,
+and `blocks_to_rowrecs()`.]
 
 The reverse operation (often called pivoting) is also easy (and in
 fact shares the same control structures).
 
 ```{r pivot}
-dL <- moveValuesToColumnsN(
+dL <- blocks_to_rowrecs_q(
   dTName,
   keyColumns = "name",
   controlTable = cT,
