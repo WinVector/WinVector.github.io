@@ -119,9 +119,9 @@ d %.>%
 Our larger goal was to perform this same operation on each of the 5 letter groups.
 
 We do this easily as follows:^[A better overall design would be to use 
-[`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html),
+[`cdata::rowrecs_to_blocks_q()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html),
 then perform a single bulk operation on rows, and then pivot/transpose back
-with [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html).
+with [`cdata::blocks_to_rowrecs_q()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html).
 But let's see how we simply work with a problem at hand.]
 
 ```{r dLong}

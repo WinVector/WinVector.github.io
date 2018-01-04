@@ -41,6 +41,17 @@ cR %.>%
   row_spec(., 0:nrow(cR), background = "lightgrey") 
 ```
 
+Or with a bit more color:
+
+```{r setup2}
+cR %.>%
+  knitr::kable(.) %.>%
+  kable_styling(., full_width = F) %.>%
+  row_spec(., 0:nrow(cR), background = "lightgrey") %.>%
+  row_spec(., 0, background = "lightgreen") %.>%
+  column_spec(., 1:4, background = "yellow")
+```
+
 # Reproducing the first plot
 
 First plot: reproduce the original with bulk-renaming of columns (via the new [`cdata::map_fieldsD()`](https://winvector.github.io/cdata/reference/map_fieldsD.html) function).
@@ -48,14 +59,14 @@ First plot: reproduce the original with bulk-renaming of columns (via the new [`
 First we perform the equivalent of a "shred", "un-pivot", or "gather":
 
 ```{r firstplot}
-cT <- buildUnPivotControlTable(
+cT <- build_unpivot_control(
   nameForNewKeyColumn= 'origColName',
   nameForNewValueColumn= 'performance',
   columnsToTakeFrom= c('val_loss',
                        'val_acc',
                        'loss',
                        'acc' ))
-dT <- moveValuesToRowsD(
+dT <- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = "epoch")
@@ -67,7 +78,7 @@ cR %.>%
   row_spec(., 0:nrow(cR), background = "lightgrey") 
 ```
 
-The we define a value mapping table to build the new 
+Then we define a value mapping table to build the new 
 value key columns that we need.
 
 ```{r fp2}
@@ -91,9 +102,9 @@ mp %.>%
 We apply that key map and we are ready to plot:
 
 ```{r akm}
-dT <- map_fieldsD(dT, 
-                  "origColName",
-                  mp)
+dT <- map_fields(dT, 
+                 "origColName",
+                 mp)
 dT$measure <- factor(dT$measure, 
                      levels = c("minus binary cross entropy",
                                 "accuracy"))
@@ -147,6 +158,8 @@ cR %.>%
   row_spec(., 2:nrow(cR), background = "lightgrey") 
 ```
 
+
+
 Let's concentrate on a single row (in this case the first row).
 
 ```{r lineplot1}
@@ -174,7 +187,7 @@ cT <- dplyr::tribble(
 
 cR <- d %.>%
   head(., n=1) %.>%
-  moveValuesToRowsD(
+  rowrecs_to_blocks(
     .,
     controlTable = cT,
     columnsToCopy = "epoch")
@@ -202,11 +215,11 @@ cT %.>%
   column_spec(., 2:3, background = "yellow")
 ```
 
-It can be applied to data, or to itself, in a forward or backward direction (depending if we use `cdata::moveValuesToRowsD()` or `cdata::moveValuesToColumnsD()`).
+It can be applied to data, or to itself, in a forward or backward direction (depending if we use `cdata::rowrecs_to_blocks()` or `cdata::blocks_to_rowrecs()`).
 
 ```{r lpc}
 cR <- cT %.>%
-  moveValuesToColumnsD(
+  blocks_to_rowrecs(
     .,
     controlTable = cT,
     keyColumns = NULL) %.>%
@@ -262,7 +275,7 @@ moveValuesToColumnsD(r1,
 We can now apply the transform to all the data, and produce the final plot.
 
 ```{r moveall}
-dT <- moveValuesToRowsD(
+dT <- rowrecs_to_blocks(
   d,
   controlTable = cT,
   columnsToCopy = "epoch")
