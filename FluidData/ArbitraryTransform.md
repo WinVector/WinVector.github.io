@@ -14,10 +14,10 @@ What I want to do now is "write a bit more, so I finally feel I have been concis
 
 The [`cdata`](https://winvector.github.io/cdata/) [`R`](https://www.r-project.org) package supplies general data transform operators.
 
--   The whole system is based on two primitives or operators [`cdata::rowrecs_to_blocks()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks.html) and [`cdata::moveValuesToColumnsD()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html).
+-   The whole system is based on two primitives or operators [`cdata::rowrecs_to_blocks()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks.html) and [`cdata::blocks_to_rowrecs()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs.html).
 -   These operators have pivot, un-pivot, one-hot encode, transpose, moving multiple rows and columns, and many other transforms as simple special cases.
 -   It is easy to write many different operations in terms of the `cdata` primitives.
--   These operators can work-in memory or at big data scale (with databases and Apache Spark; for big data we use the [`cdata::moveValuesToRowsN()`](https://winvector.github.io/cdata/reference/moveValuesToRowsN.html) and [`cdata::moveValuesToColumnsN()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsN.html) variants).
+-   These operators can work-in memory or at big data scale (with databases and Apache Spark; for big data we use the [`cdata::rowrecs_to_blocks()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks.html) and [`cdata::blocks_to_rowrecs_q()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html) variants).
 -   The transforms are controlled by a control table that itself is a diagram of or picture of the transform.
 
 We will end with a quick example, centered on pivoting/un-pivoting values to/from more than one column at the same time.
@@ -77,11 +77,11 @@ In a control table:
 
 This control table is called "non trivial" as it does not correspond to a simple pivot/un-pivot (those tables all have two columns). The control table is a picture of of the mapping we want to perform.
 
-An interesting fact is `cdata::moveValuesToColumnsD(cT1, cT1, keyColumns = NULL)` is a picture of the control table as a one-row table (and this one row table can be mapped back to the original control table by `cdata::rowrecs_to_blocks()`, these two operators work roughly as inverses of each other; though `cdata::rowrecs_to_blocks()` operates on rows and [`cdata::moveValuesToColumnsD()`](https://winvector.github.io/cdata/reference/moveValuesToColumnsD.html) operates on groups of rows specified by the keying columns).
+An interesting fact is `cdata::blocks_to_rowrecs(cT1, cT1, keyColumns = NULL)` is a picture of the control table as a one-row table (and this one row table can be mapped back to the original control table by `cdata::rowrecs_to_blocks()`, these two operators work roughly as inverses of each other; though `cdata::rowrecs_to_blocks()` operates on rows and [`cdata::blocks_to_rowrecs()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs.html) operates on groups of rows specified by the keying columns).
 
 The mnemonic is:
 
--   `cdata::moveValuesToColumnsD()` converts arbitrary grouped blocks of rows that look like the control table into many columns.
+-   `cdata::blocks_to_rowrecs()` converts arbitrary grouped blocks of rows that look like the control table into many columns.
 -   `cdata::rowrecs_to_blocks()` converts each row into row blocks that have the same shape as the control table.
 
 Because pivot and un-pivot are fairly common needs `cdata` also supplies functions that pre-populate the controls tables for these operations ([`buildPivotControlTableD()`](https://winvector.github.io/cdata/reference/buildPivotControlTableD.html) and [`buildUnPivotControlTable()`](https://winvector.github.io/cdata/reference/buildUnPivotControlTable.html)).

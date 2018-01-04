@@ -136,7 +136,7 @@ The point is: using the `replyr` and `cdata` packages you *can* design in terms 
 when working with big data in `R`.  Designs in terms of these operators tend to 
 be succinct, powerful, performant, and maintainable.  
 
-To master the terms `moveValuesToRows` and `moveValuesToColumns` I suggest trying the following
+To master the terms `rowrecs_to_blocks` and `blocks_to_rowrecs` I suggest trying the following
 two articles:
 
   * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html).
