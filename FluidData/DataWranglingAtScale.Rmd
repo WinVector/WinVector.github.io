@@ -21,8 +21,7 @@ d <- dplyr::starwars %.>%
 
 > "[`R`](https://www.r-project.org) is its packages."
 
-One great example of this is: the [`sparklyr` package](https://CRAN.R-project.org/package=sparklyr), which allows
-`R` to work with big data.  In this note we we will use the `sparklyr` package, but concentrate on another important package called [`cdata`](https://winvector.github.io/cdata/).
+One great example of this is: the [`sparklyr` package](https://CRAN.R-project.org/package=sparklyr), which allows `R` to work with big data.  In this note we we will use the `sparklyr` package, but concentrate on another important package called [`cdata`](https://winvector.github.io/cdata/).
 
 In the following example the table we are working with
 is remote. For all we know it could be distributed on a large remote data center.^[Working with remote data tools can be like working with a [Waldo system](https://en.wikipedia.org/wiki/Remote_manipulator): powerful, but a touch awkward. ![](Waldo.jpg)]
@@ -43,7 +42,7 @@ transform is easy and performant, as we show below.
 ```{r unpivot}
 library("cdata")
 
-cT <- buildUnPivotControlTable(
+cT <- build_unpivot_control(
   nameForNewKeyColumn = "measurement",
   nameForNewValueColumn = "value",
   columnsToTakeFrom = c('height', 'mass') )
