@@ -109,6 +109,7 @@ dL %.>%
 More^[The source code that produced this article can be [downloaded from here](https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/DataWranglingAtScale.Rmd).] on these sort of transforms can be found in the following notes:
 
  * [Theory of coordinatized data](http://winvector.github.io/FluidData/RowsAndColumns.html)
+ * [Fluid data reshaping with cdata](http://winvector.github.io/FluidData/FluidDataReshapingWithCdata.html)
  * [Fluid data transforms](http://winvector.github.io/FluidData/FluidData.html)
 
  
