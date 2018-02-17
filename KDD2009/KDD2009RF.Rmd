@@ -9,10 +9,13 @@ output: html_document
 #load some libraries
 # https://github.com/WinVector/vtreat
 library('vtreat')
+packageVersion("vtreat")
 # devtools::install_github("WinVector/WVPlots")
 library('WVPlots')
 library('parallel')
 library('randomForest')
+library('ggplot2')
+
 
 
 # load the data as in the book
@@ -58,29 +61,32 @@ treatmentsC = designTreatmentsC(dTrainC,
                                 parallelCluster=cl)
 
 
-library('ggplot2')
-kddSig=0.05
-ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
-  geom_density(adjust=0.2) + geom_vline(xintercept=kddSig)
-ggplot(data=treatmentsC$scoreFrame,aes(x=csig)) + 
+kddSig = 1/length(vars)
+
+ggplot(data=treatmentsC$scoreFrame,aes(x=sig)) + 
+  geom_density(adjust=0.2) + 
+  geom_vline(xintercept=kddSig) + 
+  ggtitle("distribution of variable significances")
+ggplot(data=treatmentsC$scoreFrame,aes(x=sig)) + 
   geom_density(adjust=0.2) + geom_vline(xintercept=kddSig) +
-  scale_x_log10()
+  scale_x_log10() + 
+   ggtitle("distribution of variable significances")
 
 
-length(treatmentsC$scoreFrame$csig)
-sum(treatmentsC$scoreFrame$csig<kddSig)
+length(treatmentsC$scoreFrame$sig)
+selvars <- treatmentsC$scoreFrame$varName[treatmentsC$scoreFrame$sig<kddSig]
+length(selvars)
 
 trainP = prepare(treatmentsC,
                  dTrainM,
                  scale=TRUE,
-                 pruneSig=kddSig,
+                 varRestriction=selvars,
                  parallelCluster=cl)
-selvars = setdiff(colnames(trainP),yName)
 
 testP = prepare(treatmentsC,
                 dTest,
                 scale=TRUE,
-                pruneSig=kddSig,
+                varRestriction=selvars,
                 parallelCluster=cl)
 
 if(!is.null(cl)) {
