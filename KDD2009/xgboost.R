@@ -41,7 +41,7 @@ mkXGBoostModelC <- function(trainDat, vars, outcomeCol,
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
     if(buildPlot) {
-      plotD <- moveValuesToRows(elog, 
+      plotD <- unpivot_to_blocks(elog, 
                                 nameForNewKeyColumn = 'errtype', 
                                 nameForNewValueColumn = 'error', 
                                 columnsToTakeFrom = c('train_error_mean', 'test_error_mean')) 
@@ -114,7 +114,7 @@ mkXGBoostModelR <- function(trainDat, vars, outcomeCol,
     # Get the evaluation log and call summary on it
     elog <- cv$evaluation_log
     if(buildPlot) {
-      plotD <- moveValuesToRows(elog, 
+      plotD <- unpivot_to_blocks(elog, 
                                 nameForNewKeyColumn = 'errtype', 
                                 nameForNewValueColumn = 'rmse', 
                                 columnsToTakeFrom = c('train_rmse_mean', 'test_rmse_mean')) 
