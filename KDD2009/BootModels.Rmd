@@ -12,6 +12,7 @@ output: html_document
 load('bsteps.Rdata')
 source('Lfns.R')
 source('Afns.R')
+library("plyr")
 
 # column selection doesn't work the same for data.table
 # in particular d[1,'columnTitle'] returns the column title, not value
