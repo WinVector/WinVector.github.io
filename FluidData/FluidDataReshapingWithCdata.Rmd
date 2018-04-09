@@ -132,11 +132,10 @@ onerow  %>%
 First, create the control table.
 
 ```{r controltable2}
-library(tibble)
-controlTable = 
-  tribble(~measure, ~training, ~validation,
-          "minus binary cross entropy", "loss", "val_loss",
-          "accuracy", "acc", "val_acc")
+controlTable = build_frame(
+   "measure"                   , "training", "validation" |
+   "minus binary cross entropy", "loss"    , "val_loss"   |
+   "accuracy"                  , "acc"     , "val_acc"    )
 ```
 
 ```{r controltable3, echo=FALSE}
@@ -152,7 +151,7 @@ controlTable  %>%
 The function `cdata::rowrecs_to_blocks` takes data organized as row records, and reorganizes it into blocks. It takes as input the data, the control table, and an additional optional argument called `columnsToCopy` for columns that you want to carry along. One such column is often the record id (in this case, `epoch`).
 
 ```{r torows}
-library(cdata)
+library("cdata")
 
 blockf = rowrecs_to_blocks(onerow,
                       controlTable=controlTable, 
