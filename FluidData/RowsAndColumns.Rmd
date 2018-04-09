@@ -3,14 +3,14 @@ title: "Coordinatized Data: A Fluid Data Specification"
 author: "John Mount and Nina Zumel"
 date: "March 29, 2017"
 output:
+  tufte::tufte_html: default
   tufte::tufte_handout:
     citation_package: natbib
     latex_engine: xelatex
-  tufte::tufte_html: default
   tufte::tufte_book:
     citation_package: natbib
     latex_engine: xelatex
-#bibliography: skeleton.bib
+bibliography: skeleton.bib
 link-citations: yes
 ---
 
@@ -432,5 +432,5 @@ For coordinatized data different layouts of rows and columns are demonstrably eq
 
 It pays to think fluidly in terms of coordinatized data and delay any format conversions until you actually need them.  You will eventually need transforms as most data processing steps have a preferred format.  For example, machine learning training usually requires a denormalized form.
 
-We feel the methods [`unpivot_to_blocks()`](https://winvector.github.io/cdata/reference/unpivot_to_blocks.html) and [`pivot_to_rowrecs()`](https://winvector.github.io/cdata/reference/pivot_to_rowrecs.html) are easier to learn and remember than abstract terms such as "stack/unstack", "melt/cast", or "gather/spread" and thus are a good way to teach.  Perhaps they are even a good way to document (and confirm) your intent in your own projects.  These terms also anticipate the more general table controlled operators [`rowrecs_to_blocks()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html) and [`blocks_to_rowrecs()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html).
+We feel the methods [`unpivot_to_blocks()`](https://winvector.github.io/cdata/reference/unpivot_to_blocks.html) and [`pivot_to_rowrecs()`](https://winvector.github.io/cdata/reference/pivot_to_rowrecs.html) are easier to learn and remember than abstract terms such as "stack/unstack", "melt/cast", or "gather/spread" and thus are a good way to teach.  Perhaps they are even a good way to document (and confirm) your intent in your own projects.  These terms also anticipate the more general table controlled operators [`rowrecs_to_blocks()`](https://winvector.github.io/cdata/reference/rowrecs_to_blocks_q.html) and [`blocks_to_rowrecs()`](https://winvector.github.io/cdata/reference/blocks_to_rowrecs_q.html).  For more on the general theory please see ["Fluid data reshaping with cdata"](http://winvector.github.io/FluidData/FluidDataReshapingWithCdata.html).
 

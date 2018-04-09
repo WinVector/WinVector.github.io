@@ -12,7 +12,7 @@
 
 <meta name="author" content="John Mount, Win-Vector LLC" />
 
-<meta name="date" content="2018-01-03" />
+<meta name="date" content="2018-01-25" />
 
 <title>Data Wrangling at Scale</title>
 
@@ -44,7 +44,7 @@ if (window.hljs) {
 
 <h1 class="title toc-ignore">Data Wrangling at Scale</h1>
 <h4 class="author">John Mount, <a href="http://www.win-vector.com/">Win-Vector LLC</a></h4>
-<h4 class="date">2018-01-03</h4>
+<h4 class="date">2018-01-25</h4>
 
 
 
@@ -77,7 +77,7 @@ print(d)</code></pre>
 <p>Suppose we needed to un-pivot this data into a row oriented representation. Often big data transform steps can achieve a much higher degree of parallelization with “tall data”<label for="tufte-sn-2" class="margin-toggle sidenote-number">2</label><input type="checkbox" id="tufte-sn-2" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">2</span> many rows, fewer columns</span>. With the <a href="https://winvector.github.io/cdata/"><code>cdata</code> package</a> this transform is easy and performant, as we show below.</p>
 <pre class="r"><code>library(&quot;cdata&quot;)
 
-cT &lt;- buildUnPivotControlTable(
+cT &lt;- build_unpivot_control(
   nameForNewKeyColumn = &quot;measurement&quot;,
   nameForNewValueColumn = &quot;value&quot;,
   columnsToTakeFrom = c('height', 'mass') )
@@ -88,9 +88,9 @@ dTName &lt;- rowrecs_to_blocks_q(
   columnsToCopy = &quot;name&quot;)
 
 str(dTName)</code></pre>
-<pre><code>##  chr &quot;mvtrq_5v7tgs700xdo1owm4xrp_0000000001&quot;</code></pre>
+<pre><code>##  chr &quot;mvtrq_rrakp3dqsorimj4ohzgh_0000000001&quot;</code></pre>
 <pre class="r"><code>qlook(sc, dTName)</code></pre>
-<pre><code>## table `mvtrq_5v7tgs700xdo1owm4xrp_0000000001` spark_connection spark_shell_connection DBIConnection 
+<pre><code>## table `mvtrq_rrakp3dqsorimj4ohzgh_0000000001` spark_connection spark_shell_connection DBIConnection 
 ##  nrow: 174 
 ##  NOTE: &quot;obs&quot; below is count of sample, not number of rows of data.
 ## 'data.frame':    10 obs. of  3 variables:
@@ -235,6 +235,7 @@ dL %.&gt;%
 <p>More<label for="tufte-sn-8" class="margin-toggle sidenote-number">8</label><input type="checkbox" id="tufte-sn-8" class="margin-toggle"><span class="sidenote"><span class="sidenote-number">8</span> The source code that produced this article can be <a href="https://github.com/WinVector/WinVector.github.io/blob/master/FluidData/DataWranglingAtScale.Rmd">downloaded from here</a>.</span> on these sort of transforms can be found in the following notes:</p>
 <ul>
 <li><a href="http://winvector.github.io/FluidData/RowsAndColumns.html">Theory of coordinatized data</a></li>
+<li><a href="http://winvector.github.io/FluidData/FluidDataReshapingWithCdata.html">Fluid data reshaping with cdata</a></li>
 <li><a href="http://winvector.github.io/FluidData/FluidData.html">Fluid data transforms</a></li>
 </ul>
 
