@@ -56,16 +56,18 @@ Consider the following table that we call a "control table":
 
 ```{r setup}
 suppressPackageStartupMessages(library("cdata"))
-packageVersion("cdata")
-suppressPackageStartupMessages(library("dplyr"))
+library("wrapr")
+library("rqdatatable")
+library("rquery")
 options(width = 160) 
-tng <- cdata::makeTempNameGenerator('fdexample')
+tng <- wrapr::mk_tmp_name_source('fdexample')
 ```
 
 ```{r notation1}
-controlTable <- dplyr::tribble(~group, ~col1, ~col2,
-                               'aa',  'c1',  'c2',
-                               'bb',  'c3',  'c4')
+controlTable <- wrapr::build_frame(
+   "group", "col1", "col2" |
+   "aa"   , "c1"  , "c2"   |
+   "bb"   , "c3"  , "c4"   )
 knitr::kable(controlTable)
 ```
 
@@ -76,11 +78,11 @@ The specification is interpreted as follows:
 The region `controlTable[ , 2:ncol(controlTable)]` specifies partial coordinates of data cells in another table.  In our example these partial coordinates are "`c1`", "`c2`", "`c3`", and "`c4`" treated as column names.  For example if our data is:
 
 ```{r notationd1}
-dat1 <- dplyr::tribble(
-  ~ID,          ~c1,          ~c2,          ~c3,          ~c4,
-  'id1', 'val_id1_c1', 'val_id1_c2', 'val_id1_c3', 'val_id1_c4',
-  'id2', 'val_id2_c1', 'val_id2_c2', 'val_id2_c3', 'val_id2_c4',
-  'id3', 'val_id3_c1', 'val_id3_c2', 'val_id3_c3', 'val_id3_c4' )
+dat1 <- wrapr::build_frame(
+   "ID" , "c1"        , "c2"        , "c3"        , "c4"         |
+   "id1", "val_id1_c1", "val_id1_c2", "val_id1_c3", "val_id1_c4" |
+   "id2", "val_id2_c1", "val_id2_c2", "val_id2_c3", "val_id2_c4" |
+   "id3", "val_id3_c1", "val_id3_c2", "val_id3_c3", "val_id3_c4" )
 knitr::kable(dat1)
 ```
 
@@ -122,15 +124,17 @@ the data cells in the following table:
 
 ```{r dat2}
 my_db <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-dat1db <- dplyr::copy_to(my_db, dat1, 'dat1db')
+dat1db <- DBI::dbWriteTable(my_db, 'dat1db', dat1, 
+                            overwrite = TRUE,
+                            temporary = TRUE)
 dat2 <- cdata::rowrecs_to_blocks_q(wideTable = 'dat1db',
-                                 controlTable = controlTable,
-                                 my_db = my_db,
-                                 columnsToCopy = "ID",
-                                 tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .) %>%
-  arrange(ID, group)
-knitr::kable(dat2)
+                                   controlTable = controlTable,
+                                   my_db = my_db,
+                                   columnsToCopy = "ID",
+                                   tempNameGenerator = tng)
+DBI::dbReadTable(my_db, dat2) %.>%
+  orderby(., c("ID", "group")) %.>%
+  knitr::kable(.)
 ```
 
 For `dat2` the composite row-key `(ID, group)` plus the column name 
@@ -157,25 +161,26 @@ We give simple examples of each of the operators below.
 
 ```{r rowrecs_to_blocks_q}
 wideTableName <- 'dat'
-d <- dplyr::copy_to(my_db,
-      dplyr::tribble(
-        ~ID,          ~c1,          ~c2,          ~c3,          ~c4,
-      'id1', 'val_id1_c1', 'val_id1_c2', 'val_id1_c3', 'val_id1_c4',
-      'id2', 'val_id2_c1', 'val_id2_c2', 'val_id2_c3', 'val_id2_c4',
-      'id3', 'val_id3_c1', 'val_id3_c2', 'val_id3_c3', 'val_id3_c4' ),
-             wideTableName, overwrite = TRUE, temporary=TRUE)
-controlTable <- dplyr::tribble(~group, ~col1, ~col2,
-                                 'aa',  'c1',  'c2',
-                                 'bb',  'c3',  'c4')
+d <- DBI::dbWriteTable(my_db, wideTableName,
+  wrapr::build_frame(
+   "ID" , "c1"        , "c2"        , "c3"        , "c4"         |
+   "id1", "val_id1_c1", "val_id1_c2", "val_id1_c3", "val_id1_c4" |
+   "id2", "val_id2_c1", "val_id2_c2", "val_id2_c3", "val_id2_c4" |
+   "id3", "val_id3_c1", "val_id3_c2", "val_id3_c3", "val_id3_c4" ),
+             overwrite = TRUE, temporary=TRUE)
+controlTable <- wrapr::build_frame(
+   "group", "col1", "col2" |
+   "aa"   , "c1"  , "c2"   |
+   "bb"   , "c3"  , "c4"   )
 columnsToCopy <- 'ID'
 cdata::rowrecs_to_blocks_q(wideTable = wideTableName,
                          controlTable =  controlTable,
                          my_db = my_db,
                          columnsToCopy = columnsToCopy,
-                         tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .) %>%
-  arrange(ID, group) %>%
-  knitr::kable()
+                         tempNameGenerator = tng) %.>%
+  DBI::dbReadTable(my_db, .) %.>%
+  orderby(., c("ID", "group")) %.>%
+  knitr::kable(.)
 ```
 
 
@@ -183,29 +188,29 @@ cdata::rowrecs_to_blocks_q(wideTable = wideTableName,
 
 ```{r blocks_to_rowrecs_q}
 tallTableName <- 'dat'
-d <- dplyr::copy_to(my_db,
-  dplyr::tribble(
-   ~ID,   ~group, ~col1,              ~col2,
-   "id1", "aa",   "val_id1_gaa_col1", "val_id1_gaa_col2",
-   "id1", "bb",   "val_id1_gbb_col1", "val_id1_gbb_col2",
-   "id2", "aa",   "val_id2_gaa_col1", "val_id2_gaa_col2",
-   "id2", "bb",   "val_id2_gbb_col1", "val_id2_gbb_col2",
-   "id3", "aa",   "val_id3_gaa_col1", "val_id3_gaa_col2",
-   "id3", "bb",   "val_id3_gbb_col1", "val_id3_gbb_col2" ),
-         tallTableName,
+d <- DBI::dbWriteTable(my_db, tallTableName,
+  wrapr::build_frame(
+   "ID" , "group", "col1"            , "col2"             |
+   "id1", "aa"   , "val_id1_gaa_col1", "val_id1_gaa_col2" |
+   "id1", "bb"   , "val_id1_gbb_col1", "val_id1_gbb_col2" |
+   "id2", "aa"   , "val_id2_gaa_col1", "val_id2_gaa_col2" |
+   "id2", "bb"   , "val_id2_gbb_col1", "val_id2_gbb_col2" |
+   "id3", "aa"   , "val_id3_gaa_col1", "val_id3_gaa_col2" |
+   "id3", "bb"   , "val_id3_gbb_col1", "val_id3_gbb_col2" ),
          overwrite = TRUE, temporary=TRUE)
-controlTable <- dplyr::tribble(~group, ~col1, ~col2,
-                                 'aa',  'c1',  'c2',
-                                 'bb',  'c3',  'c4')
+controlTable <- wrapr::build_frame(
+   "group", "col1", "col2" |
+   "aa"   , "c1"  , "c2"   |
+   "bb"   , "c3"  , "c4"   )
 keyColumns <- 'ID'
 cdata::blocks_to_rowrecs_q(tallTable = tallTableName,
                             controlTable = controlTable,
                             keyColumns = keyColumns,
                             my_db = my_db,
-                            tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .) %>%
-  arrange(ID) %>%
-  knitr::kable()
+                            tempNameGenerator = tng) %.>%
+  DBI::dbReadTable(my_db, .) %.>%
+  orderby(., "ID") %.>%
+  knitr::kable(.)
 ```
 
 
@@ -229,30 +234,30 @@ knitr::kable(d)
 # the cdata::pivot_to_rowrecs version
 # equivalent to tidyr::spread(d, 'meastype', 'meas')
 cdata::pivot_to_rowrecs(d,
-                           columnToTakeKeysFrom = 'meastype',
-                           columnToTakeValuesFrom = 'meas',
-                           rowKeyColumns= 'index',
-                           sep= '_') %>%
-  arrange(index) %>%
-  knitr::kable()
+                        columnToTakeKeysFrom = 'meastype',
+                        columnToTakeValuesFrom = 'meas',
+                        rowKeyColumns= 'index',
+                        sep= '_') %.>%
+  orderby(., "index") %.>%
+  knitr::kable(.)
 
 # the cdata::blocks_to_rowrecs() version
-dtall <- dplyr::copy_to(my_db, d, "dtall")
+dtall <- DBI::dbWriteTable(my_db, "dtall", d)
 controlTable <- cdata::build_pivot_control_q(tableName = "dtall",
-                                               columnToTakeKeysFrom = 'meastype',
-                                               columnToTakeValuesFrom = 'meas',
-                                               my_db = my_db,
-                                               sep = "_")
+                                             columnToTakeKeysFrom = 'meastype',
+                                             columnToTakeValuesFrom = 'meas',
+                                             my_db = my_db,
+                                             sep = "_")
 knitr::kable(controlTable)
 
 blocks_to_rowrecs_q(tallTable = "dtall",
                      controlTable = controlTable,
                      keyColumns = "index",
                      my_db = my_db,
-                     tempNameGenerator = tng) %>% 
-  dplyr::tbl(my_db, .) %>%
-  arrange(index) %>%
-  knitr::kable()
+                     tempNameGenerator = tng) %.>%
+  DBI::dbReadTable(my_db, .) %.>%
+  orderby(., "index") %.>%
+  knitr::kable(.)
 ```
 
 
@@ -272,12 +277,12 @@ knitr::kable(d)
 cdata::unpivot_to_blocks(d,
                         nameForNewKeyColumn= 'meastype',
                         nameForNewValueColumn= 'meas',
-                        columnsToTakeFrom= c('meas1','meas2')) %>%
-  arrange(index, info) %>%
-  knitr::kable()
+                        columnsToTakeFrom= c('meas1','meas2')) %.>%
+  orderby(., "index") %.>%
+  knitr::kable(.)
 
 # the cdata::cdata::unpivot_to_blocks() version
-dwide <- dplyr::copy_to(my_db, d, "dwide")
+dwide <- DBI::dbWriteTable(my_db, "dwide", d)
 controlTable <- build_unpivot_control(nameForNewKeyColumn= 'meastype',
                                          nameForNewValueColumn= 'meas',
                                          columnsToTakeFrom= c('meas1','meas2'))
@@ -288,10 +293,10 @@ rowrecs_to_blocks_q(wideTable = "dwide",
                   controlTable = controlTable,
                   my_db = my_db,
                   columnsToCopy = keyColumns,
-                  tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .) %>%
-  arrange(index, info) %>%
-  knitr::kable()
+                  tempNameGenerator = tng) %.>%
+  DBI::dbReadTable(my_db, .) %.>%
+  orderby(., "index") %.>%
+  knitr::kable(.)
 ```
 
 # Additional Interesting Applications
@@ -309,12 +314,13 @@ Suppose we had the following data in the following format in our system of recor
 (but with many more column groups and columns):
 
 ```{r pdat}
-purchaseDat <- dplyr::copy_to(my_db, dplyr::tribble(
-  ~ID, ~Q1purchases, ~Q2purchases, ~Q1rebates, ~Q2rebates,
-    1,           20,           10,          5,          3,
-    2,            5,            6,         10,         12),
-  'purchaseDat')
-knitr::kable(purchaseDat)
+purchaseDat <- DBI::dbWriteTable(my_db, 'purchaseDat',
+  wrapr::build_frame(
+   "ID", "Q1purchases", "Q2purchases", "Q1rebates", "Q2rebates" |
+   1   , 20           , 10           , 5          , 3           |
+   2   , 5            , 6            , 10         , 12          )
+  )
+knitr::kable(DBI::dbReadTable(my_db, 'purchaseDat'))
 ```
 
 Common tasks might include totaling columns and computing rates between columns.
@@ -323,42 +329,38 @@ outside systems may need column oriented, or more denormalized results).
 With fluid data the task is easy:
 
 ```{r fluidex}
-controlTable <- dplyr::tribble(
-  ~group, ~purchases,    ~rebates,
-  "Q1",   "Q1purchases", "Q1rebates",
-  "Q2",   "Q2purchases", "Q2rebates")
+controlTable <- wrapr::build_frame(
+   "group", "purchases"  , "rebates"   |
+   "Q1"   , "Q1purchases", "Q1rebates" |
+   "Q2"   , "Q2purchases", "Q2rebates" )
+controlTable2 <- controlTable %.>%
+  extend_nse(., purchasesPerRebate = paste0(group, "PurchPerRebate"))
+
 knitr::kable(controlTable)
 purchasesTall <- rowrecs_to_blocks_q(wideTable = "purchaseDat",
-                                   columnsToCopy = "ID", 
-                                   controlTable = controlTable, 
-                                   my_db = my_db,
-                                   tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .)
-knitr::kable(purchasesTall)
+                                     columnsToCopy = "ID", 
+                                     controlTable = controlTable, 
+                                     my_db = my_db,
+                                     tempNameGenerator = tng)
+
+print(purchasesTall)
+knitr::kable(DBI::dbReadTable(my_db, purchasesTall))
 
 # perform the calculation in one easy step
-calc <- purchasesTall %>% 
-  mutate(purchasesPerRebate = purchases/rebates) %>%
-  compute(name = "purchasesTallC")
-knitr::kable(calc)
 
-# move what we want back
-controlTable <- controlTable %>%
-  mutate(purchasesPerRebate = 
-           paste0(group, "purchasesPerRebate"))
-knitr::kable(controlTable)
+calc <- db_td(my_db, "purchaseDat") %.>% 
+  rowrecs_to_blocks(.,
+                    columnsToCopy = "ID", 
+                    controlTable = controlTable) %.>% 
+  extend_nse(., purchasesPerRebate = purchases/rebates) %.>%
+  blocks_to_rowrecs(.,
+                    keyColumns = "ID",
+                    controlTable = controlTable2)
 
-# notice the step back is not a single
-# pivot or un-pivot
-# due to the larger controlTable
-# (especially if there were more quarters)
-result <- blocks_to_rowrecs_q(tallTable = "purchasesTallC",
-                               keyColumns = "ID",
-                               controlTable = controlTable,
-                               my_db = my_db,
-                               tempNameGenerator = tng) %>%
-  dplyr::tbl(my_db, .)
-knitr::kable(result)
+cat(format(calc))
+
+execute(my_db, calc) %.>%
+  knitr::kable(.)
 ```
 
 The point is: the above can work on a large number of rows and columns (especially
@@ -391,18 +393,18 @@ table through `blocks_to_rowrecs()` to illustrate the kernel of the
 transformation.
 
 ```{r tc}
-controlTable <- dplyr::tribble(~group, ~col1, ~col2,
-                                 'aa',  'c1',  'c2',
-                                 'bb',  'c3',  'c4')
+controlTable <- wrapr::build_frame(
+   "group", "col1", "col2" |
+   "aa"   , "c1"  , "c2"   |
+   "bb"   , "c3"  , "c4"   )
 tallTableName <- 'dc'
-d <- dplyr::copy_to(my_db, controlTable, tallTableName)
+d <- DBI::dbWriteTable(my_db, tallTableName, controlTable)
 keyColumns <- NULL
 wideTableName <- blocks_to_rowrecs_q(tallTable = tallTableName,
                            controlTable = controlTable,
                            keyColumns = keyColumns,
                            my_db = my_db) 
-dw <- dplyr::tbl(my_db, wideTableName)
-knitr::kable(dw)
+knitr::kable(DBI::dbReadTable(my_db, wideTableName))
 ```
 
 The transformed table is essentially an example row of the wide-form.
@@ -420,10 +422,10 @@ a single denormalized column, the other is storing in many RDF-triple like rows.
 ```{r tcr}
 rowrecs_to_blocks_q(wideTable = wideTableName,
                   controlTable = controlTable,
-                  my_db = my_db) %>%
-  dplyr::tbl(my_db, .) %>%
-  arrange(group) %>%
-  knitr::kable()
+                  my_db = my_db) %.>%
+  DBI::dbReadTable(my_db, .) %.>%
+  orderby(., "group") %.>%
+  knitr::kable(.)
 ```
 
 
@@ -432,14 +434,17 @@ rowrecs_to_blocks_q(wideTable = wideTableName,
 
 `cdata::rowrecs_to_blocks()` and `cdata::blocks_to_rowrecs()` represent
 two very general "fluid data" or "coordinatized data" operators that have
-database scale (via `DBI/dbplyr/dplyr`) and big data scale implementations (via `Sparklyr`).
+database scale (via `DBI/rquery`) and big data scale implementations (via `Sparklyr`).
 Some very powerful data transformations can be translated into the above explicit control table
 terminology.  The extra details explicitly managed in the control table notation makes
 for clear calling interfaces.
 
 ```{r cleanup}
 for(ti in tng(dumpList = TRUE)) {
-  dplyr::db_drop_table(my_db, ti)
+  tryCatch(
+    DBI::dbRemoveTable(my_db, ti),
+    error = function(e) { }
+  )
 }
 DBI::dbDisconnect(my_db)
 ```
