@@ -12,7 +12,7 @@
 
 <meta name="author" content="Nina Zumel" />
 
-<meta name="date" content="2018-09-01" />
+<meta name="date" content="2018-10-11" />
 
 <title>Fluid data reshaping with cdata</title>
 
@@ -49,7 +49,7 @@ if (window.hljs) {
 <h1 class="title toc-ignore">Fluid data reshaping with cdata</h1>
 <h3 class="subtitle"><em>Beyond pivot and unpivot</em></h3>
 <h4 class="author"><em>Nina Zumel</em></h4>
-<h4 class="date"><em>2018-09-01</em></h4>
+<h4 class="date"><em>2018-10-11</em></h4>
 
 
 
@@ -363,7 +363,7 @@ val_acc
 <h2>Row Records and Blocks</h2>
 <p>Our example data comes grouped by epoch. Let’s call the data for a single epoch a <em>record</em>. In the starting data shape, a record is a single row. We’ll call that shape a <em>row record</em> (“rowrec” for short). For plotting, we want the information from a single record distributed across multiple rows, as the table above (the <em>control table</em>) describes. We’ll call that shape a <em>block</em>.</p>
 <p>In <code>cdata</code> the control table specifies how to transform data from row records to blocks. Let’s work through this with a table that contains a single row record.</p>
-<pre class="r"><code>onerow = startingData %&gt;%
+<pre class="r"><code>onerow = startingData %.&gt;%
   head(., n=1)</code></pre>
 <p><!--
 <caption>--><span class="marginnote shownote">A single-record table</span><!--</caption>--></p>
@@ -490,20 +490,6 @@ validation
 1
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
-accuracy
-</td>
-<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.785200
-</td>
-<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.8722000
-</td>
-</tr>
-<tr>
-<td style="text-align:right;background-color: lightgrey;">
-1
-</td>
-<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 minus binary cross entropy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
@@ -511,6 +497,20 @@ minus binary cross entropy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
 -0.3769818
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;">
+1
+</td>
+<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
+accuracy
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.785200
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8722000
 </td>
 </tr>
 </tbody>
@@ -564,14 +564,14 @@ val_loss
 </tbody>
 </table>
 <p>A neat thing about the <code>cdata</code> functions is that you can use them on the control table itself! This is a useful way to check that you have specified your reshaping correctly. Let’s move the control table into a single row.</p>
-<pre class="r"><code>cR = controlTable %&gt;%
+<pre class="r"><code>cR = controlTable %.&gt;%
   blocks_to_rowrecs(
     .,
     controlTable = controlTable,
     # no record id column
-    keyColumns = NULL) %&gt;%
+    keyColumns = NULL) %.&gt;%
   # reorder the columns as in the original shape
-  dplyr::select(val_loss, val_acc, loss, acc)</code></pre>
+  select_columns(., c(&quot;val_loss&quot;, &quot;val_acc&quot;, &quot;loss&quot;, &quot;acc&quot;))</code></pre>
 <p><!--
 <caption>--><span class="marginnote shownote">The control table reshaped to a single row</span><!--</caption>--></p>
 <table class="table" style="width: auto !important; margin-left: auto; margin-right: auto;">
@@ -611,7 +611,7 @@ acc
 </tbody>
 </table>
 <p>Now move the transformed table back into its original shape.</p>
-<pre class="r"><code>cT = cR %&gt;% 
+<pre class="r"><code>cT = cR %.&gt;% 
   rowrecs_to_blocks(
     .,
     controlTable = controlTable)</code></pre>
@@ -636,17 +636,6 @@ validation
 <tbody>
 <tr>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
-accuracy
-</td>
-<td style="text-align:left;background-color: lightgrey;background-color: yellow;">
-acc
-</td>
-<td style="text-align:left;background-color: lightgrey;background-color: yellow;">
-val_acc
-</td>
-</tr>
-<tr>
-<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 minus binary cross entropy
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: yellow;">
@@ -654,6 +643,17 @@ loss
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: yellow;">
 val_loss
+</td>
+</tr>
+<tr>
+<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
+accuracy
+</td>
+<td style="text-align:left;background-color: lightgrey;background-color: yellow;">
+acc
+</td>
+<td style="text-align:left;background-color: lightgrey;background-color: yellow;">
+val_acc
 </td>
 </tr>
 </tbody>
@@ -693,20 +693,6 @@ validation
 1
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
-accuracy
-</td>
-<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.7852000
-</td>
-<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.8722000
-</td>
-</tr>
-<tr>
-<td style="text-align:right;background-color: lightgrey;">
-1
-</td>
-<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 minus binary cross entropy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
@@ -718,16 +704,16 @@ minus binary cross entropy
 </tr>
 <tr>
 <td style="text-align:right;background-color: lightgrey;">
-2
+1
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 accuracy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.9040000
+0.7852000
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.8895000
+0.8722000
 </td>
 </tr>
 <tr>
@@ -746,16 +732,16 @@ minus binary cross entropy
 </tr>
 <tr>
 <td style="text-align:right;background-color: lightgrey;">
-3
+2
 </td>
 <td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
 accuracy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.9303333
+0.9040000
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
-0.8822000
+0.8895000
 </td>
 </tr>
 <tr>
@@ -770,6 +756,20 @@ minus binary cross entropy
 </td>
 <td style="text-align:right;background-color: lightgrey;background-color: yellow;">
 -0.2963943
+</td>
+</tr>
+<tr>
+<td style="text-align:right;background-color: lightgrey;">
+3
+</td>
+<td style="text-align:left;background-color: lightgrey;background-color: lightgreen;">
+accuracy
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.9303333
+</td>
+<td style="text-align:right;background-color: lightgrey;background-color: yellow;">
+0.8822000
 </td>
 </tr>
 </tbody>
