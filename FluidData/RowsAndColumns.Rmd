@@ -3,8 +3,14 @@ title: "Coordinatized Data: A Fluid Data Specification"
 author: "John Mount and Nina Zumel"
 date: "March 29, 2017"
 output:
-  tint::tintHtml
-bibliography: skeleton.bib
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+#bibliography: skeleton.bib
 link-citations: yes
 ---
 
@@ -20,7 +26,7 @@ pltImg <- function(fname) {
 }
 ```
 
-## Introduction
+# Introduction
 
 It has been our experience when teaching the data wrangling part of data science that students often have difficulty understanding the conversion to and from row-oriented and column-oriented data formats (what is commonly called pivoting and un-pivoting).
 
@@ -32,13 +38,13 @@ Real trust and understanding of this concept doesn't fully form until one realiz
 
 In this article we will try to separate representation from semantics.  We will advocate for thinking in terms of *coordinatized data*, and demonstrate advanced data wrangling in [`R`](https://cran.r-project.org).
 
-## Example 
+# Example 
 
 Consider four data scientists who perform the same set of modeling tasks, but happen to record the data differently.
 
 In each case the data scientist was asked to test two decision tree regression models (*a* and *b*) on two test-sets (*x* and *y*) and record both the model quality on the test sets under two different metrics ([`AUC`](https://en.wikipedia.org/wiki/Receiver_operating_characteristic#Area_under_the_curve) and [`pseudo R-squared`](http://www.win-vector.com/blog/2011/09/the-simpler-derivation-of-logistic-regression/)).  The two models differ in tree depth (in this case model *a* has depth 5, and model *b* has depth 3), which is also to be recorded.
 
-#### Data Scientist 1
+## Data Scientist 1
 
 ```{marginfigure}
 <img src="ML.png">
@@ -63,7 +69,7 @@ Data Scientist 1 uses what is called a *denormalized form* (we use this term out
 
 Denormalized forms are the most ready for tasks that reason across columns, such as training or evaluating machine learning models.
 
-#### Data Scientist 2
+## Data Scientist 2
 
 ```{marginfigure}
 <img src="DW.png">
@@ -106,7 +112,7 @@ all.equal(d1, d1_2)
 
 [Relational](https://en.wikipedia.org/wiki/Relational_algebra) data theory (the science of joins) is the basis of Structured Query Language (`SQL`) and a topic any data scientist *must* master.
 
-#### Data Scientist 3
+## Data Scientist 3
 
 ```{marginfigure}
 <img src="SC.png">
@@ -175,7 +181,7 @@ And we are certainly neglecting other namings of the concept.  We find none of t
 Note: often the data re-arrangement operation is only exposed as part of a larger aggregating or tabulating operation.  Also `pivot_to_rowrecs()` is considered the harder transform direction (as it has to group rows to work), so it is often supplied in packages, whereas analysts often use ad-hoc methods for the simpler `unpivot_to_blocks()` operation (to be defined next).
 
 
-#### Data Scientist 4
+## Data Scientist 4
 
 ```{marginfigure}
 <img src="BA.png">
@@ -224,7 +230,7 @@ pltImg("gather_spread.png")
 
 We find the more verbose naming (and calling interface) more intuitive. So we encourage you to think directly in terms of `unpivot_to_blocks()` as moving values to different rows (in the same column), and `blocks_to_rowrecs()` as moving values to different columns (in the same row).  It will usually be apparent from your problem which of these operations you want to use.
 
-## The Theory of Coordinatized Data
+# The Theory of Coordinatized Data
 
 When you are working with transformations you look for invariants to keep your bearings.  All of the above data share an invariant property we call being *coordinatized* data.  In this case the invariant is so strong that one can think of all of the above examples as being equivalent, and the row/column transformations as merely changes of frame of reference.  
 
@@ -289,11 +295,11 @@ pltImg("15puzzleGroupoid.png")
 
 By "wild" data we mean data where cells don't have unique `lookup()` addresses.  This often happens in data that has repeated measurements.  Wild data is simply tamed by adding additional keying columns (such as an arbitrary experiment repetition number). Hygienic data collection practice nearly always produces coordinatized data, or at least data that is easy to coordinatize. Our position is that your data should always be coordinatized; if it's not, you shouldn't be working with it yet.
 
-## Rows and Columns
+# Rows and Columns
 
 Many students are initially surprised that row/column conversions are considered "easy."  Thus, it is worth taking a little time to review moving data between rows and columns.
 
-### Moving From Columns to Rows ("Thinifying data")
+## Moving From Columns to Rows ("Thinifying data")
 
 ```{r echo=FALSE, fig.fullwidth = TRUE}
 pltImg("Gather.png")
@@ -338,7 +344,7 @@ unpivot_to_blocks(data=row,
 ```
 
 
-### Moving From Rows to Columns ("Widening data")
+## Moving From Rows to Columns ("Widening data")
 
 Moving data from rows to columns (i.e., from Scientist 3 to Scientist 1) is a bit harder to explain, and usually not explained well.
 
@@ -367,7 +373,7 @@ all.equal(d1, d1from3)
 
 If the structure of our data doesn't match our expected keying we can have problems. We emphasize that these problems arise from trying to work with non-coordinatized data, and not from the transforms themselves.
 
-##### Too little keying
+## Too little keying
 
 If our keys don't contain enough information to match rows together we can have a problem.
 Suppose our `testset` record was damaged or not present and look how a direct call to `spread` works:
@@ -390,7 +396,7 @@ pivot_to_rowrecs(data= d3damaged,
 
 The above issue is often fixed by adding additional columns (such as measurement number or time of measurement).
 
-##### Too much keying
+## Too much keying
 
 Columns can also contain too fine a key structure. For example, suppose our data was damaged and `depth` is no longer a function of the model id, but contains extra detail.  In this case a direct call to `spread` produces a way too large result because the extra detail prevents it from matching rows.
 
@@ -418,7 +424,7 @@ The above issue is usually fixed by one of two solutions (which one is appropria
   2. Aggregating or summing out the problematic columns. For example if the problematic column in our example were `runtime`, which could legitimately vary for the same model and dataset, we could use `dplyr::group_by/summarize` to create a data frame with columns `(model, testset, mean_runtime, measurement, value)`, so that `(model, testset)` does uniquely specify row groups.
 
 
-## Conclusion
+# Conclusion
 
 The concept to remember is: organize your records so data cells have unique consistent abstract coordinates.  For coordinatized data the actual arrangement of data into tables, rows, and columns is an implementation detail or optimization that does not significantly change what the data means.
 
