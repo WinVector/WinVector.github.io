@@ -3,21 +3,15 @@ title: "Coordinatized Data: A Fluid Data Specification"
 author: "John Mount and Nina Zumel"
 date: "March 29, 2017"
 output:
-  tufte::tufte_html: default
-  tufte::tufte_handout:
-    citation_package: natbib
-    latex_engine: xelatex
-  tufte::tufte_book:
-    citation_package: natbib
-    latex_engine: xelatex
+  tint::tintHtml
 bibliography: skeleton.bib
 link-citations: yes
 ---
 
 ```{r setup, include=FALSE}
-library(tufte)
-# invalidate cache when the tufte version changes
-knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tufte'))
+library("tint")
+# invalidate cache when the tint version changes
+knitr::opts_chunk$set(tidy = FALSE, cache.extra = packageVersion('tint'))
 options(htmltools.dir.version = FALSE)
 library("magick")
 pltImg <- function(fname) {
