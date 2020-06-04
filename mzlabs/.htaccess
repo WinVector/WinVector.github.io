@@ -1,0 +1,13 @@
+
+RewriteOptions inherit
+
+RewriteEngine on
+
+RewriteCond %{HTTP_REFERER} !^http://mzlabs.com/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://mzlabs.com$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://mzlabs.com/apple.com/cgi-bin/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://mzlabs.com/apple.com/cgi-bin$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.mzlabs.com/.*$      [NC]
+RewriteCond %{HTTP_REFERER} !^http://www.mzlabs.com$      [NC]
+RewriteRule .*\.(jpg|jpeg|gif|png|bmp)$ http://mzlabs.com/apple.com/cgi-bin/ [R,NC]
+

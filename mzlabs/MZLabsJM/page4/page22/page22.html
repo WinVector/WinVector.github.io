@@ -1,0 +1,71 @@
+<html>
+<head>
+<title>Genetic Art Applet</title>
+<!-- Start Google Analytics -->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-4693310-1', 'auto');
+  ga('send', 'pageview');
+
+</script><!-- End Google Analytics -->
+</head>
+<body>
+Requires Java.
+<p>
+  <a href="../page4.html">back</a>
+</p><p>
+  <SCRIPT LANGUAGE="JavaScript">
+    var isnetscape = false;
+    var ismicrosoft = false;
+    var isother = false;
+    // code to get around Microsoft/Netscape incompatibilities
+    if(navigator.appName.indexOf("Netscape")>=0) {
+       isnetscape = true;
+    } else  if(navigator.appName.indexOf("Microsoft")>=0) {
+       ismicrosoft = true;
+    } else {
+       isother = true;
+    }
+    // code to get around Microsoft/Netscape incompatibilities
+    function write_applet_tag(instname,classname,jarname,
+       awidth,aheight)
+    {
+     if(ismicrosoft) {
+      document.write(
+      '<OBJECT CODETYPE="application/java" ' + 
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</OBJECT>\n');
+     } else if(isnetscape) {
+//  They say to use embed with netscape- but it crashes my browser
+      document.write(
+      '<APPLET ' +
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</APPLET>\n');
+     } else {
+      document.write(
+      '<APPLET ' +
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</APPLET>\n');
+     }
+    }
+     write_applet_tag('gart','mzlabs/gart/SwingApplet.class','http://www.mzlabs.com/JMPubs/gart.jar',900,650);
+    </SCRIPT>
+  <br>
+</p><p>
+  <a href="../page4.html">back</a>
+</p>
+</body>
+</html>

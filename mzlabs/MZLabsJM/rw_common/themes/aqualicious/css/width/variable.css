@@ -1,0 +1,11 @@
+#container {
+	width: auto;
+	margin: 0 20px;
+}
+
+#navcontainer ul,
+#navcontainer ul ul,
+#navcontainer ul ul ul {
+	width: auto;
+	margin: 0 20px 0 30px;
+}

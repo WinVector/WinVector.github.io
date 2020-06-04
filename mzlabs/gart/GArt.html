@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>Genetic Art Applet</title>
+</head>
+<body>
+<p>
+  <a href="http://www.mzlabs.com/MZLabsJM/page4/page4.html">back</a>
+</p><p>
+  <SCRIPT LANGUAGE="JavaScript">
+    var isnetscape = false;
+    var ismicrosoft = false;
+    var isother = false;
+    // code to get around Microsoft/Netscape incompatibilities
+    if(navigator.appName.indexOf("Netscape")>=0) {
+       isnetscape = true;
+    } else  if(navigator.appName.indexOf("Microsoft")>=0) {
+       ismicrosoft = true;
+    } else {
+       isother = true;
+    }
+    // code to get around Microsoft/Netscape incompatibilities
+    function write_applet_tag(instname,classname,jarname,
+       awidth,aheight)
+    {
+     if(ismicrosoft) {
+      document.write(
+      '<OBJECT CODETYPE="application/java" ' + 
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</OBJECT>\n');
+     } else if(isnetscape) {
+//  They say to use embed with netscape- but it crashes my browser
+      document.write(
+      '<APPLET ' +
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</APPLET>\n');
+     } else {
+      document.write(
+      '<APPLET ' +
+         'ARCHIVE="' + jarname + '" ' + 
+	    'NAME="' + instname + '" ' + 
+	       'CODE="' + classname + '" ' + 
+	          'WIDTH=' + awidth + ' HEIGHT=' + aheight + '>\n' +
+		  '</APPLET>\n');
+     }
+    }
+     write_applet_tag('gart','mzlabs/gart/SwingApplet.class','http://www.mzlabs.com/gart//g4.jar',900,600);
+    </SCRIPT>
+  <br>
+</p><p>
+  <a href="http://www.mzlabs.com/MZLabsJM/page4/page4.html">back</a>
+</p>
+</body>
+</html>
