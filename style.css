@@ -1,35 +1,3 @@
-/*--------------------------------------------------------------
-TABLE OF CONTENT
-----------------------------------------------------------------
-1.0 VARIABLE
-|  1.1 COLOR
-|  1.2 TYPOGRAPHY
-|  1.3 LAYOUT
-2.0 FOUNDATION
-3.0 TYPOGRAPHY
-4.0 IMAGE
-5.0 LAYOUT
-6.0 COMPONENT
-|  6.1 CTA
-|  6.2 BUTTON
-|  6.3 TOGGLE
-|  6.4 CARD
-|  6.5 LIST
-7.0 SECTION
-|  7.1 HEADER
-|  7.2 HERO
-|  7.3 CUSTOMER
-|  7.4 FEATURE
-|  7.5 TESTIMONIAL
-|  7.6 PRICING
-|  7.7 FAQ
-|  7.8 CLOSE
-|  7.9 FOOTER
-8.0 MEDIA
-|  8.1 768PX
-|  8.2 1024PX
-|  8.3 1200PX
---------------------------------------------------------------*/
 
 /*--------------------------------------------------------------
 1.0 VARIABLE
@@ -114,17 +82,12 @@ TABLE OF CONTENT
   /* GAP */
   
   --ui-gap-header  : 1rem;
-  --ui-gap-cta     : .75rem;
-  --ui-gap-hero    : 2rem;
-  --ui-gap-customer: 2rem;
   --ui-gap-card    : 1.25rem;
-  --ui-gap-pricing : 1rem;
-  --ui-gap-faq     : 1.5rem;
+  --ui-gap-project : 1rem;
 
   /* BORDER RADIUS */
   
   --ui-radius-avatar: 5rem;
-  --ui-radius-button: 5rem;
   --ui-radius-card  : .5rem;
 
 }
@@ -237,87 +200,6 @@ svg {
 
 .ui-layout-grid { display: grid; }
 
-/*--------------------------------------------------------------
-6.0 COMPONENT
---------------------------------------------------------------*/
-
-/*--------------------------------------------------------------
-|
-| 6.1 CTA
-|
---------------------------------------------------------------*/
-
-.ui-component-cta {
-  flex-direction: column;
-  row-gap: var(--ui-gap-cta);
-}
-
-/*--------------------------------------------------------------
-|
-| 6.2 BUTTON
-|
---------------------------------------------------------------*/
-
-.ui-component-button {
-  border: .0625rem solid var(--ui-color-brand);
-  border-radius: var(--ui-radius-button);
-  display: block;
-  font-weight: 700;
-  line-height: 1;
-  text-align: center;
-  text-decoration: none;
-}
-
-.ui-component-button-primary {
-  background-color: var(--ui-color-brand);
-  color: var(--ui-color-typography-button);
-}
-
-.ui-component-button-secondary {
-  background-color: var(--ui-color-background-primary);
-  color: var(--ui-color-brand);
-}
-
-.ui-component-button-big,
-.ui-component-button-normal { padding: .75rem 1rem .875rem; }
-
-.ui-component-button-big { width: 100%; }
-
-.ui-component-button-normal { width: fit-content; }
-
-/*--------------------------------------------------------------
-|
-| 6.3 TOGGLE
-|
---------------------------------------------------------------*/
-
-input[name="toggle"] { display: none; }
-
-.ui-component-toggle {
-  background-color: var(--ui-color-background-tertiary);
-  border-radius: var(--ui-radius-button);
-  color: var(--ui-color-typography-note);
-  font-size: var(--ui-typography-s);
-  font-weight: 700;
-  line-height: 1;
-  margin: var(--ui-gap-pricing) auto .5rem;
-  padding: .25rem;
-  width: max-content;
-}
-
-.ui-component-toggle--label {
-  border-radius: var(--ui-radius-button);
-  cursor: pointer;
-  padding: .5rem .625rem;
-}
-
-#ui-component-toggle__monthly:checked ~
-div label[for=ui-component-toggle__monthly],
-#ui-component-toggle__yearly:checked ~
-div label[for=ui-component-toggle__yearly] {
-  background-color: var(--ui-color-background-primary);
-  color: var(--ui-color-typography-body);
-}
 
 /*--------------------------------------------------------------
 |
@@ -402,7 +284,7 @@ div label[for=ui-component-toggle__yearly] {
 
 .ui-section-header--menu-icon::before,
 .ui-section-header--menu-icon::after {
-  background: var(--ui-color-brand);
+  background: var(--ui-color-background-primary);
   content: "";
   height: .125rem;
   left: 0;
@@ -428,7 +310,7 @@ div label[for=ui-component-toggle__yearly] {
 /* MENU */
 
 .ui-section-header--nav {
-  background-color: var(--ui-color-background-primary);
+  background-color: var(--ui-color-background-secondary);
   box-shadow: 0 .5rem 1rem rgba(0,0,0,.05);
   flex-direction: column;
   gap: var(--ui-gap-header);
@@ -456,171 +338,41 @@ div label[for=ui-component-toggle__yearly] {
   color: var(--ui-color-background-primary)
 }
 
+
 /*--------------------------------------------------------------
 |
-| 7.2 HERO
+| 7.6 PROJECT
 |
 --------------------------------------------------------------*/
 
-.ui-section-hero {
+.ui-section-project {
   padding-bottom: 5rem;
   padding-top: 5rem;
   text-align: center;
 }
 
-.ui-section-hero__layout { row-gap: var(--ui-gap-hero); }
-
-/*--------------------------------------------------------------
-|
-| 7.3 CUSTOMER
-|
---------------------------------------------------------------*/
-
-.ui-section-customer__layout {
-  flex-direction: column;
-  row-gap: var(--ui-gap-customer);
-}
-
-.ui-section-customer--logo {
-  height: 1.5rem;
-  width: auto;
-}
-
-.ui-section-customer--logo-str { height: 1.75rem; }
-  
-.ui-section-customer--logo-bhn { height: 1.375rem; }
-
-/*--------------------------------------------------------------
-|
-| 7.4 FEATURE
-|
---------------------------------------------------------------*/
-
-.ui-section-feature {
-  padding-bottom: 5rem;
-  padding-top: 5rem;
-}
-
-.ui-section-feature__layout { row-gap: var(--ui-gap-card); }
-
-/* CARD */
-
-.ui-component-card--feature { text-align: center; }
-
-.ui-component-card--feature-content { padding: 2.25rem 1.5rem; }
-
-.ui-component-card--feature-title { margin-bottom: .5rem; }
-
-/*--------------------------------------------------------------
-|
-| 7.5 TESTIMONIAL
-|
---------------------------------------------------------------*/
-
-.ui-section-testimonial {
-  background-color: var(--ui-color-background-secondary);
-  padding-bottom: 5rem;
-  padding-top: 5rem;
-  text-align: center;
-}
-
-.ui-section-testimonial--avatar {
-  border-radius: var(--ui-radius-avatar);
-  height: 5rem;
-  width: 5rem;
-}
-
-.ui-section-testimonial--quote {
-  margin-bottom: 1rem;
-  margin-top: 1rem;
-}
-
-.ui-section-testimonial--author { line-height: 1.25; }
-
-/*--------------------------------------------------------------
-|
-| 7.6 PRICING
-|
---------------------------------------------------------------*/
-
-.ui-section-pricing {
-  padding-bottom: 5rem;
-  padding-top: 5rem;
-  text-align: center;
-}
-
-.ui-section-pricing__layout {
+.ui-section-project__layout {
   justify-content: initial;
   align-items: stretch;
-  margin-top: var(--ui-gap-pricing);
+  margin-top: var(--ui-gap-project);
   row-gap: var(--ui-gap-card);
 }
 
 /* CARD */
 
-.ui-component-card--pricing {
+.ui-component-card--project {
   background-color: var(--ui-color-background-tertiary);
   padding: 1.5rem 1.5rem 1.75rem;
   text-align: left;
 }
 
-.ui-component-card--pricing-price {
-  line-height: 1;
-  margin-bottom: 1.25rem;
-  margin-top: 1.25rem;
-}
-
-.ui-component-card--pricing-amount {
-  font-size: var(--ui-typography-h1);
-  font-weight: 700;
-}
-
-/* AMOUNT */
-
-.ui-component-card--pricing-amount-1::before { content: "$5"; }
-
-#ui-component-toggle__yearly:checked ~ div
-.ui-component-card--pricing-amount-1::before { content: "$3"; }
-
-.ui-component-card--pricing-amount-2::before { content: "$15"; }
-
-#ui-component-toggle__yearly:checked ~ div
-.ui-component-card--pricing-amount-2::before { content: "$13"; }
-
-.ui-component-card--pricing-amount-3::before { content: "$25"; }
-
-#ui-component-toggle__yearly:checked ~ div
-.ui-component-card--pricing-amount-3::before { content: "$23"; }
-
 /* LIST */
 
-.ui-component-list--pricing {
+.ui-component-list--project {
   margin-bottom: 1.5rem;
   margin-top: 1.25rem;
 }
 
-/*--------------------------------------------------------------
-|
-| 7.7 FAQ
-|
---------------------------------------------------------------*/
-
-.ui-section-faq { padding-bottom: 5rem; }
-
-.ui-section-faq__layout {
-  margin-bottom: 2rem;
-  row-gap: var(--ui-gap-faq);
-  text-align: left;
-}
-
-.ui-section-faq--question {
-  background-image: url(https://res.cloudinary.com/uisual/image/upload/assets/icons/question.svg);
-  margin-bottom: .5rem;
-}
-
-.ui-section-faq--answer { padding-left: 1.875rem; }
-
-.ui-section-faq--note { text-align: center; }
 
 /*--------------------------------------------------------------
 |
@@ -750,9 +502,6 @@ div label[for=ui-component-toggle__yearly] {
            (var(--ui-layout-gutter) * 3));
   }
 
-  /*------------------------------------------------------------
-  COMPONENT
-  ------------------------------------------------------------*/
 
   /*------------------------------------------------------------
   |
@@ -765,9 +514,6 @@ div label[for=ui-component-toggle__yearly] {
     padding-left: 2rem;
   }
 
-  /*------------------------------------------------------------
-  SECTION
-  ------------------------------------------------------------*/
 
   /*------------------------------------------------------------
   |
@@ -801,62 +547,16 @@ div label[for=ui-component-toggle__yearly] {
     padding: 0;
   }
 
-  /*------------------------------------------------------------
-  |
-  | HERO
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-hero { text-align: left; }
-
-  .ui-section-hero .ui-component-cta { align-items: start; }
 
   /*------------------------------------------------------------
   |
-  | CUSTOMER
+  | PROJECT
   |
   ------------------------------------------------------------*/
 
-  .ui-section-customer__layout {
-    column-gap: var(--ui-gap-customer);
-    flex-direction: row;
-  }
-  
-  .ui-section-customer--logo {
-    margin-left: 0;
-    margin-right: 0;
-  }
-
-  /*------------------------------------------------------------
-  |
-  | FEATURE
-  |
-  ------------------------------------------------------------*/
-
-  .ui-component-card--feature-content {
-    padding-left: 2.25rem;
-    padding-right: 2.25rem;
-  }
-
-  /*------------------------------------------------------------
-  |
-  | PRICING
-  |
-  ------------------------------------------------------------*/
-
-  .ui-component-card--pricing { 
+  .ui-component-card--project { 
 	padding: 2rem 2rem 2.25rem; 
   }
-
-  /*------------------------------------------------------------
-  |
-  | FAQ
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-faq__layout { margin-bottom: 3rem; }
-
-  .ui-section-faq--answer { padding-left: 2rem; }
 
   /*------------------------------------------------------------
   |
@@ -923,20 +623,6 @@ div label[for=ui-component-toggle__yearly] {
   SECTION
   ------------------------------------------------------------*/
 
-  /*------------------------------------------------------------
-  |
-  | HERO
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-hero .ui-component-cta {
-    align-items: center;
-    column-gap: var(--ui-gap-cta);
-    flex-direction: row;
-    justify-content: start;
-  }
-
-}
 
 /*--------------------------------------------------------------
 |
@@ -983,7 +669,7 @@ div label[for=ui-component-toggle__yearly] {
     --ui-gap-header  : 2rem;
     --ui-gap-customer: 4rem;
     --ui-gap-card    : 2rem;
-    --ui-gap-pricing : 3rem;
+    --ui-gap-project : 3rem;
     
   }
 
@@ -999,21 +685,6 @@ div label[for=ui-component-toggle__yearly] {
   
   .ui-layout-container { width: 70rem; }
 
-  /*------------------------------------------------------------
-  COMPONENT
-  ------------------------------------------------------------*/
-
-  /*------------------------------------------------------------
-  |
-  | BUTTON
-  |
-  ------------------------------------------------------------*/
-
-  .ui-component-button-big,
-  .ui-component-button-normal {
-    padding-bottom: 1.125rem;
-    padding-top: 1rem;
-  }
 
   /*------------------------------------------------------------
   SECTION
@@ -1027,73 +698,20 @@ div label[for=ui-component-toggle__yearly] {
 
   .ui-section-header { padding-top: 3rem; }
 
-  /*------------------------------------------------------------
-  |
-  | HERO
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-hero {
-    padding-bottom: 7.5rem;
-    padding-top: 7.5rem;
-  }
 
   /*------------------------------------------------------------
   |
-  | CUSTOMER
+  | PROJECT
   |
   ------------------------------------------------------------*/
 
-  .ui-section-customer--logo { height: 2rem; }
-  
-  .ui-section-customer--logo-str { height: 2.25rem; }
-  
-  .ui-section-customer--logo-bhn { height: 1.75rem; }
-
-  /*------------------------------------------------------------
-  |
-  | FEATURE
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-feature {
-    padding-bottom: 7.5rem;
-    padding-top: 7.5rem;
-  }
-
-  /*------------------------------------------------------------
-  |
-  | TESTIMONIAL
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-testimonial {
-    padding-bottom: 7.5rem;
-    padding-top: 7.5rem;
-  }
-
-  /*------------------------------------------------------------
-  |
-  | PRICING
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-pricing {
+  .ui-section-project {
     padding-bottom: 2.5rem;
     padding-top: 2.5rem;
   }
 
-  .ui-component-card--pricing { padding: 3rem; }
+  .ui-component-card--project { padding: 3rem; }
 
-  /*------------------------------------------------------------
-  |
-  | FAQ
-  |
-  ------------------------------------------------------------*/
-
-  .ui-section-faq { padding-bottom: 7.5rem; }
-
-  .ui-section-faq__layout { margin-bottom: 5rem; }
 
   /*------------------------------------------------------------
   |
