@@ -15,7 +15,7 @@ Banaue rice terraces. Photo: <a href="https://www.flickr.com/photos/london/31934
 <br><br>
 
 
-In a previous article, we showed the use of partial pooling, or hierarchical/multilevel models, for level coding high-cardinality categorical variables in [`vtreat`](https://winvector.github.io/vtreat/). In this article, we will discuss a little more about the how and why of partial pooling in [`R`](https://www.r-project.org).
+In a [previous article](https://github.com/WinVector/vtreat/blob/main/Examples/CustomLevelCoding/CustomLevelCoding.md), we showed the use of partial pooling, or hierarchical/multilevel models, for level coding high-cardinality categorical variables in [`vtreat`](https://winvector.github.io/vtreat/). In this article, we will discuss a little more about the how and why of partial pooling in [`R`](https://www.r-project.org).
 
 We will use the `lme4` package to fit the hierarchical models. The acronym "lme" stands for "linear mixed-effects" models: models that combine so-called "fixed effects" and "random effects" in a single (generalized) linear model. The `lme4` documentation uses the random/fixed effects terminology, but we are going to follow Gelman and Hill, and avoid the use of the terms "fixed" and "random" effects.
 
